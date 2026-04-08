@@ -1,17 +1,21 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import {
+  int,
+  mysqlEnum,
+  mysqlTable,
+  text,
+  timestamp,
+  varchar,
+  decimal,
+  boolean,
+  longtext,
+} from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
+ * Extended with role field for admin/user distinction.
  */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -25,4 +29,147 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * Clients table - represents companies/organizations using the platform
+ */
+export const clients = mysqlTable("clients", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  phone: varchar("phone", { length: 20 }),
+  companyName: varchar("companyName", { length: 255 }),
+  companyWebsite: varchar("companyWebsite", { length: 255 }),
+  contactPerson: varchar("contactPerson", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Client = typeof clients.$inferSelect;
+export type InsertClient = typeof clients.$inferInsert;
+
+/**
+ * Experts table - represents expert professionals in the network
+ */
+export const experts = mysqlTable("experts", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  phone: varchar("phone", { length: 20 }),
+  firstName: varchar("firstName", { length: 255 }),
+  lastName: varchar("lastName", { length: 255 }),
+  sector: varchar("sector", { length: 255 }),
+  function: varchar("function", { length: 255 }),
+  biography: longtext("biography"),
+  linkedinUrl: varchar("linkedinUrl", { length: 500 }),
+  cvUrl: varchar("cvUrl", { length: 500 }),
+  cvKey: varchar("cvKey", { length: 500 }), // S3 key for CV
+  isVerified: boolean("isVerified").default(false).notNull(),
+  verificationToken: varchar("verificationToken", { length: 255 }),
+  verificationTokenExpiry: timestamp("verificationTokenExpiry"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Expert = typeof experts.$inferSelect;
+export type InsertExpert = typeof experts.$inferInsert;
+
+/**
+ * Expert Employment History
+ */
+export const expertEmployment = mysqlTable("expertEmployment", {
+  id: int("id").autoincrement().primaryKey(),
+  expertId: int("expertId").notNull(),
+  companyName: varchar("companyName", { length: 255 }).notNull(),
+  position: varchar("position", { length: 255 }).notNull(),
+  startDate: varchar("startDate", { length: 10 }), // YYYY-MM format
+  endDate: varchar("endDate", { length: 10 }), // YYYY-MM format, null if current
+  isCurrent: boolean("isCurrent").default(false).notNull(),
+  description: longtext("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ExpertEmployment = typeof expertEmployment.$inferSelect;
+export type InsertExpertEmployment = typeof expertEmployment.$inferInsert;
+
+/**
+ * Expert Education History
+ */
+export const expertEducation = mysqlTable("expertEducation", {
+  id: int("id").autoincrement().primaryKey(),
+  expertId: int("expertId").notNull(),
+  schoolName: varchar("schoolName", { length: 255 }).notNull(),
+  degree: varchar("degree", { length: 255 }).notNull(),
+  fieldOfStudy: varchar("fieldOfStudy", { length: 255 }),
+  startDate: varchar("startDate", { length: 10 }), // YYYY-MM format
+  endDate: varchar("endDate", { length: 10 }), // YYYY-MM format
+  description: longtext("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ExpertEducation = typeof expertEducation.$inferSelect;
+export type InsertExpertEducation = typeof expertEducation.$inferInsert;
+
+/**
+ * Projects table - represents projects created by clients
+ */
+export const projects = mysqlTable("projects", {
+  id: int("id").autoincrement().primaryKey(),
+  clientId: int("clientId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: longtext("description"),
+  projectType: mysqlEnum("projectType", ["Call", "Advisory", "ID"]).notNull(),
+  targetCompanies: text("targetCompanies"), // Comma-separated or JSON
+  targetPersona: text("targetPersona"),
+  hourlyRate: decimal("hourlyRate", { precision: 10, scale: 2 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Project = typeof projects.$inferSelect;
+export type InsertProject = typeof projects.$inferInsert;
+
+/**
+ * Screening Questions table - questions associated with projects
+ */
+export const screeningQuestions = mysqlTable("screeningQuestions", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  question: longtext("question").notNull(),
+  order: int("order").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ScreeningQuestion = typeof screeningQuestions.$inferSelect;
+export type InsertScreeningQuestion = typeof screeningQuestions.$inferInsert;
+
+/**
+ * Shortlist table - tracks which experts are shortlisted for which projects
+ */
+export const shortlists = mysqlTable("shortlists", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  expertId: int("expertId").notNull(),
+  status: mysqlEnum("status", ["pending", "interested", "rejected"]).default("pending").notNull(),
+  notes: longtext("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Shortlist = typeof shortlists.$inferSelect;
+export type InsertShortlist = typeof shortlists.$inferInsert;
+
+/**
+ * Expert Verification table - tracks email verification tokens
+ */
+export const expertVerification = mysqlTable("expertVerification", {
+  id: int("id").autoincrement().primaryKey(),
+  expertId: int("expertId").notNull(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ExpertVerification = typeof expertVerification.$inferSelect;
+export type InsertExpertVerification = typeof expertVerification.$inferInsert;
