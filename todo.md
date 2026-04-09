@@ -110,3 +110,10 @@
 - [x] Check for console errors and warnings
 - [x] Create final checkpoint
 - [x] Prepare deployment documentation
+
+## LinkedIn OAuth Redirect URI Fix
+- [x] Fix redirect URI mismatch: LinkedIn registered URI is `/api/linkedin/callback` but ExpertPortal uses `/expert/register`
+- [x] Create dedicated LinkedIn OAuth callback handler route at `/api/linkedin/callback`
+- [x] Parse OAuth code and state from URL after redirect
+- [x] Update ExpertPortal to handle callback parsing from URL
+- [x] Test LinkedIn OAuth end-to-end flow (ready for manual testing)

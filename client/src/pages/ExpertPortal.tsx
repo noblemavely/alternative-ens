@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -47,31 +47,6 @@ export default function ExpertPortal() {
   const linkedinCallbackMutation = trpc.linkedinOAuth.handleCallback.useMutation();
   const createExpertMutation = trpc.experts.create.useMutation();
 
-  const handleLinkedInCallback = async (code: string) => {
-    try {
-      const result = await linkedinCallbackMutation.mutateAsync({
-        code,
-        redirectUri: "https://expert-net-ggrdr6ye.manus.space/expert/register",
-      });
-      if (result.profile) {
-        profileForm.setValue("firstName", result.profile.firstName);
-        profileForm.setValue("lastName", result.profile.lastName);
-        if (result.profile.email) profileForm.setValue("email", result.profile.email);
-        if (result.profile.headline) profileForm.setValue("sector", result.profile.headline);
-        if (result.profile.skills && result.profile.skills.length > 0) {
-          profileForm.setValue("function", result.profile.skills[0]);
-        }
-        setEmploymentHistory(result.profile.employmentHistory);
-        setEducationHistory(result.profile.educationHistory);
-        toast.success("LinkedIn profile loaded successfully!");
-      }
-    } catch (error) {
-      toast.error("Failed to load LinkedIn profile");
-    }
-  };
-
-  // Handle LinkedIn OAuth callback - will be implemented in next phase
-
   const emailForm = useForm<EmailVerificationData>({
     resolver: zodResolver(emailVerificationSchema),
     defaultValues: { email: "" },
@@ -90,6 +65,71 @@ export default function ExpertPortal() {
       linkedinUrl: "",
     },
   });
+
+  // Handle LinkedIn OAuth callback from URL parameters
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const linkedinProfile = params.get("linkedin_profile");
+    const linkedinError = params.get("linkedin_error");
+
+    if (linkedinError) {
+      const errorDesc = params.get("error_description") || linkedinError;
+      toast.error(`LinkedIn connection failed: ${errorDesc}`);
+      // Clean up URL
+      window.history.replaceState({}, document.title, "/expert/register");
+      return;
+    }
+
+    if (linkedinProfile) {
+      try {
+        const profile = JSON.parse(decodeURIComponent(linkedinProfile));
+        
+        // Auto-populate form fields with LinkedIn data
+        profileForm.setValue("firstName", profile.firstName || "");
+        profileForm.setValue("lastName", profile.lastName || "");
+        if (profile.email) profileForm.setValue("email", profile.email);
+        if (profile.headline) profileForm.setValue("sector", profile.headline);
+        if (profile.skills && profile.skills.length > 0) {
+          profileForm.setValue("function", profile.skills[0]);
+        }
+        
+        // Store employment and education history
+        if (profile.employmentHistory) {
+          setEmploymentHistory(
+            profile.employmentHistory.map((emp: any) => ({
+              companyName: emp.company || "",
+              position: emp.position || "",
+              startDate: emp.startDate || "",
+              endDate: emp.endDate || "",
+              isCurrent: emp.current || false,
+              description: emp.description || "",
+            }))
+          );
+        }
+        
+        if (profile.educationHistory) {
+          setEducationHistory(
+            profile.educationHistory.map((edu: any) => ({
+              schoolName: edu.school || "",
+              degree: edu.degree || "",
+              fieldOfStudy: edu.fieldOfStudy || "",
+              startDate: edu.startDate || "",
+              endDate: edu.endDate || "",
+            }))
+          );
+        }
+        
+        toast.success("LinkedIn profile loaded successfully!");
+        
+        // Clean up URL
+        window.history.replaceState({}, document.title, "/expert/register");
+      } catch (error) {
+        console.error("Failed to parse LinkedIn profile from URL:", error);
+        toast.error("Failed to parse LinkedIn profile");
+        window.history.replaceState({}, document.title, "/expert/register");
+      }
+    }
+  }, [profileForm]);
 
   const handleSendVerification = async (data: EmailVerificationData) => {
     try {
@@ -139,6 +179,7 @@ export default function ExpertPortal() {
       setParsingLinkedin(false);
     }
   };
+
   const handleCompleteProfile = async (data: ProfileFormData) => {
     try {
       // Handle CV upload if file is selected
@@ -206,6 +247,18 @@ export default function ExpertPortal() {
     toast.success("Code copied to clipboard!");
   };
 
+  const handleLinkedInConnect = () => {
+    // Use the correct redirect URI that matches LinkedIn app settings
+    const redirectUri = `${window.location.origin}/api/linkedin/callback`;
+    const clientId = "778d1mhegtvecq";
+    const scope = "profile email openid";
+    const responseType = "code";
+    
+    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=${responseType}&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
+    
+    window.location.href = authUrl;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
@@ -251,12 +304,12 @@ export default function ExpertPortal() {
                   />
                   <Button 
                     type="submit" 
-                    className="w-full bg-slate-900 hover:bg-slate-800" 
+                    className="w-full bg-slate-900 hover:bg-slate-800"
                     disabled={sendVerificationMutation.isPending}
                   >
                     {sendVerificationMutation.isPending ? (
                       <>
-                        <Loader2 size={16} className="animate-spin mr-2" />
+                        <Loader2 className="mr-2 animate-spin" size={16} />
                         Sending...
                       </>
                     ) : (
@@ -277,64 +330,49 @@ export default function ExpertPortal() {
                 <CheckCircle size={24} className="text-green-600" />
                 Enter Verification Code
               </CardTitle>
-              <CardDescription>Enter the verification code sent to {verificationEmail}</CardDescription>
+              <CardDescription>We sent a code to {verificationEmail}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Display Code for Testing */}
+            <CardContent className="space-y-4">
               {displayCode && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-blue-900 mb-2">Test Verification Code:</p>
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                  <p className="text-sm text-slate-600 mb-2">Testing Code:</p>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 bg-white border border-blue-300 rounded px-3 py-2 font-mono text-sm text-slate-900 break-all">
-                      {displayCode}
-                    </code>
+                    <code className="text-lg font-mono font-bold text-slate-900">{displayCode}</code>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={copyToClipboard}
-                      className="flex-shrink-0"
+                      className="border-blue-300"
                     >
-                      <Copy size={16} />
+                      <Copy size={14} />
                     </Button>
                   </div>
-                  <p className="text-xs text-blue-700 mt-2">Copy and paste this code below to verify your email</p>
                 </div>
               )}
-
-              {/* Verification Code Input */}
               <div>
-                <label className="block text-sm font-medium text-slate-900 mb-2">Verification Code</label>
+                <label className="text-sm font-medium text-slate-900">Verification Code</label>
                 <Input
-                  placeholder="Paste the code here"
+                  type="text"
+                  placeholder="Enter the code"
                   value={verificationToken}
                   onChange={(e) => setVerificationToken(e.target.value)}
-                  className="border-slate-300"
+                  className="mt-2 border-slate-300"
                 />
               </div>
-
-              {/* Action Buttons */}
-              <div className="space-y-2">
-                <Button 
-                  onClick={handleVerifyEmail} 
-                  className="w-full bg-slate-900 hover:bg-slate-800" 
-                  disabled={verifyEmailMutation.isPending}
-                >
-                  {verifyEmailMutation.isPending ? "Verifying..." : "Verify Code"}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full border-slate-300" 
-                  onClick={() => {
-                    setStep("email");
-                    setDisplayCode("");
-      setEmploymentHistory([]);
-      setEducationHistory([]);
-                    setVerificationToken("");
-                  }}
-                >
-                  Back
-                </Button>
-              </div>
+              <Button 
+                onClick={handleVerifyEmail}
+                className="w-full bg-slate-900 hover:bg-slate-800"
+                disabled={verifyEmailMutation.isPending}
+              >
+                {verifyEmailMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 animate-spin" size={16} />
+                    Verifying...
+                  </>
+                ) : (
+                  "Verify Email"
+                )}
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -344,20 +382,17 @@ export default function ExpertPortal() {
           <Card className="border-slate-200 shadow-lg">
             <CardHeader>
               <CardTitle className="text-slate-900">Complete Your Profile</CardTitle>
-              <CardDescription>Fill in your professional information</CardDescription>
+              <CardDescription>Add your professional information</CardDescription>
             </CardHeader>
             <CardContent>
-              {/* LinkedIn Parser */}
+              {/* LinkedIn Connect Button */}
               <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg space-y-3 mb-6">
                 <label className="text-sm font-medium text-slate-900 flex items-center gap-2">
                   <Linkedin size={16} className="text-blue-600" />
                   Connect with LinkedIn (Optional)
                 </label>
                 <Button
-                  onClick={() => {
-                    const redirectUri = "https://expert-net-ggrdr6ye.manus.space/expert/register";
-                    window.location.href = "https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=778d1mhegtvecq&redirect_uri=" + encodeURIComponent(redirectUri) + "&scope=profile%20email%20openid";
-                  }}
+                  onClick={handleLinkedInConnect}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2"
                 >
                   <Linkedin size={16} />
@@ -390,7 +425,7 @@ export default function ExpertPortal() {
                         <FormItem>
                           <FormLabel className="text-slate-900">Last Name *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Doe" {...field} className="border-slate-300" />
+                            <Input placeholder="Smith" {...field} className="border-slate-300" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -403,9 +438,9 @@ export default function ExpertPortal() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-900">Email</FormLabel>
+                        <FormLabel className="text-slate-900">Email *</FormLabel>
                         <FormControl>
-                          <Input type="email" {...field} disabled className="border-slate-300 bg-slate-100" />
+                          <Input type="email" disabled {...field} className="border-slate-300 bg-slate-50" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -419,7 +454,7 @@ export default function ExpertPortal() {
                       <FormItem>
                         <FormLabel className="text-slate-900">Phone</FormLabel>
                         <FormControl>
-                          <Input placeholder="+1 (555) 000-0000" {...field} className="border-slate-300" />
+                          <Input placeholder="+1 (555) 123-4567" {...field} className="border-slate-300" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -431,7 +466,7 @@ export default function ExpertPortal() {
                     name="sector"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-900">Sector</FormLabel>
+                        <FormLabel className="text-slate-900">Sector / Industry</FormLabel>
                         <FormControl>
                           <Input placeholder="e.g., Technology, Finance, Healthcare" {...field} className="border-slate-300" />
                         </FormControl>
@@ -447,21 +482,7 @@ export default function ExpertPortal() {
                       <FormItem>
                         <FormLabel className="text-slate-900">Function / Role</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Product Manager, Data Scientist" {...field} className="border-slate-300" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={profileForm.control}
-                    name="linkedinUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-slate-900">LinkedIn URL</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://linkedin.com/in/username" {...field} className="border-slate-300" />
+                          <Input placeholder="e.g., VP of Product, Senior Engineer" {...field} className="border-slate-300" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -475,58 +496,75 @@ export default function ExpertPortal() {
                       <FormItem>
                         <FormLabel className="text-slate-900">Biography</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="Tell us about your professional background and expertise..." 
-                            {...field} 
-                            className="border-slate-300 resize-none"
-                            rows={4}
-                          />
+                          <Textarea placeholder="Tell us about yourself..." {...field} className="border-slate-300 min-h-24" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
 
-                  <div className="border-t pt-4">
-                    <label className="text-sm font-medium text-slate-900 block mb-2">Upload CV (Optional)</label>
-                    <input 
-                      type="file" 
-                      accept=".pdf,.doc,.docx" 
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"
-                      id="cv-upload"
+                  <FormField
+                    control={profileForm.control}
+                    name="linkedinUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-slate-900">LinkedIn URL</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://linkedin.com/in/yourprofile" {...field} className="border-slate-300" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Employment History */}
+                  <div className="border-t border-slate-200 pt-4">
+                    <EmploymentHistoryForm 
+                      entries={employmentHistory}
+                      onAdd={(entry) => setEmploymentHistory([...employmentHistory, entry])}
+                      onUpdate={(entry) => setEmploymentHistory(employmentHistory.map(e => e.id === entry.id ? entry : e))}
+                      onDelete={(id) => setEmploymentHistory(employmentHistory.filter(e => e.id !== id))}
                     />
-                    <p className="text-xs text-slate-600 mt-1">Accepted formats: PDF, DOC, DOCX (Max 5MB)</p>
+                  </div>
+
+                  {/* Education History */}
+                  <div className="border-t border-slate-200 pt-4">
+                    <EducationHistoryForm 
+                      entries={educationHistory}
+                      onAdd={(entry) => setEducationHistory([...educationHistory, entry])}
+                      onUpdate={(entry) => setEducationHistory(educationHistory.map(e => e.id === entry.id ? entry : e))}
+                      onDelete={(id) => setEducationHistory(educationHistory.filter(e => e.id !== id))}
+                    />
+                  </div>
+
+                  {/* CV Upload */}
+                  <div className="border-t border-slate-200 pt-4">
+                    <label className="text-sm font-medium text-slate-900 block mb-2">Upload CV (Optional)</label>
+                    <input
+                      id="cv-upload"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">PDF, DOC, or DOCX (max 10MB)</p>
                   </div>
 
                   <Button 
                     type="submit" 
-                    className="w-full bg-slate-900 hover:bg-slate-800" 
+                    className="w-full bg-slate-900 hover:bg-slate-800"
                     disabled={createExpertMutation.isPending}
                   >
-                    {createExpertMutation.isPending ? "Creating Profile..." : "Complete Profile"}
+                    {createExpertMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 animate-spin" size={16} />
+                        Creating Profile...
+                      </>
+                    ) : (
+                      "Complete Profile"
+                    )}
                   </Button>
                 </form>
               </Form>
-
-              {/* Employment History */}
-              <div className="mt-8 pt-8 border-t border-slate-200">
-                <EmploymentHistoryForm
-                  entries={employmentHistory}
-                  onAdd={(entry) => setEmploymentHistory([...employmentHistory, { ...entry, id: Date.now().toString() }])}
-                  onUpdate={(entry) => setEmploymentHistory(employmentHistory.map(e => e.id === entry.id ? entry : e))}
-                  onDelete={(id) => setEmploymentHistory(employmentHistory.filter(e => e.id !== id))}
-                />
-              </div>
-
-              {/* Education History */}
-              <div className="mt-8 pt-8 border-t border-slate-200">
-                <EducationHistoryForm
-                  entries={educationHistory}
-                  onAdd={(entry) => setEducationHistory([...educationHistory, { ...entry, id: Date.now().toString() }])}
-                  onUpdate={(entry) => setEducationHistory(educationHistory.map(e => e.id === entry.id ? entry : e))}
-                  onDelete={(id) => setEducationHistory(educationHistory.filter(e => e.id !== id))}
-                />
-              </div>
             </CardContent>
           </Card>
         )}
