@@ -51,7 +51,7 @@ export default function ExpertPortal() {
     try {
       const result = await linkedinCallbackMutation.mutateAsync({
         code,
-        redirectUri: window.location.origin + "/expert/register",
+        redirectUri: "https://expert-net-ggrdr6ye.manus.space/expert/register",
       });
       if (result.profile) {
         profileForm.setValue("firstName", result.profile.firstName);
@@ -325,7 +325,8 @@ export default function ExpertPortal() {
                 </label>
                 <Button
                   onClick={() => {
-                    window.location.href = "https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=778d1mhegtvecq&redirect_uri=" + encodeURIComponent(window.location.origin + "/expert/register") + "&scope=profile%20email%20openid";
+                    const redirectUri = "https://expert-net-ggrdr6ye.manus.space/expert/register";
+                    window.location.href = "https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=778d1mhegtvecq&redirect_uri=" + encodeURIComponent(redirectUri) + "&scope=profile%20email%20openid";
                   }}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2"
                 >
