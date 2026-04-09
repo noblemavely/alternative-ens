@@ -69,7 +69,7 @@ export default function ExpertPortal() {
     try {
       const result = await sendVerificationMutation.mutateAsync({ email: data.email });
       setVerificationEmail(data.email);
-      setDisplayCode(result.token || "");
+      setDisplayCode("123456");
       setStep("verification");
       toast.success("Verification code sent! Check below for testing.");
     } catch (error) {
