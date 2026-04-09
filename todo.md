@@ -144,3 +144,18 @@
 - [x] Employment/education can be added via manual URL parsing (simulated parser)
 - [x] All 60 tests passing with new scope configuration
 - [x] Verify LinkedIn OAuth works end-to-end on production domain (ready for user testing)
+
+
+## Bug Fixes - In Progress
+- [ ] Expert profile submission redirects to login instead of completing registration
+
+
+## Logo & Theme Implementation
+- [x] Trim and optimize AlterNatives logo (remove white spaces)
+- [x] Upload trimmed logo to CDN
+- [x] Update website theme colors to match logo (blue #5B5BFF, black #000000)
+- [x] Apply blue theme to navigation bar
+- [x] Apply blue theme to buttons and CTAs
+- [x] Apply blue theme to form elements and inputs
+- [x] Update header/logo display in navigation (Home.tsx, DashboardLayout, ExpertPortal)
+- [x] Test theme consistency across all pages

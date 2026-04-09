@@ -43,74 +43,76 @@
 }
 
 :root {
-  --primary: oklch(0.623 0.214 259.815);
-  --primary-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.623 0.214 259.815);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --chart-1: oklch(0.623 0.214 259.815);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.623 0.214 259.815);
-  --chart-4: oklch(0.623 0.214 259.815);
-  --chart-5: oklch(0.623 0.214 259.815);
+  /* AlterNatives Brand Colors */
+  --primary: #5B5BFF;  /* Vibrant Blue from logo */
+  --primary-foreground: #FFFFFF;  /* White text on blue */
+  --sidebar-primary: #5B5BFF;
+  --sidebar-primary-foreground: #FFFFFF;
+  --chart-1: #5B5BFF;
+  --chart-2: #5B5BFF;
+  --chart-3: #5B5BFF;
+  --chart-4: #5B5BFF;
+  --chart-5: #5B5BFF;
   --radius: 0.5rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.235 0.015 65);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.235 0.015 65);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.235 0.015 65);
-  --secondary: oklch(0.98 0.001 286.375);
-  --secondary-foreground: oklch(0.4 0.015 65);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.623 0.214 259.815);
-  --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.623 0.214 259.815);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.235 0.015 65);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.623 0.214 259.815);
+  --background: #FFFFFF;  /* Clean white background */
+  --foreground: #000000;  /* Black text - matches logo */
+  --card: #FFFFFF;
+  --card-foreground: #000000;
+  --popover: #FFFFFF;
+  --popover-foreground: #000000;
+  --secondary: #F5F5F5;  /* Light gray for secondary */
+  --secondary-foreground: #333333;  /* Dark gray text */
+  --muted: #E8E8E8;  /* Muted gray */
+  --muted-foreground: #666666;  /* Muted text */
+  --accent: #5B5BFF;  /* Blue accent */
+  --accent-foreground: #FFFFFF;
+  --destructive: #EF4444;  /* Red for destructive actions */
+  --destructive-foreground: #FFFFFF;
+  --border: #E0E0E0;  /* Light border */
+  --input: #F0F0F0;  /* Light input background */
+  --ring: #5B5BFF;  /* Blue focus ring */
+  --sidebar: #FFFFFF;  /* White sidebar */
+  --sidebar-foreground: #000000;
+  --sidebar-accent: #5B5BFF;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #E0E0E0;
+  --sidebar-ring: #5B5BFF;
 }
 
 .dark {
-  --primary: oklch(0.623 0.214 259.815);
-  --primary-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.623 0.214 259.815);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.85 0.005 65);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.85 0.005 65);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.85 0.005 65);
-  --secondary: oklch(0.24 0.006 286.033);
-  --secondary-foreground: oklch(0.7 0.005 65);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.623 0.214 259.815);
-  --accent-foreground: oklch(0.141 0.005 285.823);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.623 0.214 259.815);
-  --chart-1: oklch(0.623 0.214 259.815);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.623 0.214 259.815);
-  --chart-4: oklch(0.623 0.214 259.815);
-  --chart-5: oklch(0.623 0.214 259.815);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.85 0.005 65);
-  --sidebar-accent: oklch(0.623 0.214 259.815);
-  --sidebar-accent-foreground: oklch(1 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.623 0.214 259.815);
+  /* AlterNatives Dark Mode */
+  --primary: #5B5BFF;  /* Vibrant Blue */
+  --primary-foreground: #FFFFFF;  /* White text */
+  --sidebar-primary: #5B5BFF;
+  --sidebar-primary-foreground: #FFFFFF;
+  --background: #0F0F0F;  /* Very dark background */
+  --foreground: #FFFFFF;  /* White text */
+  --card: #1A1A1A;  /* Dark card background */
+  --card-foreground: #FFFFFF;
+  --popover: #1A1A1A;
+  --popover-foreground: #FFFFFF;
+  --secondary: #2A2A2A;  /* Dark secondary */
+  --secondary-foreground: #E0E0E0;  /* Light text */
+  --muted: #333333;  /* Muted dark */
+  --muted-foreground: #999999;  /* Muted text */
+  --accent: #5B5BFF;  /* Blue accent */
+  --accent-foreground: #FFFFFF;
+  --destructive: #FF6B6B;  /* Bright red for dark mode */
+  --destructive-foreground: #FFFFFF;
+  --border: #333333;  /* Dark border */
+  --input: #2A2A2A;  /* Dark input */
+  --ring: #5B5BFF;  /* Blue focus ring */
+  --chart-1: #5B5BFF;
+  --chart-2: #5B5BFF;
+  --chart-3: #5B5BFF;
+  --chart-4: #5B5BFF;
+  --chart-5: #5B5BFF;
+  --sidebar: #1A1A1A;  /* Dark sidebar */
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-accent: #5B5BFF;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #333333;
+  --sidebar-ring: #5B5BFF;
 }
 
 @layer base {

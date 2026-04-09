@@ -292,12 +292,18 @@ export default function ExpertPortal() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-border bg-white/95 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <h1 className="text-2xl font-bold text-slate-900">Alternative</h1>
-          <p className="text-sm text-slate-600">Expert Network Service</p>
+          <div className="flex items-center gap-3 mb-2">
+            <img 
+              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/alternative-logo-trimmed-RgZCb6bccbkFnj5ejWPUg4.webp" 
+              alt="AlterNatives" 
+              className="h-8 w-auto object-contain"
+            />
+          </div>
+          <p className="text-sm text-muted-foreground">Expert Network Service</p>
         </div>
       </header>
 
@@ -305,10 +311,10 @@ export default function ExpertPortal() {
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Step 1: Email Verification */}
         {step === "email" && (
-          <Card className="border-slate-200 shadow-lg">
+          <Card className="border-border shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-slate-900">
-                <Mail size={24} className="text-slate-700" />
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Mail size={24} className="text-primary" />
                 Verify Your Email
               </CardTitle>
               <CardDescription>Enter your email to get started</CardDescription>
@@ -321,13 +327,13 @@ export default function ExpertPortal() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-900">Email Address</FormLabel>
+                        <FormLabel className="text-foreground">Email Address</FormLabel>
                         <FormControl>
                           <Input 
                             type="email" 
                             placeholder="your@email.com" 
                             {...field}
-                            className="border-slate-300"
+                            className="border-border"
                           />
                         </FormControl>
                         <FormMessage />
@@ -336,7 +342,7 @@ export default function ExpertPortal() {
                   />
                   <Button 
                     type="submit" 
-                    className="w-full bg-slate-900 hover:bg-slate-800"
+                    className="w-full bg-primary hover:bg-primary/90"
                     disabled={sendVerificationMutation.isPending}
                   >
                     {sendVerificationMutation.isPending ? (
@@ -356,9 +362,9 @@ export default function ExpertPortal() {
 
         {/* Step 2: Email Verification Code */}
         {step === "verification" && (
-          <Card className="border-slate-200 shadow-lg">
+          <Card className="border-border shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-slate-900">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <CheckCircle size={24} className="text-green-600" />
                 Enter Verification Code
               </CardTitle>
@@ -367,9 +373,9 @@ export default function ExpertPortal() {
             <CardContent className="space-y-4">
               {displayCode && (
                 <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                  <p className="text-sm text-slate-600 mb-2">Testing Code:</p>
+                  <p className="text-sm text-muted-foreground mb-2">Testing Code:</p>
                   <div className="flex items-center gap-2">
-                    <code className="text-lg font-mono font-bold text-slate-900">{displayCode}</code>
+                    <code className="text-lg font-mono font-bold text-foreground">{displayCode}</code>
                     <Button
                       size="sm"
                       variant="outline"
@@ -382,18 +388,18 @@ export default function ExpertPortal() {
                 </div>
               )}
               <div>
-                <label className="text-sm font-medium text-slate-900">Verification Code</label>
+                <label className="text-sm font-medium text-foreground">Verification Code</label>
                 <Input
                   type="text"
                   placeholder="Enter the code"
                   value={verificationToken}
                   onChange={(e) => setVerificationToken(e.target.value)}
-                  className="mt-2 border-slate-300"
+                  className="mt-2 border-border"
                 />
               </div>
               <Button 
                 onClick={handleVerifyEmail}
-                className="w-full bg-slate-900 hover:bg-slate-800"
+                className="w-full bg-primary hover:bg-primary/90"
                 disabled={verifyEmailMutation.isPending}
               >
                 {verifyEmailMutation.isPending ? (
@@ -411,15 +417,15 @@ export default function ExpertPortal() {
 
         {/* Step 3: Complete Profile */}
         {step === "profile" && (
-          <Card className="border-slate-200 shadow-lg">
+          <Card className="border-border shadow-lg">
             <CardHeader>
-              <CardTitle className="text-slate-900">Complete Your Profile</CardTitle>
+              <CardTitle className="text-foreground">Complete Your Profile</CardTitle>
               <CardDescription>Add your professional information</CardDescription>
             </CardHeader>
             <CardContent>
               {/* LinkedIn Connect Button */}
               <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg space-y-3 mb-6">
-                <label className="text-sm font-medium text-slate-900 flex items-center gap-2">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
                   <Linkedin size={16} className="text-blue-600" />
                   Connect with LinkedIn (Optional)
                 </label>
@@ -430,7 +436,7 @@ export default function ExpertPortal() {
                   <Linkedin size={16} />
                   Connect with LinkedIn
                 </Button>
-                <p className="text-xs text-slate-600">Auto-populate your profile with LinkedIn data</p>
+                <p className="text-xs text-muted-foreground">Auto-populate your profile with LinkedIn data</p>
               </div>
 
               {/* Profile Form */}
@@ -442,9 +448,9 @@ export default function ExpertPortal() {
                       name="firstName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-slate-900">First Name *</FormLabel>
+                          <FormLabel className="text-foreground">First Name *</FormLabel>
                           <FormControl>
-                            <Input placeholder="John" {...field} className="border-slate-300" />
+                            <Input placeholder="John" {...field} className="border-border" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -455,9 +461,9 @@ export default function ExpertPortal() {
                       name="lastName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-slate-900">Last Name *</FormLabel>
+                          <FormLabel className="text-foreground">Last Name *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Smith" {...field} className="border-slate-300" />
+                            <Input placeholder="Smith" {...field} className="border-border" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -470,9 +476,9 @@ export default function ExpertPortal() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-900">Email *</FormLabel>
+                        <FormLabel className="text-foreground">Email *</FormLabel>
                         <FormControl>
-                          <Input type="email" disabled {...field} className="border-slate-300 bg-slate-50" />
+                          <Input type="email" disabled {...field} className="border-border bg-secondary" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -484,9 +490,9 @@ export default function ExpertPortal() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-900">Phone</FormLabel>
+                        <FormLabel className="text-foreground">Phone</FormLabel>
                         <FormControl>
-                          <Input placeholder="+1 (555) 123-4567" {...field} className="border-slate-300" />
+                          <Input placeholder="+1 (555) 123-4567" {...field} className="border-border" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -498,9 +504,9 @@ export default function ExpertPortal() {
                     name="sector"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-900">Sector / Industry</FormLabel>
+                        <FormLabel className="text-foreground">Sector / Industry</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Technology, Finance, Healthcare" {...field} className="border-slate-300" />
+                          <Input placeholder="e.g., Technology, Finance, Healthcare" {...field} className="border-border" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -512,9 +518,9 @@ export default function ExpertPortal() {
                     name="function"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-900">Function / Role</FormLabel>
+                        <FormLabel className="text-foreground">Function / Role</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., VP of Product, Senior Engineer" {...field} className="border-slate-300" />
+                          <Input placeholder="e.g., VP of Product, Senior Engineer" {...field} className="border-border" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -526,9 +532,9 @@ export default function ExpertPortal() {
                     name="biography"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-900">Biography</FormLabel>
+                        <FormLabel className="text-foreground">Biography</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Tell us about yourself..." {...field} className="border-slate-300 min-h-24" />
+                          <Textarea placeholder="Tell us about yourself..." {...field} className="border-border min-h-24" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -537,11 +543,11 @@ export default function ExpertPortal() {
 
                   {/* Manual LinkedIn URL Parsing */}
                   <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg space-y-3">
-                    <label className="text-sm font-medium text-slate-900 flex items-center gap-2">
+                    <label className="text-sm font-medium text-foreground flex items-center gap-2">
                       <Link2 size={16} className="text-amber-600" />
                       Parse LinkedIn Profile (Optional)
                     </label>
-                    <p className="text-xs text-slate-600">Enter your LinkedIn URL to auto-populate employment and education history</p>
+                    <p className="text-xs text-muted-foreground">Enter your LinkedIn URL to auto-populate employment and education history</p>
                     <div className="flex gap-2">
                       <Input
                         type="url"
@@ -572,9 +578,9 @@ export default function ExpertPortal() {
                     name="linkedinUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-900">LinkedIn URL (Auto-filled)</FormLabel>
+                        <FormLabel className="text-foreground">LinkedIn URL (Auto-filled)</FormLabel>
                         <FormControl>
-                          <Input placeholder="https://linkedin.com/in/yourprofile" {...field} className="border-slate-300" />
+                          <Input placeholder="https://linkedin.com/in/yourprofile" {...field} className="border-border" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -582,7 +588,7 @@ export default function ExpertPortal() {
                   />
 
                   {/* Employment History */}
-                  <div className="border-t border-slate-200 pt-4">
+                  <div className="border-t border-border pt-4">
                     <EmploymentHistoryForm 
                       entries={employmentHistory}
                       onAdd={(entry) => setEmploymentHistory([...employmentHistory, entry])}
@@ -592,7 +598,7 @@ export default function ExpertPortal() {
                   </div>
 
                   {/* Education History */}
-                  <div className="border-t border-slate-200 pt-4">
+                  <div className="border-t border-border pt-4">
                     <EducationHistoryForm 
                       entries={educationHistory}
                       onAdd={(entry) => setEducationHistory([...educationHistory, entry])}
@@ -602,20 +608,20 @@ export default function ExpertPortal() {
                   </div>
 
                   {/* CV Upload */}
-                  <div className="border-t border-slate-200 pt-4">
-                    <label className="text-sm font-medium text-slate-900 block mb-2">Upload CV (Optional)</label>
+                  <div className="border-t border-border pt-4">
+                    <label className="text-sm font-medium text-foreground block mb-2">Upload CV (Optional)</label>
                     <input
                       id="cv-upload"
                       type="file"
                       accept=".pdf,.doc,.docx"
-                      className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200"
+                      className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-secondary file:text-foreground hover:file:bg-secondary/80"
                     />
-                    <p className="text-xs text-slate-500 mt-1">PDF, DOC, or DOCX (max 10MB)</p>
+                    <p className="text-xs text-muted-foreground mt-1">PDF, DOC, or DOCX (max 10MB)</p>
                   </div>
 
                   <Button 
                     type="submit" 
-                    className="w-full bg-slate-900 hover:bg-slate-800"
+                    className="w-full bg-primary hover:bg-primary/90"
                     disabled={createExpertMutation.isPending}
                   >
                     {createExpertMutation.isPending ? (
