@@ -162,3 +162,9 @@
 
 ## Bug Reports - Fixed
 - [x] Expert registration shows "expert with this email already exists" error for new emails - FIXED: submitProfile now updates existing unverified experts instead of throwing error
+
+## Registration Flow Improvements - Completed
+- [x] Add query invalidation to refresh admin experts list after profile submission
+- [x] Show profile preview page after expert registration completes
+- [x] Add "Back to Home" button on profile preview page
+- [x] Test end-to-end registration flow with profile preview

@@ -32,7 +32,7 @@ type EmailVerificationData = z.infer<typeof emailVerificationSchema>;
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function ExpertPortal() {
-  const [step, setStep] = useState<"email" | "verification" | "profile">("email");
+  const [step, setStep] = useState<"email" | "verification" | "profile" | "preview">("email");
   const [verificationEmail, setVerificationEmail] = useState("");
   const [verificationToken, setVerificationToken] = useState("");
   const [displayCode, setDisplayCode] = useState("");
@@ -40,12 +40,19 @@ export default function ExpertPortal() {
   const [parsingLinkedin, setParsingLinkedin] = useState(false);
   const [employmentHistory, setEmploymentHistory] = useState<any[]>([]);
   const [educationHistory, setEducationHistory] = useState<any[]>([]);
+  const [createdExpertId, setCreatedExpertId] = useState<number | null>(null);
+  const [createdExpertData, setCreatedExpertData] = useState<any>(null);
 
+  const utils = trpc.useUtils();
   const sendVerificationMutation = trpc.expertVerification.sendVerificationEmail.useMutation();
   const verifyEmailMutation = trpc.expertVerification.verifyEmail.useMutation();
   const parseLinkedinMutation = trpc.linkedin.parseProfile.useMutation();
   const linkedinCallbackMutation = trpc.linkedinOAuth.handleCallback.useMutation();
-  const createExpertMutation = trpc.experts.submitProfile.useMutation();
+  const createExpertMutation = trpc.experts.submitProfile.useMutation({
+    onSuccess: () => {
+      utils.experts.list.invalidate();
+    },
+  });
 
   const emailForm = useForm<EmailVerificationData>({
     resolver: zodResolver(emailVerificationSchema),
@@ -238,26 +245,9 @@ export default function ExpertPortal() {
       });
       toast.success("Profile created successfully!");
       
-      // Log employment and education history for backend integration
-      if (employmentHistory.length > 0) {
-        console.log("Employment history to save:", employmentHistory);
-      }
-      if (educationHistory.length > 0) {
-        console.log("Education history to save:", educationHistory);
-      }
-      setStep("email");
-      emailForm.reset();
-      profileForm.reset();
-      setVerificationEmail("");
-      setVerificationToken("");
-      setDisplayCode("");
-      setEmploymentHistory([]);
-      setEducationHistory([]);
-      
-      // Reset CV input
-      if (cvInput) {
-        cvInput.value = "";
-      }
+      // Store created expert data and redirect to preview
+      setCreatedExpertData(data);
+      setStep("preview");
       
       // Revoke blob URL if created
       if (cvUrl) {
@@ -635,6 +625,81 @@ export default function ExpertPortal() {
                   </Button>
                 </form>
               </Form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Preview Step */}
+        {step === "preview" && createdExpertData && (
+          <Card className="w-full max-w-2xl mx-auto border-border">
+            <CardHeader className="bg-primary/5 border-b border-border">
+              <CardTitle className="text-foreground">Profile Preview</CardTitle>
+              <CardDescription>Your expert profile has been created successfully!</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">First Name</p>
+                    <p className="text-lg font-semibold text-foreground">{createdExpertData.firstName}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Last Name</p>
+                    <p className="text-lg font-semibold text-foreground">{createdExpertData.lastName}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="text-lg font-semibold text-foreground">{createdExpertData.email}</p>
+                </div>
+
+                {createdExpertData.phone && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Phone</p>
+                    <p className="text-lg font-semibold text-foreground">{createdExpertData.phone}</p>
+                  </div>
+                )}
+
+                {createdExpertData.sector && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Sector</p>
+                    <p className="text-lg font-semibold text-foreground">{createdExpertData.sector}</p>
+                  </div>
+                )}
+
+                {createdExpertData.function && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Function</p>
+                    <p className="text-lg font-semibold text-foreground">{createdExpertData.function}</p>
+                  </div>
+                )}
+
+                {createdExpertData.biography && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Biography</p>
+                    <p className="text-foreground whitespace-pre-wrap">{createdExpertData.biography}</p>
+                  </div>
+                )}
+
+                {createdExpertData.linkedinUrl && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">LinkedIn Profile</p>
+                    <a href={createdExpertData.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      {createdExpertData.linkedinUrl}
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-8 flex gap-4">
+                <Button 
+                  onClick={() => window.location.href = "/"}
+                  className="flex-1 bg-primary hover:bg-primary/90"
+                >
+                  Back to Home
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
