@@ -159,3 +159,6 @@
 - [x] Apply blue theme to form elements and inputs
 - [x] Update header/logo display in navigation (Home.tsx, DashboardLayout, ExpertPortal)
 - [x] Test theme consistency across all pages
+
+## Bug Reports - Fixed
+- [x] Expert registration shows "expert with this email already exists" error for new emails - FIXED: submitProfile now updates existing unverified experts instead of throwing error

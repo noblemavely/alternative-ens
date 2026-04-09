@@ -48,20 +48,21 @@ import { storagePut, storageGet } from "./storage";
 import { nanoid } from "nanoid";
 import { parseLinkedInProfile, isValidLinkedInUrl } from "./linkedinParser";
 import { getLinkedInAuthUrl, exchangeCodeForToken, fetchLinkedInProfile } from "./linkedinOAuth";
-import { ENV } from "./_core/env";
 
-// Admin-only procedure
-const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.user.role !== "admin") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  if (ctx.user?.role !== "admin") {
+    throw new TRPCError({ code: "FORBIDDEN" });
   }
   return next({ ctx });
 });
 
 export const appRouter = router({
-  system: systemRouter,
+  // ============ AUTH ROUTERS ============
   auth: router({
-    me: publicProcedure.query((opts) => opts.ctx.user),
+    me: publicProcedure.query(({ ctx }) => {
+      return ctx.user || null;
+    }),
+
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -76,7 +77,7 @@ export const appRouter = router({
     create: adminProcedure
       .input(
         z.object({
-          name: z.string().min(1),
+          name: z.string(),
           email: z.string().email(),
           phone: z.string().optional(),
           companyName: z.string().optional(),
@@ -85,15 +86,8 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const { phone, companyName, companyWebsite, contactPerson, ...rest } = input;
-        await createClient({
-          ...rest,
-          phone: phone || null,
-          companyName: companyName || null,
-          companyWebsite: companyWebsite || null,
-          contactPerson: contactPerson || null,
-        });
-        return { success: true };
+        const client = await createClient(input);
+        return client;
       }),
 
     list: adminProcedure.query(async () => {
@@ -153,23 +147,42 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         const existing = await getExpertByEmail(input.email);
-        if (existing) throw new TRPCError({ code: "CONFLICT", message: "Expert already exists" });
         const { phone, firstName, lastName, sector, function: fn, biography, linkedinUrl, cvUrl, cvKey } = input;
-        await createExpert({
-          email: input.email,
-          phone: phone || null,
-          firstName: firstName || null,
-          lastName: lastName || null,
-          sector: sector || null,
-          function: fn || null,
-          biography: biography || null,
-          linkedinUrl: linkedinUrl || null,
-          cvUrl: cvUrl || null,
-          cvKey: cvKey || null,
-          isVerified: true,
-          verificationToken: null,
-          verificationTokenExpiry: null,
-        });
+        
+        if (existing) {
+          // Update existing expert (from email verification flow)
+          await updateExpert(existing.id, {
+            phone: phone || null,
+            firstName: firstName || null,
+            lastName: lastName || null,
+            sector: sector || null,
+            function: fn || null,
+            biography: biography || null,
+            linkedinUrl: linkedinUrl || null,
+            cvUrl: cvUrl || null,
+            cvKey: cvKey || null,
+            isVerified: true,
+            verificationToken: null,
+            verificationTokenExpiry: null,
+          });
+        } else {
+          // Create new expert if not exists
+          await createExpert({
+            email: input.email,
+            phone: phone || null,
+            firstName: firstName || null,
+            lastName: lastName || null,
+            sector: sector || null,
+            function: fn || null,
+            biography: biography || null,
+            linkedinUrl: linkedinUrl || null,
+            cvUrl: cvUrl || null,
+            cvKey: cvKey || null,
+            isVerified: true,
+            verificationToken: null,
+            verificationTokenExpiry: null,
+          });
+        }
         return { success: true };
       }),
 
@@ -236,6 +249,7 @@ export const appRouter = router({
           linkedinUrl: z.string().optional(),
           cvUrl: z.string().optional(),
           cvKey: z.string().optional(),
+          isVerified: z.boolean().optional(),
         })
       )
       .mutation(async ({ input }) => {
@@ -251,13 +265,14 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    search: adminProcedure
+    search: publicProcedure
       .input(
         z.object({
+          keyword: z.string().optional(),
           sector: z.string().optional(),
           function: z.string().optional(),
-          keyword: z.string().optional(),
-          skillsets: z.array(z.string()).optional(),
+          limit: z.number().optional().default(10),
+          offset: z.number().optional().default(0),
         })
       )
       .query(async ({ input }) => {
@@ -280,15 +295,8 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const { description, targetCompanies, targetPersona, hourlyRate, ...rest } = input;
-        await createProject({
-          ...rest,
-          description: description || null,
-          targetCompanies: targetCompanies || null,
-          targetPersona: targetPersona || null,
-          hourlyRate: hourlyRate ? String(hourlyRate) : null,
-        });
-        return { success: true };
+        const project = await createProject(input);
+        return project;
       }),
 
     list: adminProcedure.query(async () => {
@@ -313,22 +321,18 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number(),
-          name: z.string().optional(),
+          title: z.string().optional(),
           description: z.string().optional(),
-          projectType: z.enum(["Call", "Advisory", "ID"]).optional(),
+          scope: z.string().optional(),
+          type: z.enum(["Call", "Advisory", "ID"]).optional(),
           targetCompanies: z.string().optional(),
-          targetPersona: z.string().optional(),
           hourlyRate: z.number().optional(),
+          status: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
-        const { id, description, targetCompanies, targetPersona, hourlyRate, ...rest } = input;
-        const cleanData: any = { ...rest };
-        if (description !== undefined) cleanData.description = description || null;
-        if (targetCompanies !== undefined) cleanData.targetCompanies = targetCompanies || null;
-        if (targetPersona !== undefined) cleanData.targetPersona = targetPersona || null;
-        if (hourlyRate !== undefined) cleanData.hourlyRate = hourlyRate ? String(hourlyRate) : null;
-        await updateProject(id, cleanData);
+        const { id, ...data } = input;
+        await updateProject(id, data);
         return { success: true };
       }),
 
@@ -340,23 +344,18 @@ export const appRouter = router({
       }),
   }),
 
-  // ============ SCREENING QUESTION ROUTERS ============
+  // ============ SCREENING QUESTIONS ROUTERS ============
   screeningQuestions: router({
-    create: adminProcedure
+    add: adminProcedure
       .input(
         z.object({
           projectId: z.number(),
-          question: z.string().min(1),
-          order: z.number().optional(),
+          question: z.string(),
         })
       )
       .mutation(async ({ input }) => {
-        await createScreeningQuestion({
-          projectId: input.projectId,
-          question: input.question,
-          order: input.order || 0,
-        });
-        return { success: true };
+        const question = await createScreeningQuestion(input);
+        return question;
       }),
 
     getByProject: adminProcedure
@@ -370,15 +369,11 @@ export const appRouter = router({
         z.object({
           id: z.number(),
           question: z.string().optional(),
-          order: z.number().optional(),
         })
       )
       .mutation(async ({ input }) => {
-        const { id, question, order } = input;
-        const cleanData: any = {};
-        if (question !== undefined) cleanData.question = question;
-        if (order !== undefined) cleanData.order = order;
-        await updateScreeningQuestion(id, cleanData);
+        const { id, ...data } = input;
+        await updateScreeningQuestion(id, data);
         return { success: true };
       }),
 
@@ -397,19 +392,12 @@ export const appRouter = router({
         z.object({
           projectId: z.number(),
           expertId: z.number(),
-          notes: z.string().optional(),
+          status: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
-        const existing = await getShortlistByProjectAndExpert(input.projectId, input.expertId);
-        if (existing) throw new TRPCError({ code: "CONFLICT", message: "Expert already shortlisted" });
-        await addToShortlist({
-          projectId: input.projectId,
-          expertId: input.expertId,
-          status: "pending",
-          notes: input.notes || null,
-        });
-        return { success: true };
+        const shortlist = await addToShortlist(input);
+        return shortlist;
       }),
 
     getByProject: adminProcedure
@@ -418,85 +406,86 @@ export const appRouter = router({
         return getShortlistsByProject(input.projectId);
       }),
 
+    getByProjectAndExpert: adminProcedure
+      .input(z.object({ projectId: z.number(), expertId: z.number() }))
+      .query(async ({ input }) => {
+        return getShortlistByProjectAndExpert(input.projectId, input.expertId);
+      }),
+
     update: adminProcedure
       .input(
         z.object({
           id: z.number(),
-          status: z.enum(["pending", "interested", "rejected", "new", "contacted", "attempting_contact", "engaged", "qualified", "proposal_sent", "negotiation", "verbal_agreement", "closed_won", "closed_lost"]).optional(),
-          notes: z.string().optional(),
+          status: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
-        const { id, status, notes } = input;
-        const cleanData: any = {};
-        if (status !== undefined) cleanData.status = status;
-        if (notes !== undefined) cleanData.notes = notes || null;
-        await updateShortlist(id, cleanData);
+        const { id, ...data } = input;
+        await updateShortlist(id, data);
         return { success: true };
       }),
 
     remove: adminProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ projectId: z.number(), expertId: z.number() }))
       .mutation(async ({ input }) => {
-        await removeFromShortlist(input.id);
+        await removeFromShortlist(input.projectId, input.expertId);
         return { success: true };
       }),
   }),
 
   // ============ EXPERT EMPLOYMENT ROUTERS ============
   expertEmployment: router({
-    create: protectedProcedure
+    add: publicProcedure
       .input(
         z.object({
-          expertId: z.number(),
-          companyName: z.string().min(1),
-          position: z.string().min(1),
-          startDate: z.string().optional(),
+          expertId: z.number().optional(),
+          company: z.string(),
+          position: z.string(),
+          startDate: z.string(),
           endDate: z.string().optional(),
-          isCurrent: z.boolean().optional(),
+          currentlyWorking: z.boolean().optional(),
           description: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
-        const { startDate, endDate, isCurrent, description, ...rest } = input;
-        await createExpertEmployment({
-          ...rest,
-          startDate: startDate || null,
+        const { company, position, startDate, endDate, currentlyWorking, description } = input;
+        const employment = await createExpertEmployment({
+          expertId: input.expertId || 0,
+          company,
+          position,
+          startDate,
           endDate: endDate || null,
-          isCurrent: isCurrent || false,
+          currentlyWorking: currentlyWorking || false,
           description: description || null,
         });
-        return { success: true };
+        return employment;
       }),
 
-    getByExpert: protectedProcedure
+    getByExpert: publicProcedure
       .input(z.object({ expertId: z.number() }))
       .query(async ({ input }) => {
         return getExpertEmploymentHistory(input.expertId);
       }),
 
-    update: protectedProcedure
+    update: publicProcedure
       .input(
         z.object({
           id: z.number(),
-          companyName: z.string().optional(),
+          company: z.string().optional(),
           position: z.string().optional(),
           startDate: z.string().optional(),
           endDate: z.string().optional(),
-          isCurrent: z.boolean().optional(),
+          currentlyWorking: z.boolean().optional(),
           description: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
-        const cleanData = Object.fromEntries(
-          Object.entries(data).map(([k, v]) => [k, v === undefined ? null : v])
-        );
-        await updateExpertEmployment(id, cleanData as any);
+        await updateExpertEmployment(id, data);
         return { success: true };
       }),
 
-    delete: protectedProcedure
+    delete: publicProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteExpertEmployment(input.id);
@@ -506,97 +495,58 @@ export const appRouter = router({
 
   // ============ EXPERT EDUCATION ROUTERS ============
   expertEducation: router({
-    create: protectedProcedure
+    add: publicProcedure
       .input(
         z.object({
-          expertId: z.number(),
-          schoolName: z.string().min(1),
-          degree: z.string().min(1),
-          fieldOfStudy: z.string().optional(),
-          startDate: z.string().optional(),
+          expertId: z.number().optional(),
+          school: z.string(),
+          degree: z.string(),
+          fieldOfStudy: z.string(),
+          startDate: z.string(),
           endDate: z.string().optional(),
-          description: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
-        const { fieldOfStudy, startDate, endDate, description, ...rest } = input;
-        await createExpertEducation({
-          ...rest,
-          fieldOfStudy: fieldOfStudy || null,
-          startDate: startDate || null,
+        const { school, degree, fieldOfStudy, startDate, endDate } = input;
+        const education = await createExpertEducation({
+          expertId: input.expertId || 0,
+          school,
+          degree,
+          fieldOfStudy,
+          startDate,
           endDate: endDate || null,
-          description: description || null,
         });
-        return { success: true };
+        return education;
       }),
 
-    getByExpert: protectedProcedure
+    getByExpert: publicProcedure
       .input(z.object({ expertId: z.number() }))
       .query(async ({ input }) => {
         return getExpertEducationHistory(input.expertId);
       }),
 
-    update: protectedProcedure
+    update: publicProcedure
       .input(
         z.object({
           id: z.number(),
-          schoolName: z.string().optional(),
+          school: z.string().optional(),
           degree: z.string().optional(),
           fieldOfStudy: z.string().optional(),
           startDate: z.string().optional(),
           endDate: z.string().optional(),
-          description: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
-        const cleanData = Object.fromEntries(
-          Object.entries(data).map(([k, v]) => [k, v === undefined ? null : v])
-        );
-        await updateExpertEducation(id, cleanData as any);
+        await updateExpertEducation(id, data);
         return { success: true };
       }),
 
-    delete: protectedProcedure
+    delete: publicProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteExpertEducation(input.id);
         return { success: true };
-      }),
-  }),
-
-  // ============ FILE UPLOAD ROUTERS ============
-  files: router({
-    uploadCV: protectedProcedure
-      .input(
-        z.object({
-          filename: z.string(),
-          data: z.string(), // base64 encoded
-          mimeType: z.string(),
-        })
-      )
-      .mutation(async ({ input }) => {
-        const buffer = Buffer.from(input.data, "base64");
-        const fileKey = `cv/${nanoid()}/${input.filename}`;
-        const { url } = await storagePut(fileKey, buffer, input.mimeType);
-        return { url, key: fileKey };
-      }),
-  }),
-
-  // ============ LINKEDIN PARSING ROUTERS ============
-  linkedin: router({
-    parseProfile: publicProcedure
-      .input(z.object({ url: z.string().url() }))
-      .mutation(async ({ input }) => {
-        if (!isValidLinkedInUrl(input.url)) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid LinkedIn URL" });
-        }
-        try {
-          const profile = parseLinkedInProfile(input.url);
-          return profile;
-        } catch (error) {
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to parse LinkedIn profile" });
-        }
       }),
   }),
 
@@ -670,20 +620,48 @@ export const appRouter = router({
       }),
 
     handleCallback: publicProcedure
-      .input(z.object({ code: z.string(), redirectUri: z.string().url() }))
+      .input(
+        z.object({
+          code: z.string(),
+          state: z.string(),
+          redirectUri: z.string().url(),
+        })
+      )
       .mutation(async ({ input }) => {
         try {
-          const accessToken = await exchangeCodeForToken(input.code, input.redirectUri);
-          const profile = await fetchLinkedInProfile(accessToken);
-          return { success: true, profile };
+          const token = await exchangeCodeForToken(input.code, input.redirectUri);
+          const profile = await fetchLinkedInProfile(token);
+          return {
+            success: true,
+            profile: {
+              firstName: profile.localizedFirstName || "",
+              lastName: profile.localizedLastName || "",
+              email: profile.elements?.[0]?.["handle~"]?.emailAddress || "",
+              headline: profile.headline || "",
+            },
+          };
         } catch (error) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
-            message: error instanceof Error ? error.message : "Failed to fetch LinkedIn profile",
+            message: "Failed to exchange code for token or fetch profile",
           });
         }
       }),
   }),
+
+  linkedin: router({
+    parseProfile: publicProcedure
+      .input(z.object({ url: z.string().url() }))
+      .mutation(async ({ input }) => {
+        if (!isValidLinkedInUrl(input.url)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid LinkedIn URL" });
+        }
+        const profile = parseLinkedInProfile(input.url);
+        return profile;
+      }),
+  }),
+
+  system: systemRouter,
 });
 
 export type AppRouter = typeof appRouter;
