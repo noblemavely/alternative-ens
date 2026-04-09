@@ -281,7 +281,8 @@ export default function ExpertPortal() {
     try {
       // Get the auth URL from backend (which has correct scopes)
       const redirectUri = `${window.location.origin}/api/linkedin/callback`;
-      const result = await trpc.linkedinOAuth.getAuthUrl.query({ redirectUri });
+      const utils = trpc.useUtils();
+      const result = await utils.linkedinOAuth.getAuthUrl.fetch({ redirectUri });
       if (result.authUrl) {
         window.location.href = result.authUrl;
       }
