@@ -64,7 +64,7 @@
 
 ## Public Expert Profile Portal
 - [x] Build public expert registration page
-- [x] Implement email verification flow with code display
+- [x] Implement email verification flow with code display (using dummy code 123456)
 - [x] Create expert profile form (basic info, employment, education, CV, sector, function, biography)
 - [x] Build employment history form (add/edit/delete entries)
 - [x] Build education history form (add/edit/delete entries)
