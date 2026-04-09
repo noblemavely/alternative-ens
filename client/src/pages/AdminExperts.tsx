@@ -31,8 +31,16 @@ export default function AdminExperts() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [parsingLinkedin, setParsingLinkedin] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const expertsQuery = trpc.experts.list.useQuery();
+  
+  const filteredExperts = expertsQuery.data?.filter(expert => 
+    ((expert.firstName || "") + " " + (expert.lastName || "")).toLowerCase().includes(searchTerm.toLowerCase()) ||
+    expert.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    expert.sector?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    expert.function?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
   const createMutation = trpc.experts.create.useMutation();
   const updateMutation = trpc.experts.update.useMutation();
   const deleteMutation = trpc.experts.delete.useMutation();
@@ -293,6 +301,18 @@ export default function AdminExperts() {
           </Dialog>
         </div>
 
+        {/* Search Bar */}
+        <Card className="card-elegant">
+          <CardContent className="pt-6">
+            <Input
+              placeholder="Search by name, email, sector, or function..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-md"
+            />
+          </CardContent>
+        </Card>
+
         {/* Experts Table */}
         <Card className="card-elegant">
           <CardHeader>
@@ -302,7 +322,7 @@ export default function AdminExperts() {
           <CardContent>
             {expertsQuery.isLoading ? (
               <div className="text-center py-8 text-muted">Loading experts...</div>
-            ) : expertsQuery.data && expertsQuery.data.length > 0 ? (
+            ) : filteredExperts.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -316,7 +336,7 @@ export default function AdminExperts() {
                     </tr>
                   </thead>
                   <tbody>
-                    {expertsQuery.data.map((expert) => (
+                    {filteredExperts.map((expert) => (
                       <tr key={expert.id} className="border-b border-border hover:bg-muted/50 transition-colors">
                         <td className="py-3 px-4 font-medium">
                           {expert.firstName} {expert.lastName}

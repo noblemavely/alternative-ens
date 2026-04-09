@@ -29,7 +29,7 @@
 - [x] Create Client creation form (name, contact details, company info)
 - [x] Create Client edit form
 - [x] Implement Client delete functionality
-- [ ] Add search/filter for clients list
+- [x] Add search/filter for clients list
 
 ## Admin Expert Management
 - [x] Build Experts list page with table view
@@ -38,7 +38,7 @@
 - [ ] Implement CV upload functionality (S3 integration)
 - [x] Add LinkedIn URL input field
 - [x] Create Expert delete functionality
-- [ ] Add search/filter for experts list
+- [x] Add search/filter for experts list
 
 ## Admin Project Management
 - [x] Build Projects list page with table view

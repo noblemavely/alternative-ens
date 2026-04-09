@@ -26,9 +26,16 @@ type ClientFormData = z.infer<typeof clientSchema>;
 export default function AdminClients() {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const clientsQuery = trpc.clients.list.useQuery();
   const createMutation = trpc.clients.create.useMutation();
+  
+  const filteredClients = clientsQuery.data?.filter(client => 
+    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.companyName?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
   const updateMutation = trpc.clients.update.useMutation();
   const deleteMutation = trpc.clients.delete.useMutation();
 
@@ -190,6 +197,18 @@ export default function AdminClients() {
               </Form>
             </DialogContent>
           </Dialog>
+        {/* Search Bar */}
+        <Card className="card-elegant">
+          <CardContent className="pt-6">
+            <Input
+              placeholder="Search by name, email, or company..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-md"
+            />
+          </CardContent>
+        </Card>
+
         </div>
 
         {/* Clients Table */}
@@ -201,7 +220,7 @@ export default function AdminClients() {
           <CardContent>
             {clientsQuery.isLoading ? (
               <div className="text-center py-8 text-muted">Loading clients...</div>
-            ) : clientsQuery.data && clientsQuery.data.length > 0 ? (
+            ) : filteredClients.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -214,7 +233,7 @@ export default function AdminClients() {
                     </tr>
                   </thead>
                   <tbody>
-                    {clientsQuery.data.map((client) => (
+                    {filteredClients.map((client) => (
                       <tr key={client.id} className="border-b border-border hover:bg-muted/50 transition-colors">
                         <td className="py-3 px-4 font-medium">{client.name}</td>
                         <td className="py-3 px-4 text-muted">{client.email}</td>
@@ -245,7 +264,7 @@ export default function AdminClients() {
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-muted mb-4">No clients yet</p>
+                <p className="text-muted mb-4">{searchTerm ? "No clients match your search" : "No clients yet"}</p>
                 <Button onClick={() => setOpen(true)} className="gap-2">
                   <Plus size={18} />
                   Add First Client
