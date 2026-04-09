@@ -146,44 +146,53 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const existing = await getExpertByEmail(input.email);
-        const { phone, firstName, lastName, sector, function: fn, biography, linkedinUrl, cvUrl, cvKey } = input;
-        
-        if (existing) {
-          // Update existing expert (from email verification flow)
-          await updateExpert(existing.id, {
-            phone: phone || null,
-            firstName: firstName || null,
-            lastName: lastName || null,
-            sector: sector || null,
-            function: fn || null,
-            biography: biography || null,
-            linkedinUrl: linkedinUrl || null,
-            cvUrl: cvUrl || null,
-            cvKey: cvKey || null,
-            isVerified: true,
-            verificationToken: null,
-            verificationTokenExpiry: null,
-          });
-        } else {
-          // Create new expert if not exists
-          await createExpert({
-            email: input.email,
-            phone: phone || null,
-            firstName: firstName || null,
-            lastName: lastName || null,
-            sector: sector || null,
-            function: fn || null,
-            biography: biography || null,
-            linkedinUrl: linkedinUrl || null,
-            cvUrl: cvUrl || null,
-            cvKey: cvKey || null,
-            isVerified: true,
-            verificationToken: null,
-            verificationTokenExpiry: null,
-          });
+        try {
+          const existing = await getExpertByEmail(input.email);
+          const { phone, firstName, lastName, sector, function: fn, biography, linkedinUrl, cvUrl, cvKey } = input;
+          
+          if (existing) {
+            // Update existing expert (from email verification flow)
+            console.log(`[submitProfile] Updating expert ${existing.id}`);
+            await updateExpert(existing.id, {
+              phone: phone || null,
+              firstName: firstName || null,
+              lastName: lastName || null,
+              sector: sector || null,
+              function: fn || null,
+              biography: biography || null,
+              linkedinUrl: linkedinUrl || null,
+              cvUrl: cvUrl || null,
+              cvKey: cvKey || null,
+              isVerified: true,
+              verificationToken: null,
+              verificationTokenExpiry: null,
+            });
+            console.log(`[submitProfile] Updated expert ${existing.id}`);
+          } else {
+            // Create new expert if not exists
+            console.log(`[submitProfile] Creating new expert`);
+            await createExpert({
+              email: input.email,
+              phone: phone || null,
+              firstName: firstName || null,
+              lastName: lastName || null,
+              sector: sector || null,
+              function: fn || null,
+              biography: biography || null,
+              linkedinUrl: linkedinUrl || null,
+              cvUrl: cvUrl || null,
+              cvKey: cvKey || null,
+              isVerified: true,
+              verificationToken: null,
+              verificationTokenExpiry: null,
+            });
+            console.log(`[submitProfile] Created new expert`);
+          }
+          return { success: true };
+        } catch (error) {
+          console.error(`[submitProfile] Error:`, error);
+          throw error;
         }
-        return { success: true };
       }),
 
     create: adminProcedure
