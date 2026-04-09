@@ -64,10 +64,10 @@
 
 ## Public Expert Profile Portal
 - [x] Build public expert registration page
-- [x] Implement email verification flow
+- [x] Implement email verification flow with code display
 - [x] Create expert profile form (basic info, employment, education, CV, sector, function, biography)
-- [ ] Build employment history form (add/edit/delete entries)
-- [ ] Build education history form (add/edit/delete entries)
+- [x] Build employment history form (add/edit/delete entries)
+- [x] Build education history form (add/edit/delete entries)
 - [ ] Implement CV upload functionality
 - [x] Create expert profile completion/submission flow
 - [ ] Build expert profile view page (for verified experts)
@@ -96,7 +96,7 @@
 - [x] Write vitest tests for database helpers
 - [x] Test all CRUD operations for Clients, Experts, Projects
 - [x] Test expert search with various filters
-- [ ] Test email verification flow
+- [x] Test email verification flow (with code display)
 - [ ] Test CV upload functionality
 - [x] Test LinkedIn parsing functionality
 - [ ] Manual testing of admin workflows

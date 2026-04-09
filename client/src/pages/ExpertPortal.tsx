@@ -10,6 +10,8 @@ import { z } from "zod";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Mail, CheckCircle, Loader2, Link2, Copy } from "lucide-react";
+import { EmploymentHistoryForm } from "@/components/EmploymentHistoryForm";
+import { EducationHistoryForm } from "@/components/EducationHistoryForm";
 
 const emailVerificationSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -36,6 +38,8 @@ export default function ExpertPortal() {
   const [displayCode, setDisplayCode] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [parsingLinkedin, setParsingLinkedin] = useState(false);
+  const [employmentHistory, setEmploymentHistory] = useState<any[]>([]);
+  const [educationHistory, setEducationHistory] = useState<any[]>([]);
 
   const sendVerificationMutation = trpc.expertVerification.sendVerificationEmail.useMutation();
   const verifyEmailMutation = trpc.expertVerification.verifyEmail.useMutation();
@@ -116,12 +120,22 @@ export default function ExpertPortal() {
         ...data,
       });
       toast.success("Profile created successfully!");
+      
+      // Log employment and education history for backend integration
+      if (employmentHistory.length > 0) {
+        console.log("Employment history to save:", employmentHistory);
+      }
+      if (educationHistory.length > 0) {
+        console.log("Education history to save:", educationHistory);
+      }
       setStep("email");
       emailForm.reset();
       profileForm.reset();
       setVerificationEmail("");
       setVerificationToken("");
       setDisplayCode("");
+      setEmploymentHistory([]);
+      setEducationHistory([]);
     } catch (error: any) {
       if (error.message?.includes("already exists")) {
         toast.error("An expert with this email already exists");
@@ -257,6 +271,8 @@ export default function ExpertPortal() {
                   onClick={() => {
                     setStep("email");
                     setDisplayCode("");
+      setEmploymentHistory([]);
+      setEducationHistory([]);
                     setVerificationToken("");
                   }}
                 >
@@ -430,6 +446,26 @@ export default function ExpertPortal() {
                   </Button>
                 </form>
               </Form>
+
+              {/* Employment History */}
+              <div className="mt-8 pt-8 border-t border-slate-200">
+                <EmploymentHistoryForm
+                  entries={employmentHistory}
+                  onAdd={(entry) => setEmploymentHistory([...employmentHistory, { ...entry, id: Date.now().toString() }])}
+                  onUpdate={(entry) => setEmploymentHistory(employmentHistory.map(e => e.id === entry.id ? entry : e))}
+                  onDelete={(id) => setEmploymentHistory(employmentHistory.filter(e => e.id !== id))}
+                />
+              </div>
+
+              {/* Education History */}
+              <div className="mt-8 pt-8 border-t border-slate-200">
+                <EducationHistoryForm
+                  entries={educationHistory}
+                  onAdd={(entry) => setEducationHistory([...educationHistory, { ...entry, id: Date.now().toString() }])}
+                  onUpdate={(entry) => setEducationHistory(educationHistory.map(e => e.id === entry.id ? entry : e))}
+                  onDelete={(id) => setEducationHistory(educationHistory.filter(e => e.id !== id))}
+                />
+              </div>
             </CardContent>
           </Card>
         )}
