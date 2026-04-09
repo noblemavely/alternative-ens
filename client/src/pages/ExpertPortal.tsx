@@ -318,28 +318,21 @@ export default function ExpertPortal() {
             </CardHeader>
             <CardContent>
               {/* LinkedIn Parser */}
-              <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg space-y-3 mb-6">
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg space-y-3 mb-6">
                 <label className="text-sm font-medium text-slate-900 flex items-center gap-2">
-                  <Link2 size={16} />
-                  Parse from LinkedIn (Optional)
+                  <Linkedin size={16} className="text-blue-600" />
+                  Connect with LinkedIn (Optional)
                 </label>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="https://linkedin.com/in/username"
-                    value={linkedinUrl}
-                    onChange={(e) => setLinkedinUrl(e.target.value)}
-                    className="border-slate-300"
-                  />
-                  <Button
-                    onClick={handleParseLinkedin}
-                    variant="outline"
-                    disabled={parsingLinkedin}
-                    className="gap-2 border-slate-300"
-                  >
-                    {parsingLinkedin ? <Loader2 size={16} className="animate-spin" /> : "Parse"}
-                  </Button>
-                </div>
-                <p className="text-xs text-slate-600">Enter your LinkedIn URL to auto-populate fields</p>
+                <Button
+                  onClick={() => {
+                    window.location.href = "https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=778d1mhegtvecq&redirect_uri=" + encodeURIComponent(window.location.origin + "/expert/register") + "&scope=profile%20email%20openid";
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                >
+                  <Linkedin size={16} />
+                  Connect with LinkedIn
+                </Button>
+                <p className="text-xs text-slate-600">Auto-populate your profile with LinkedIn data</p>
               </div>
 
               {/* Profile Form */}

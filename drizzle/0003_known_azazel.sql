@@ -1,0 +1,1 @@
+ALTER TABLE `shortlists` MODIFY COLUMN `status` enum('pending','interested','rejected','new','contacted','attempting_contact','engaged','qualified','proposal_sent','negotiation','verbal_agreement','closed_won','closed_lost') NOT NULL DEFAULT 'pending';

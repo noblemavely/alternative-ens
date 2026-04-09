@@ -10,6 +10,8 @@ import AdminClients from "./pages/AdminClients";
 import AdminExperts from "./pages/AdminExperts";
 import AdminProjects from "./pages/AdminProjects";
 import AdminSearch from "./pages/AdminSearch";
+import AdminExpertDetail from "./pages/AdminExpertDetail";
+import AdminProjectDetail from "./pages/AdminProjectDetail";
 import ExpertPortal from "./pages/ExpertPortal";
 
 function Router() {
@@ -21,6 +23,8 @@ function Router() {
       <Route path={"/admin/experts"} component={AdminExperts} />
       <Route path={"/admin/projects"} component={AdminProjects} />
       <Route path={"/admin/search"} component={AdminSearch} />
+      <Route path={"/admin/experts/:id"} component={AdminExpertDetail} />
+      <Route path={"/admin/projects/:id"} component={AdminProjectDetail} />
       <Route path={"/expert/register"} component={ExpertPortal} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

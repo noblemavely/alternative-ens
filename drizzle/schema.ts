@@ -151,7 +151,7 @@ export const shortlists = mysqlTable("shortlists", {
   id: int("id").autoincrement().primaryKey(),
   projectId: int("projectId").notNull(),
   expertId: int("expertId").notNull(),
-  status: mysqlEnum("status", ["pending", "interested", "rejected"]).default("pending").notNull(),
+  status: mysqlEnum("status", ["pending", "interested", "rejected", "new", "contacted", "attempting_contact", "engaged", "qualified", "proposal_sent", "negotiation", "verbal_agreement", "closed_won", "closed_lost"]).default("pending").notNull(),
   notes: longtext("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
