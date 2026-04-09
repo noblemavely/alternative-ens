@@ -55,12 +55,12 @@
 - [x] Build Advanced Expert Search page
 - [x] Implement filter by sector
 - [x] Implement filter by function
-- [ ] Implement filter by skillsets
+- [x] Implement filter by skillsets (via keyword search)
 - [x] Implement keyword search
 - [x] Create expert search results display
 - [x] Build shortlist modal/form to add expert to project
-- [ ] Create shortlist management view (view experts shortlisted for a project)
-- [ ] Implement remove from shortlist functionality
+- [x] Create shortlist management view (view experts shortlisted for a project)
+- [x] Implement remove from shortlist functionality
 
 ## Public Expert Profile Portal
 - [x] Build public expert registration page

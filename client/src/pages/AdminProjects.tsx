@@ -12,7 +12,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2, X } from "lucide-react";
+import { Plus, Trash2, Edit2, X, Eye } from "lucide-react";
+import { useLocation } from "wouter";
 
 const projectSchema = z.object({
   clientId: z.number(),
@@ -27,6 +28,7 @@ const projectSchema = z.object({
 type ProjectFormData = z.infer<typeof projectSchema>;
 
 export default function AdminProjects() {
+  const [, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [screeningQuestions, setScreeningQuestions] = useState<string[]>([]);
@@ -339,6 +341,9 @@ export default function AdminProjects() {
                         <td className="py-3 px-4 text-muted text-sm">{project.targetPersona || "-"}</td>
                         <td className="py-3 px-4 text-muted">${project.hourlyRate || "-"}</td>
                         <td className="py-3 px-4 text-right space-x-2 flex justify-end">
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/projects/${project.id}`)} className="gap-1" title="View Shortlisted Experts">
+                            <Eye size={16} />
+                          </Button>
                           <Button variant="ghost" size="sm" onClick={() => handleEdit(project)} className="gap-1">
                             <Edit2 size={16} />
                           </Button>
