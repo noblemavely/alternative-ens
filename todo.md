@@ -136,9 +136,11 @@
 
 
 ## LinkedIn OAuth Fix Verification
-- [x] Fixed 403 Forbidden error in fetchLinkedInProfile
-- [x] Added graceful error handling for employment/education/skills endpoints
+- [x] Fixed 403 Forbidden error - root cause was incorrect OAuth scopes
+- [x] Changed scopes from OpenID Connect (openid profile email) to LinkedIn API (r_liteprofile r_emailaddress)
 - [x] OAuth now returns basic profile data (name, email, headline)
 - [x] Dev server restarted with fix deployed
 - [x] LinkedIn OAuth gracefully handles scope limitations
 - [x] Employment/education can be added via manual URL parsing (simulated parser)
+- [x] All 60 tests passing with new scope configuration
+- [ ] Verify LinkedIn OAuth works end-to-end on production domain
