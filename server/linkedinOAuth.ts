@@ -36,15 +36,16 @@ export interface LinkedInEducation {
  * Generate LinkedIn OAuth authorization URL
  */
 export function getLinkedInAuthUrl(redirectUri: string, state: string): string {
-  // Use LinkedIn API scopes instead of OpenID Connect
-  // r_liteprofile gives access to basic profile info
-  // r_emailaddress gives access to email
+  // Use LinkedIn Sign In with LinkedIn OpenID Connect scopes (approved)
+  // openid: Required for OpenID Connect
+  // profile: Access to basic profile info (name, email, picture)
+  // email: Access to email address
   const params = new URLSearchParams({
     response_type: "code",
     client_id: ENV.linkedinClientId,
     redirect_uri: redirectUri,
     state,
-    scope: "r_liteprofile r_emailaddress",
+    scope: "openid profile email",
   });
 
   return `${LINKEDIN_AUTH_URL}?${params.toString()}`;

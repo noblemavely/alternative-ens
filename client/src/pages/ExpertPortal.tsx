@@ -277,17 +277,17 @@ export default function ExpertPortal() {
     toast.success("Code copied to clipboard!");
   };
 
-  const handleLinkedInConnect = () => {
-    // Use the correct redirect URI that matches LinkedIn app settings
-    const redirectUri = `${window.location.origin}/api/linkedin/callback`;
-    const clientId = "778d1mhegtvecq";
-    // Use LinkedIn API scopes instead of OpenID Connect
-    const scope = "r_liteprofile r_emailaddress";
-    const responseType = "code";
-    
-    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=${responseType}&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
-    
-    window.location.href = authUrl;
+  const handleLinkedInConnect = async () => {
+    try {
+      // Get the auth URL from backend (which has correct scopes)
+      const redirectUri = `${window.location.origin}/api/linkedin/callback`;
+      const result = await trpc.linkedinOAuth.getAuthUrl.query({ redirectUri });
+      if (result.authUrl) {
+        window.location.href = result.authUrl;
+      }
+    } catch (error) {
+      toast.error("Failed to connect with LinkedIn");
+    }
   };
 
   return (
