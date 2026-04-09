@@ -136,6 +136,43 @@ export const appRouter = router({
 
   // ============ EXPERT ROUTERS ============
   experts: router({
+    submitProfile: publicProcedure
+      .input(
+        z.object({
+          email: z.string().email(),
+          phone: z.string().optional(),
+          firstName: z.string().optional(),
+          lastName: z.string().optional(),
+          sector: z.string().optional(),
+          function: z.string().optional(),
+          biography: z.string().optional(),
+          linkedinUrl: z.string().optional(),
+          cvUrl: z.string().optional(),
+          cvKey: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const existing = await getExpertByEmail(input.email);
+        if (existing) throw new TRPCError({ code: "CONFLICT", message: "Expert already exists" });
+        const { phone, firstName, lastName, sector, function: fn, biography, linkedinUrl, cvUrl, cvKey } = input;
+        await createExpert({
+          email: input.email,
+          phone: phone || null,
+          firstName: firstName || null,
+          lastName: lastName || null,
+          sector: sector || null,
+          function: fn || null,
+          biography: biography || null,
+          linkedinUrl: linkedinUrl || null,
+          cvUrl: cvUrl || null,
+          cvKey: cvKey || null,
+          isVerified: true,
+          verificationToken: null,
+          verificationTokenExpiry: null,
+        });
+        return { success: true };
+      }),
+
     create: adminProcedure
       .input(
         z.object({

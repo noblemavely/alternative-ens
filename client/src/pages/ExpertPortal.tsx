@@ -45,7 +45,7 @@ export default function ExpertPortal() {
   const verifyEmailMutation = trpc.expertVerification.verifyEmail.useMutation();
   const parseLinkedinMutation = trpc.linkedin.parseProfile.useMutation();
   const linkedinCallbackMutation = trpc.linkedinOAuth.handleCallback.useMutation();
-  const createExpertMutation = trpc.experts.create.useMutation();
+  const createExpertMutation = trpc.experts.submitProfile.useMutation();
 
   const emailForm = useForm<EmailVerificationData>({
     resolver: zodResolver(emailVerificationSchema),

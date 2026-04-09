@@ -4,6 +4,7 @@ import {
   getClients,
   createExpert,
   getExperts,
+  getExpertByEmail,
   createProject,
   getProjects,
   searchExperts,
@@ -210,5 +211,32 @@ describe("Data Validation", () => {
       verificationTokenExpiry: null,
     });
     expect(expert).toBeDefined();
+  });
+});
+
+describe("Expert Self-Registration (Public)", () => {
+  it("should allow public expert self-registration without admin auth", async () => {
+    const email = `public-expert-${Date.now()}@example.com`;
+    const result = await createExpert({
+      email: email,
+      phone: "+1-555-0300",
+      firstName: "Public",
+      lastName: "Expert",
+      sector: "Finance",
+      function: "CFO",
+      biography: "Self-registered expert",
+      linkedinUrl: "https://linkedin.com/in/publicexpert",
+      cvUrl: null,
+      cvKey: null,
+      isVerified: true,
+      verificationToken: null,
+      verificationTokenExpiry: null,
+    });
+    expect(result).toBeDefined();
+    // Verify by fetching the created expert
+    const expert = await getExpertByEmail(email);
+    expect(expert).toBeDefined();
+    expect(expert?.firstName).toBe("Public");
+    expect(expert?.isVerified).toBe(true);
   });
 });

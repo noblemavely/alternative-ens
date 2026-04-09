@@ -146,8 +146,8 @@
 - [x] Verify LinkedIn OAuth works end-to-end on production domain (ready for user testing)
 
 
-## Bug Fixes - In Progress
-- [ ] Expert profile submission redirects to login instead of completing registration
+## Bug Fixes - Completed
+- [x] Expert profile submission redirects to login instead of completing registration
 
 
 ## Logo & Theme Implementation
