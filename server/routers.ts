@@ -47,6 +47,8 @@ import {
 import { storagePut, storageGet } from "./storage";
 import { nanoid } from "nanoid";
 import { parseLinkedInProfile, isValidLinkedInUrl } from "./linkedinParser";
+import { getLinkedInAuthUrl, exchangeCodeForToken, fetchLinkedInProfile } from "./linkedinOAuth";
+import { ENV } from "./_core/env";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -619,6 +621,30 @@ export const appRouter = router({
         await updateExpert(verification.expertId, { isVerified: true, verificationToken: null });
         await deleteExpertVerification(verification.id);
         return { success: true };
+      }),
+  }),
+  linkedinOAuth: router({
+    getAuthUrl: publicProcedure
+      .input(z.object({ redirectUri: z.string().url() }))
+      .query(({ input }) => {
+        const state = nanoid();
+        const authUrl = getLinkedInAuthUrl(input.redirectUri, state);
+        return { authUrl, state };
+      }),
+
+    handleCallback: publicProcedure
+      .input(z.object({ code: z.string(), redirectUri: z.string().url() }))
+      .mutation(async ({ input }) => {
+        try {
+          const accessToken = await exchangeCodeForToken(input.code, input.redirectUri);
+          const profile = await fetchLinkedInProfile(accessToken);
+          return { success: true, profile };
+        } catch (error) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: error instanceof Error ? error.message : "Failed to fetch LinkedIn profile",
+          });
+        }
       }),
   }),
 });

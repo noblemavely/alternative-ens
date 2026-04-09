@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Mail, CheckCircle, Loader2, Link2, Copy } from "lucide-react";
+import { Mail, CheckCircle, Loader2, Link2, Copy, Linkedin } from "lucide-react";
 import { EmploymentHistoryForm } from "@/components/EmploymentHistoryForm";
 import { EducationHistoryForm } from "@/components/EducationHistoryForm";
 
@@ -44,7 +44,33 @@ export default function ExpertPortal() {
   const sendVerificationMutation = trpc.expertVerification.sendVerificationEmail.useMutation();
   const verifyEmailMutation = trpc.expertVerification.verifyEmail.useMutation();
   const parseLinkedinMutation = trpc.linkedin.parseProfile.useMutation();
+  const linkedinCallbackMutation = trpc.linkedinOAuth.handleCallback.useMutation();
   const createExpertMutation = trpc.experts.create.useMutation();
+
+  const handleLinkedInCallback = async (code: string) => {
+    try {
+      const result = await linkedinCallbackMutation.mutateAsync({
+        code,
+        redirectUri: window.location.origin + "/expert/register",
+      });
+      if (result.profile) {
+        profileForm.setValue("firstName", result.profile.firstName);
+        profileForm.setValue("lastName", result.profile.lastName);
+        if (result.profile.email) profileForm.setValue("email", result.profile.email);
+        if (result.profile.headline) profileForm.setValue("sector", result.profile.headline);
+        if (result.profile.skills && result.profile.skills.length > 0) {
+          profileForm.setValue("function", result.profile.skills[0]);
+        }
+        setEmploymentHistory(result.profile.employmentHistory);
+        setEducationHistory(result.profile.educationHistory);
+        toast.success("LinkedIn profile loaded successfully!");
+      }
+    } catch (error) {
+      toast.error("Failed to load LinkedIn profile");
+    }
+  };
+
+  // Handle LinkedIn OAuth callback - will be implemented in next phase
 
   const emailForm = useForm<EmailVerificationData>({
     resolver: zodResolver(emailVerificationSchema),
