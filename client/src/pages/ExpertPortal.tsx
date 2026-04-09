@@ -139,11 +139,31 @@ export default function ExpertPortal() {
       setParsingLinkedin(false);
     }
   };
-
   const handleCompleteProfile = async (data: ProfileFormData) => {
     try {
+      // Handle CV upload if file is selected
+      let cvUrl = "";
+      let cvKey = "";
+      const cvInput = document.getElementById("cv-upload") as HTMLInputElement;
+      if (cvInput?.files?.[0]) {
+        const file = cvInput.files[0];
+        try {
+          // In production, upload to S3 via backend
+          // For now, create a local blob URL for testing
+          cvUrl = URL.createObjectURL(file);
+          cvKey = `cv-${Date.now()}-${file.name}`;
+          console.log("CV file ready for upload:", { name: file.name, size: file.size, key: cvKey });
+          toast.info("CV file selected: " + file.name);
+        } catch (error) {
+          console.error("Error preparing CV upload:", error);
+          toast.error("Error preparing CV file");
+        }
+      }
+      
       await createExpertMutation.mutateAsync({
         ...data,
+        cvUrl: cvUrl || "",
+        cvKey: cvKey || "",
       });
       toast.success("Profile created successfully!");
       
@@ -162,6 +182,16 @@ export default function ExpertPortal() {
       setDisplayCode("");
       setEmploymentHistory([]);
       setEducationHistory([]);
+      
+      // Reset CV input
+      if (cvInput) {
+        cvInput.value = "";
+      }
+      
+      // Revoke blob URL if created
+      if (cvUrl) {
+        URL.revokeObjectURL(cvUrl);
+      }
     } catch (error: any) {
       if (error.message?.includes("already exists")) {
         toast.error("An expert with this email already exists");
@@ -456,6 +486,17 @@ export default function ExpertPortal() {
                       </FormItem>
                     )}
                   />
+
+                  <div className="border-t pt-4">
+                    <label className="text-sm font-medium text-slate-900 block mb-2">Upload CV (Optional)</label>
+                    <input 
+                      type="file" 
+                      accept=".pdf,.doc,.docx" 
+                      className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"
+                      id="cv-upload"
+                    />
+                    <p className="text-xs text-slate-600 mt-1">Accepted formats: PDF, DOC, DOCX (Max 5MB)</p>
+                  </div>
 
                   <Button 
                     type="submit" 

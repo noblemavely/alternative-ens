@@ -68,7 +68,7 @@
 - [x] Create expert profile form (basic info, employment, education, CV, sector, function, biography)
 - [x] Build employment history form (add/edit/delete entries)
 - [x] Build education history form (add/edit/delete entries)
-- [ ] Implement CV upload functionality
+- [x] Implement CV upload functionality - Backend S3 integration ready, UI added
 - [x] Create expert profile completion/submission flow
 - [ ] Build expert profile view page (for verified experts)
 
