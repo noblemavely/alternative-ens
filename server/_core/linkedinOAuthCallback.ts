@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { exchangeCodeForToken, fetchLinkedInProfile } from "../linkedinOAuth";
+import { ENV } from "./env";
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
@@ -34,7 +35,8 @@ export function registerLinkedInOAuthRoutes(app: Express) {
 
     try {
       // Exchange authorization code for access token
-      const redirectUri = `${req.protocol}://${req.get("host")}/api/linkedin/callback`;
+      // Use configured app origin to ensure it matches LinkedIn app settings
+      const redirectUri = `${ENV.appOrigin}/api/linkedin/callback`;
       const accessToken = await exchangeCodeForToken(code, redirectUri);
 
       // Fetch LinkedIn profile data

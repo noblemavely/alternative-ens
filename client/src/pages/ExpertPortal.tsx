@@ -172,7 +172,37 @@ export default function ExpertPortal() {
       profileForm.setValue("function", profile.headline || "");
       profileForm.setValue("biography", profile.biography || "");
       profileForm.setValue("linkedinUrl", linkedinUrl);
-      toast.success("LinkedIn profile parsed successfully!");
+      
+      // Populate employment history from simulated parser
+      if (profile.employment && profile.employment.length > 0) {
+        setEmploymentHistory(
+          profile.employment.map((emp: any) => ({
+            id: `emp-${Date.now()}-${Math.random()}`,
+            company: emp.companyName || "",
+            position: emp.position || "",
+            startDate: emp.startDate || "",
+            endDate: emp.endDate || "",
+            currentlyWorking: emp.isCurrent || false,
+            description: emp.description || "",
+          }))
+        );
+      }
+      
+      // Populate education history from simulated parser
+      if (profile.education && profile.education.length > 0) {
+        setEducationHistory(
+          profile.education.map((edu: any) => ({
+            id: `edu-${Date.now()}-${Math.random()}`,
+            school: edu.schoolName || "",
+            degree: edu.degree || "",
+            fieldOfStudy: edu.fieldOfStudy || "",
+            startDate: edu.startDate || "",
+            endDate: edu.endDate || "",
+          }))
+        );
+      }
+      
+      toast.success("LinkedIn profile parsed successfully with employment and education history!");
     } catch (error) {
       toast.error("Failed to parse LinkedIn profile");
     } finally {
@@ -503,12 +533,44 @@ export default function ExpertPortal() {
                     )}
                   />
 
+                  {/* Manual LinkedIn URL Parsing */}
+                  <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg space-y-3">
+                    <label className="text-sm font-medium text-slate-900 flex items-center gap-2">
+                      <Link2 size={16} className="text-amber-600" />
+                      Parse LinkedIn Profile (Optional)
+                    </label>
+                    <p className="text-xs text-slate-600">Enter your LinkedIn URL to auto-populate employment and education history</p>
+                    <div className="flex gap-2">
+                      <Input
+                        type="url"
+                        placeholder="https://linkedin.com/in/yourprofile"
+                        value={linkedinUrl}
+                        onChange={(e) => setLinkedinUrl(e.target.value)}
+                        className="border-amber-300 flex-1"
+                      />
+                      <Button
+                        onClick={handleParseLinkedin}
+                        disabled={parsingLinkedin}
+                        className="bg-amber-600 hover:bg-amber-700 text-white"
+                      >
+                        {parsingLinkedin ? (
+                          <>
+                            <Loader2 className="mr-2 animate-spin" size={16} />
+                            Parsing...
+                          </>
+                        ) : (
+                          "Parse"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
                   <FormField
                     control={profileForm.control}
                     name="linkedinUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-900">LinkedIn URL</FormLabel>
+                        <FormLabel className="text-slate-900">LinkedIn URL (Auto-filled)</FormLabel>
                         <FormControl>
                           <Input placeholder="https://linkedin.com/in/yourprofile" {...field} className="border-slate-300" />
                         </FormControl>

@@ -117,3 +117,25 @@
 - [x] Parse OAuth code and state from URL after redirect
 - [x] Update ExpertPortal to handle callback parsing from URL
 - [x] Test LinkedIn OAuth end-to-end flow (ready for manual testing)
+
+
+## LinkedIn OAuth Token Exchange Error
+- [x] Fix redirect URI mismatch in token exchange: Use configured APP_ORIGIN instead of request-derived origin
+- [x] Ensure redirect URI in token exchange matches the one used in authorization request
+- [x] Add APP_ORIGIN environment variable with default production domain
+- [x] Test LinkedIn OAuth flow end-to-end after fix
+
+## LinkedIn Profile Parsing - Dual Approach
+- [x] LinkedIn OAuth (Connect button): Gets basic profile data (name, email, headline)
+- [x] Manual LinkedIn URL parsing: Uses simulated parser for full employment/education history
+- [x] Updated ExpertPortal with separate sections for both approaches
+- [x] Employment/education history auto-populated from simulated parser
+- [x] All 60 tests passing
+
+## LinkedIn API Partner Program Application (For Full Data Access)
+- [ ] Apply for LinkedIn Talent Solutions API access at https://business.linkedin.com/talent-solutions/talent-solutions-api
+- [ ] Provide business justification explaining expert network use case
+- [ ] Request scopes for employment history, education, and skills data
+- [ ] Wait for LinkedIn approval (typically 1-2 weeks)
+- [ ] Update OAuth scopes once approved
+- [ ] Test employment/education data retrieval after approval
