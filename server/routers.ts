@@ -598,7 +598,8 @@ export const appRouter = router({
           });
         }
         // TODO: Send email with verification link
-        return { success: true };
+        // For testing, return the token so it can be displayed in UI
+        return { success: true, token, message: "Verification code sent! Use the code below for testing." };
       }),
 
     verifyEmail: publicProcedure

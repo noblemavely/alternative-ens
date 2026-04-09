@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Mail, CheckCircle, Loader2, Link2 } from "lucide-react";
+import { Mail, CheckCircle, Loader2, Link2, Copy } from "lucide-react";
 
 const emailVerificationSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -33,6 +33,7 @@ export default function ExpertPortal() {
   const [step, setStep] = useState<"email" | "verification" | "profile">("email");
   const [verificationEmail, setVerificationEmail] = useState("");
   const [verificationToken, setVerificationToken] = useState("");
+  const [displayCode, setDisplayCode] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [parsingLinkedin, setParsingLinkedin] = useState(false);
 
@@ -62,10 +63,11 @@ export default function ExpertPortal() {
 
   const handleSendVerification = async (data: EmailVerificationData) => {
     try {
-      await sendVerificationMutation.mutateAsync({ email: data.email });
+      const result = await sendVerificationMutation.mutateAsync({ email: data.email });
       setVerificationEmail(data.email);
+      setDisplayCode(result.token || "");
       setStep("verification");
-      toast.success("Verification email sent! Check your inbox.");
+      toast.success("Verification code sent! Check below for testing.");
     } catch (error) {
       toast.error("Failed to send verification email");
     }
@@ -119,6 +121,7 @@ export default function ExpertPortal() {
       profileForm.reset();
       setVerificationEmail("");
       setVerificationToken("");
+      setDisplayCode("");
     } catch (error: any) {
       if (error.message?.includes("already exists")) {
         toast.error("An expert with this email already exists");
@@ -128,238 +131,308 @@ export default function ExpertPortal() {
     }
   };
 
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(displayCode);
+    toast.success("Code copied to clipboard!");
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container py-6">
-          <h1 className="text-3xl font-bold text-accent">Alternative</h1>
-          <p className="text-muted mt-1">Expert Network Service</p>
+      <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <h1 className="text-2xl font-bold text-slate-900">Alternative</h1>
+          <p className="text-sm text-slate-600">Expert Network Service</p>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container py-12">
-        <div className="max-w-2xl mx-auto">
-          {/* Step 1: Email Verification */}
-          {step === "email" && (
-            <Card className="card-elegant">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail size={24} />
-                  Verify Your Email
-                </CardTitle>
-                <CardDescription>Enter your email to get started</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...emailForm}>
-                  <form onSubmit={emailForm.handleSubmit(handleSendVerification)} className="space-y-4">
-                    <FormField
-                      control={emailForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email Address</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="your@email.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" className="w-full" disabled={sendVerificationMutation.isPending}>
-                      {sendVerificationMutation.isPending ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin mr-2" />
-                          Sending...
-                        </>
-                      ) : (
-                        "Send Verification Code"
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Step 2: Email Verification Code */}
-          {step === "verification" && (
-            <Card className="card-elegant">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle size={24} />
-                  Verify Code
-                </CardTitle>
-                <CardDescription>Enter the verification code sent to {verificationEmail}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="form-label">Verification Code</label>
-                  <Input
-                    placeholder="Enter 6-digit code"
-                    value={verificationToken}
-                    onChange={(e) => setVerificationToken(e.target.value)}
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Step 1: Email Verification */}
+        {step === "email" && (
+          <Card className="border-slate-200 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-slate-900">
+                <Mail size={24} className="text-slate-700" />
+                Verify Your Email
+              </CardTitle>
+              <CardDescription>Enter your email to get started</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...emailForm}>
+                <form onSubmit={emailForm.handleSubmit(handleSendVerification)} className="space-y-4">
+                  <FormField
+                    control={emailForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-slate-900">Email Address</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="email" 
+                            placeholder="your@email.com" 
+                            {...field}
+                            className="border-slate-300"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-                <Button onClick={handleVerifyEmail} className="w-full" disabled={verifyEmailMutation.isPending}>
-                  {verifyEmailMutation.isPending ? "Verifying..." : "Verify Code"}
-                </Button>
-                <Button variant="outline" className="w-full" onClick={() => setStep("email")}>
-                  Back
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-slate-900 hover:bg-slate-800" 
+                    disabled={sendVerificationMutation.isPending}
+                  >
+                    {sendVerificationMutation.isPending ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin mr-2" />
+                        Sending...
+                      </>
+                    ) : (
+                      "Send Verification Code"
+                    )}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        )}
 
-          {/* Step 3: Complete Profile */}
-          {step === "profile" && (
-            <Card className="card-elegant">
-              <CardHeader>
-                <CardTitle>Complete Your Profile</CardTitle>
-                <CardDescription>Fill in your professional information</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {/* LinkedIn Parser */}
-                <div className="bg-muted p-4 rounded-lg space-y-3 mb-6">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <Link2 size={16} />
-                    Parse from LinkedIn
-                  </label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="https://linkedin.com/in/username"
-                      value={linkedinUrl}
-                      onChange={(e) => setLinkedinUrl(e.target.value)}
-                    />
+        {/* Step 2: Email Verification Code */}
+        {step === "verification" && (
+          <Card className="border-slate-200 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-slate-900">
+                <CheckCircle size={24} className="text-green-600" />
+                Enter Verification Code
+              </CardTitle>
+              <CardDescription>Enter the verification code sent to {verificationEmail}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Display Code for Testing */}
+              {displayCode && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-blue-900 mb-2">Test Verification Code:</p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 bg-white border border-blue-300 rounded px-3 py-2 font-mono text-sm text-slate-900 break-all">
+                      {displayCode}
+                    </code>
                     <Button
-                      onClick={handleParseLinkedin}
+                      size="sm"
                       variant="outline"
-                      disabled={parsingLinkedin}
-                      className="gap-2"
+                      onClick={copyToClipboard}
+                      className="flex-shrink-0"
                     >
-                      {parsingLinkedin ? <Loader2 size={16} className="animate-spin" /> : "Parse"}
+                      <Copy size={16} />
                     </Button>
                   </div>
-                  <p className="text-xs text-muted">Enter your LinkedIn URL to auto-populate fields</p>
+                  <p className="text-xs text-blue-700 mt-2">Copy and paste this code below to verify your email</p>
                 </div>
+              )}
 
-                {/* Profile Form */}
-                <Form {...profileForm}>
-                  <form onSubmit={profileForm.handleSubmit(handleCompleteProfile)} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={profileForm.control}
-                        name="firstName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>First Name *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="John" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={profileForm.control}
-                        name="lastName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Last Name *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Doe" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+              {/* Verification Code Input */}
+              <div>
+                <label className="block text-sm font-medium text-slate-900 mb-2">Verification Code</label>
+                <Input
+                  placeholder="Paste the code here"
+                  value={verificationToken}
+                  onChange={(e) => setVerificationToken(e.target.value)}
+                  className="border-slate-300"
+                />
+              </div>
 
+              {/* Action Buttons */}
+              <div className="space-y-2">
+                <Button 
+                  onClick={handleVerifyEmail} 
+                  className="w-full bg-slate-900 hover:bg-slate-800" 
+                  disabled={verifyEmailMutation.isPending}
+                >
+                  {verifyEmailMutation.isPending ? "Verifying..." : "Verify Code"}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full border-slate-300" 
+                  onClick={() => {
+                    setStep("email");
+                    setDisplayCode("");
+                    setVerificationToken("");
+                  }}
+                >
+                  Back
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 3: Complete Profile */}
+        {step === "profile" && (
+          <Card className="border-slate-200 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-slate-900">Complete Your Profile</CardTitle>
+              <CardDescription>Fill in your professional information</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* LinkedIn Parser */}
+              <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg space-y-3 mb-6">
+                <label className="text-sm font-medium text-slate-900 flex items-center gap-2">
+                  <Link2 size={16} />
+                  Parse from LinkedIn (Optional)
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="https://linkedin.com/in/username"
+                    value={linkedinUrl}
+                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                    className="border-slate-300"
+                  />
+                  <Button
+                    onClick={handleParseLinkedin}
+                    variant="outline"
+                    disabled={parsingLinkedin}
+                    className="gap-2 border-slate-300"
+                  >
+                    {parsingLinkedin ? <Loader2 size={16} className="animate-spin" /> : "Parse"}
+                  </Button>
+                </div>
+                <p className="text-xs text-slate-600">Enter your LinkedIn URL to auto-populate fields</p>
+              </div>
+
+              {/* Profile Form */}
+              <Form {...profileForm}>
+                <form onSubmit={profileForm.handleSubmit(handleCompleteProfile)} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={profileForm.control}
-                      name="phone"
+                      name="firstName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Phone</FormLabel>
+                          <FormLabel className="text-slate-900">First Name *</FormLabel>
                           <FormControl>
-                            <Input placeholder="+1 (555) 000-0000" {...field} />
+                            <Input placeholder="John" {...field} className="border-slate-300" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={profileForm.control}
-                        name="sector"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Sector</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Technology" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={profileForm.control}
-                        name="function"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Function</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Product Manager" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
                     <FormField
                       control={profileForm.control}
-                      name="biography"
+                      name="lastName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Biography</FormLabel>
+                          <FormLabel className="text-slate-900">Last Name *</FormLabel>
                           <FormControl>
-                            <Textarea
-                              placeholder="Tell us about your professional background and expertise..."
-                              {...field}
-                              rows={4}
-                            />
+                            <Input placeholder="Doe" {...field} className="border-slate-300" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                  </div>
 
-                    <FormField
-                      control={profileForm.control}
-                      name="linkedinUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>LinkedIn URL</FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://linkedin.com/in/username" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={profileForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-slate-900">Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" {...field} disabled className="border-slate-300 bg-slate-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <Button type="submit" className="w-full" disabled={createExpertMutation.isPending}>
-                      {createExpertMutation.isPending ? "Creating Profile..." : "Complete Profile"}
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+                  <FormField
+                    control={profileForm.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-slate-900">Phone</FormLabel>
+                        <FormControl>
+                          <Input placeholder="+1 (555) 000-0000" {...field} className="border-slate-300" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={profileForm.control}
+                    name="sector"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-slate-900">Sector</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Technology, Finance, Healthcare" {...field} className="border-slate-300" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={profileForm.control}
+                    name="function"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-slate-900">Function / Role</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Product Manager, Data Scientist" {...field} className="border-slate-300" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={profileForm.control}
+                    name="linkedinUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-slate-900">LinkedIn URL</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://linkedin.com/in/username" {...field} className="border-slate-300" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={profileForm.control}
+                    name="biography"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-slate-900">Biography</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Tell us about your professional background and expertise..." 
+                            {...field} 
+                            className="border-slate-300 resize-none"
+                            rows={4}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-slate-900 hover:bg-slate-800" 
+                    disabled={createExpertMutation.isPending}
+                  >
+                    {createExpertMutation.isPending ? "Creating Profile..." : "Complete Profile"}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );
