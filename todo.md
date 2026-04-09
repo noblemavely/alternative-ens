@@ -70,14 +70,14 @@
 - [x] Build education history form (add/edit/delete entries)
 - [x] Implement CV upload functionality - Backend S3 integration ready, UI added
 - [x] Create expert profile completion/submission flow
-- [ ] Build expert profile view page (for verified experts)
+- [x] Build expert profile view page (for verified experts)
 
 ## LinkedIn Profile Simulation & Parsing
 - [x] Build LinkedIn URL input component
 - [x] Create LinkedIn profile parser (simulate API call)
 - [x] Implement auto-population of profile fields from parsed data
 - [x] Add validation for LinkedIn URLs
-- [ ] Test parsing with sample LinkedIn profiles
+- [x] Test parsing with sample LinkedIn profiles
 
 ## UI/UX & Branding
 - [x] Define elegant color palette and typography
@@ -99,13 +99,14 @@
 - [x] Test email verification flow (with code display)
 - [x] Test CV upload functionality - Backend tested
 - [x] Test LinkedIn parsing functionality
+- [x] Add LinkedIn parsing vitest tests with sample profiles (20 tests added)
 - [x] Manual testing of admin workflows - Core features verified
 - [x] Manual testing of expert portal - Email verification tested
 - [x] Cross-browser testing - Responsive design verified
 
 ## Deployment & Final Steps
 - [x] Verify all environment variables are set
-- [x] Run full test suite - 40/40 passing
+- [x] Run full test suite - 60/60 passing (40 core + 20 LinkedIn parsing tests)
 - [x] Check for console errors and warnings
 - [x] Create final checkpoint
 - [x] Prepare deployment documentation
