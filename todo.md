@@ -354,10 +354,10 @@
 - [ ] Test Sector/Function dropdowns in all expert forms
 
 ## Remaining Issues
-- [ ] Database migration: sector column needs to be added to clients table (SQL: ALTER TABLE clients ADD COLUMN sector varchar(255))
-- [ ] Fix hyperlinks showing 0 in listing pages (project count, expert count)
+- [x] Database migration: sector column added to clients table (SQL executed successfully)
+- [x] Fix hyperlinks showing 0 in listing pages (AdminClients project count fixed, AdminProjects expert count fixed)
+- [x] Remove "Search Experts" from navigation menu (removed from AdminLayout)
 - [ ] CV document viewer in expert profile page
-- [ ] Remove "Search Experts" from navigation menu
 - [ ] Add "Add 3 Sample Records" button in admin (alongside "Clear All Data")
 - [ ] /admin route redirect to login when not authenticated
 - [ ] Run full workflow test via UI after all fixes

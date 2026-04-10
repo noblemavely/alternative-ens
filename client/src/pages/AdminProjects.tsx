@@ -408,6 +408,7 @@ export default function AdminProjects() {
                   <tbody>
                     {filteredProjects.map((project) => {
                       const client = clientsQuery.data?.find(c => c.id === project.clientId);
+                      const expertCount = projectsQuery.data?.filter(p => p.id === project.id).length || 0;
                       return (
                       <tr key={project.id} className="border-b border-border hover:bg-muted/50 transition-colors">
                         <td className="py-3 px-4 font-medium">{project.name}</td>
@@ -421,10 +422,10 @@ export default function AdminProjects() {
                           <Button
                             variant="link"
                             size="sm"
-                            onClick={() => navigate(`/admin/search-experts?project=${project.id}`)}
+                            onClick={() => navigate(`/admin/projects/${project.id}`)}
                             className="text-blue-600 hover:text-blue-800 p-0 h-auto"
                           >
-                            {0}
+                            {expertCount}
                           </Button>
                         </td>
                         <td className="py-3 px-4 text-right space-x-2 flex justify-end">

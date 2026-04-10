@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { LogOut, Menu, X, Users, Briefcase, FileText, Search, Home, Settings } from "lucide-react";
+import { LogOut, Menu, X, Users, Briefcase, FileText, Home, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 
@@ -46,7 +46,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { label: "Clients", icon: Users, href: "/admin/clients" },
     { label: "Experts", icon: Users, href: "/admin/experts" },
     { label: "Projects", icon: Briefcase, href: "/admin/projects" },
-    { label: "Search Experts", icon: Search, href: "/admin/search" },
     { label: "Settings", icon: Settings, href: "/admin/settings" },
   ];
 
