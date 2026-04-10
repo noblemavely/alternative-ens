@@ -287,45 +287,45 @@
 - [x] Fix project carousel to show only one project at a time (carousel/slider) - Carousel with prev/next buttons implemented
 - [x] Show only project name, client name, and shortlist status in carousel card - Only essential details shown
 - [x] Remove rate and other details from carousel card - Rate removed, showing only name, client, status
-- [ ] Remove "Mapped Clients" section from expert profile page in admin dashboard
+- [x] Remove "Mapped Clients" section from expert profile page in admin dashboard - Removed from AdminExpertDetail
 - [ ] Add CV document viewer to expert profile page in admin dashboard
 
 ### Admin Dashboard Navigation & Layout
 - [x] Update logo in navigation menu (currently not showing new logo) - Logo CDN URL verified in DashboardLayout
 - [x] Move Settings option to small link above "Logged in as" with gear icon (not prominent menu) - Gear icon added to sidebar footer
-- [ ] Remove "Search Experts" from main navigation (use listing page filters instead)
+- [x] Remove "Search Experts" from main navigation (use listing page filters instead) - Removed from AdminLayout
 
 ### Project & Client Management
-- [ ] Fix shortlisted experts table in projects page (data not showing despite being available)
-- [ ] Add client name column to projects listing page
-- [ ] Add client name filter to projects listing page
-- [ ] Convert "Add Project" from popup to separate page with unique URL
-- [ ] Convert "Add Client" from popup to separate page with unique URL
-- [ ] Convert "Add Expert" from popup to separate page with unique URL
+- [x] Fix shortlisted experts table in projects page (data not showing despite being available) - Fixed with expert join in tRPC
+- [x] Add client name column to projects listing page - Column added to AdminProjects
+- [x] Add client name filter to projects listing page - Filter dropdown implemented
+- [x] Convert "Add Project" from popup to separate page with unique URL - AddProject.tsx created
+- [x] Convert "Add Client" from popup to separate page with unique URL - AddClient.tsx created
+- [x] Convert "Add Expert" from popup to separate page with unique URL - AddExpert.tsx created
 
 ### Client & Contact Structure Refactoring
-- [ ] Refactor client profile page to remove "Mapped Experts" section
-- [ ] Remove "Name" and "Company Name" fields from client profile (keep only Client Name)
-- [ ] Add client contact listing section in client profile page
-- [ ] Add "Sector" field to clients table with master list dropdown
-- [ ] Remove client filter from clients listing page
-- [ ] Add "Sector" filter to clients listing page instead
-- [ ] Implement multi-contact support UI in client profile (add/edit/delete contacts)
-- [ ] Implement contact selection in project creation form
+- [x] Refactor client profile page to remove "Mapped Experts" section - Removed from AdminClientDetail
+- [x] Remove "Name" and "Company Name" fields from client profile (keep only Client Name) - Removed from display
+- [x] Add client contact listing section in client profile page - Implemented with full UI
+- [x] Add "Sector" field to clients table with master list dropdown - Migration executed, UI added
+- [x] Remove client filter from clients listing page - Replaced with sector filter
+- [x] Add "Sector" filter to clients listing page instead - Sector dropdown filter added
+- [x] Implement multi-contact support UI in client profile (add/edit/delete contacts) - Fully functional
+- [x] Implement contact selection in project creation form - Cascading dropdown implemented
 
 ### Master List & Dropdown Integration
-- [ ] Wire Sector dropdown in Expert creation/edit to use master list
-- [ ] Wire Function dropdown in Expert creation/edit to use master list
-- [ ] Wire Sector dropdown in Client creation/edit to use master list
+- [x] Wire Sector dropdown in Expert creation/edit to use master list - AddExpert uses master lists
+- [x] Wire Function dropdown in Expert creation/edit to use master list - AddExpert uses master lists
+- [x] Wire Sector dropdown in Client creation/edit to use master list - AddClient uses master lists
 
 ### Admin Authentication & Redirects
-- [ ] Redirect /admin to admin login page if not logged in (currently shows error)
-- [ ] Implement admin login page with email/password authentication
+- [ ] Redirect /admin to admin login page if not logged in (currently shows error) - GitHub Issue #33
+- [ ] Implement admin login page with email/password authentication - GitHub Issue #34
 
 ### Data Management
-- [ ] Fix hyperlinks in listing pages (always showing 0 despite records present)
-- [ ] Add "Add 3 Sample Records" button beside "Clear All Data" in dashboard
-- [ ] Ensure sample records include shortlistings and contacts within clients
+- [x] Fix hyperlinks in listing pages (always showing 0 despite records present) - Fixed in AdminClients and AdminProjects
+- [x] Add "Add 3 Sample Records" button beside "Clear All Data" in dashboard - Seed Sample Data button added
+- [x] Ensure sample records include shortlistings and contacts within clients - Seed data includes all relationships
 
 ### Testing Workflow (To Execute After Implementation)
 - [ ] Test: Create a client
@@ -379,10 +379,33 @@
 ## Major Refactoring - Expert Profile & Project Management
 - [x] Update database schema: change projects.clientId to projects.clientContactId (migration executed)
 - [x] Update tRPC routers and db functions for clientContactId relationship (all routers updated)
-- [ ] Fix expert profile: show only tagged projects, merge with shortlist section, remove carousel styling
-- [ ] Update client listing: remove Name column, make client name hyperlinked to profile
-- [ ] Update client profile: remove Name and Email fields from display
-- [ ] Convert project creation from dialog popup to full page
-- [ ] Add client contact selection dropdown in project creation form (cascading dropdown implemented)
-- [ ] Update AdminProjects listing to show client contact instead of client
-- [ ] Update seed data to use clientContactId instead of clientId
+- [ ] Fix expert profile: show only tagged projects, merge with shortlist section, remove carousel styling - GitHub Issue #4
+- [x] Update client listing: remove Name column, make client name hyperlinked to profile - Updated
+- [x] Update client profile: remove Name and Email fields from display - Removed
+- [x] Convert project creation from dialog popup to full page - AddProject.tsx created
+- [x] Add client contact selection dropdown in project creation form (cascading dropdown implemented) - Implemented
+- [x] Update AdminProjects listing to show client contact instead of client - Updated
+- [x] Update seed data to use clientContactId instead of clientId - Updated
+
+
+## Documentation & GitHub Issue Management (New)
+- [x] Create comprehensive README.md with installation and setup instructions
+- [x] Create detailed ARCHITECTURE.md with platform architecture documentation
+- [x] Create GITHUB_WORKFLOW.md for issue management workflow
+- [ ] Set up GitHub issue templates for bug reports and feature requests
+- [ ] Configure GitHub Actions for automated issue management
+- [ ] Establish GitHub issue management workflow (create, triage, resolve, close)
+- [ ] Keep ARCHITECTURE.md updated with every commit
+- [ ] Maintain issue tracking for all bugs and features
+- [ ] Auto-close GitHub issues when fixes are committed
+- [ ] Reopen GitHub issues if problems recur
+
+## Issue Management Workflow
+- [x] Created GitHub issues for all 16 remaining tasks (Issues #4-#19)
+- [x] Documented issue lifecycle (creation, triage, resolution, closure)
+- [x] Established issue labeling system (bug, enhancement, critical, high, medium, low)
+- [ ] Set up automated issue closure on commit
+- [ ] Configure issue templates in .github/ISSUE_TEMPLATE/
+- [ ] Create GitHub Actions workflow for issue management
+- [ ] Implement issue metrics tracking
+- [ ] Set up weekly issue review process
