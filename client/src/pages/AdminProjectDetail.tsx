@@ -1,4 +1,3 @@
-import { useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useRoute } from "wouter";
 import { STATUS_LABELS, STATUS_COLORS } from "@shared/statusLabels";
 
 export default function AdminProjectDetail() {
@@ -113,62 +113,71 @@ export default function AdminProjectDetail() {
             {shortlistedExperts.length === 0 ? (
               <p className="text-slate-600 text-sm py-8 text-center">No experts shortlisted yet</p>
             ) : (
-              <div className="space-y-4">
-                {shortlistedExperts.map((shortlist: any) => (
-                  <div
-                    key={shortlist.id}
-                    className="p-4 border border-slate-200 rounded-lg hover:border-slate-300 transition-colors"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      <div className="flex-1">
-                        <p className="font-semibold text-slate-900">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="text-left py-3 px-4 font-semibold">Name</th>
+                      <th className="text-left py-3 px-4 font-semibold">Email</th>
+                      <th className="text-left py-3 px-4 font-semibold">Sector</th>
+                      <th className="text-left py-3 px-4 font-semibold">Function</th>
+                      <th className="text-left py-3 px-4 font-semibold">Status</th>
+                      <th className="text-right py-3 px-4 font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {shortlistedExperts.map((shortlist: any) => (
+                      <tr key={shortlist.id} className="border-b border-slate-200 hover:bg-slate-50">
+                        <td className="py-3 px-4 font-medium">
                           {shortlist.expert?.firstName} {shortlist.expert?.lastName}
-                        </p>
-                        <p className="text-sm text-slate-600">{shortlist.expert?.email}</p>
-                        {shortlist.notes && (
-                          <p className="text-sm text-slate-700 mt-2 italic">{shortlist.notes}</p>
-                        )}
-                      </div>
-                      <div className="flex flex-col md:flex-row gap-2">
-                        <Select
-                          value={shortlist.status}
-                          onValueChange={(value) =>
-                            updateStatusMutation.mutate({
-                              id: shortlist.id,
-                              status: value as any,
-                            })
-                          }
-                        >
-                          <SelectTrigger className="w-full md:w-48">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="new">New</SelectItem>
-                            <SelectItem value="contacted">Contacted</SelectItem>
-                            <SelectItem value="attempting_contact">Attempting Contact</SelectItem>
-                            <SelectItem value="engaged">Engaged</SelectItem>
-                            <SelectItem value="qualified">Qualified</SelectItem>
-                            <SelectItem value="proposal_sent">Proposal Sent</SelectItem>
-                            <SelectItem value="negotiation">Negotiation</SelectItem>
-                            <SelectItem value="verbal_agreement">Verbal Agreement</SelectItem>
-                            <SelectItem value="closed_won">Closed – Won</SelectItem>
-                            <SelectItem value="closed_lost">Closed – Lost</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() =>
-                            removeFromShortlistMutation.mutate({ id: shortlist.id })
-                          }
-                          disabled={removeFromShortlistMutation.isPending}
-                        >
-                          <Trash2 size={16} />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                        </td>
+                        <td className="py-3 px-4 text-slate-600">{shortlist.expert?.email}</td>
+                        <td className="py-3 px-4 text-slate-600">{shortlist.expert?.sector || "-"}</td>
+                        <td className="py-3 px-4 text-slate-600">{shortlist.expert?.function || "-"}</td>
+                        <td className="py-3 px-4">
+                          <Select
+                            value={shortlist.status}
+                            onValueChange={(value) =>
+                              updateStatusMutation.mutate({
+                                id: shortlist.id,
+                                status: value as any,
+                              })
+                            }
+                          >
+                            <SelectTrigger className="w-40">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="shortlisted">Shortlisted</SelectItem>
+                              <SelectItem value="contacted">Contacted</SelectItem>
+                              <SelectItem value="attempting_contact">Attempting Contact</SelectItem>
+                              <SelectItem value="engaged">Engaged</SelectItem>
+                              <SelectItem value="qualified">Qualified</SelectItem>
+                              <SelectItem value="proposal_sent">Proposal Sent</SelectItem>
+                              <SelectItem value="negotiation">Negotiation</SelectItem>
+                              <SelectItem value="verbal_agreement">Verbal Agreement</SelectItem>
+                              <SelectItem value="closed_won">Closed – Won</SelectItem>
+                              <SelectItem value="closed_lost">Closed – Lost</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              removeFromShortlistMutation.mutate({ id: shortlist.id })
+                            }
+                            disabled={removeFromShortlistMutation.isPending}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </CardContent>

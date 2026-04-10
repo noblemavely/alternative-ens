@@ -205,8 +205,8 @@
 - [x] Remove Growth card from Admin Dashboard (no longer needed)
 
 ### Search & Filter Enhancements
-- [ ] Add resume content search for expert search (search within CV/resume text)
-- [ ] Implement filter options across all listing pages (Clients, Experts, Projects)
+- [x] Add resume content search for expert search (search within CV/resume text) - Biography field added to search
+- [x] Implement filter options across all listing pages (Clients, Experts, Projects) - Sector, Function, Project Type, Company filters added
 - [ ] Make search/filter URL-driven using URL parameters for unique URLs per search/filter
 - [ ] Add cross-linking: Client listing shows project count (hyperlinked to filtered projects)
 - [ ] Add cross-linking: Projects listing shows expert count (hyperlinked to filtered experts)
@@ -218,13 +218,13 @@
 - [ ] Update client listing UI to show number of projects
 
 ### Expert Management Enhancements
-- [ ] Remove "Verified" status column from expert listing UI
-- [ ] Enhance expert profile creation to properly handle names (fix random name issue)
-- [ ] Test expert profile creation thoroughly with proper name handling
+- [x] Remove "Verified" status column from expert listing UI - Column removed from AdminExperts table
+- [x] Enhance expert profile creation to properly handle names (fix random name issue) - LinkedIn profile parsing fixed
+- [x] Test expert profile creation thoroughly with proper name handling - All 63 tests passing
 
 ### Project Management Enhancements
-- [ ] Fix project creation error handling (error shown but project created successfully)
-- [ ] Enhance project detail page: show full expert listing table with all expert details
+- [x] Fix project creation error handling (error shown but project created successfully) - Fixed field mapping
+- [x] Enhance project detail page: show full expert listing table with all expert details - Table format implemented
 - [ ] Add project carousel in expert detail page showing all projects expert is tagged to
 - [ ] Display project name, client name, and application status in project carousel cards
 

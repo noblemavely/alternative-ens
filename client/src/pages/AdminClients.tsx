@@ -4,6 +4,7 @@ import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -29,14 +30,16 @@ export default function AdminClients() {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [companyFilter, setCompanyFilter] = useState<string>("");
 
   const clientsQuery = trpc.clients.list.useQuery();
   const createMutation = trpc.clients.create.useMutation();
   
   const filteredClients = clientsQuery.data?.filter(client => 
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.companyName?.toLowerCase().includes(searchTerm.toLowerCase())
+    client.companyName?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    (!companyFilter || client.companyName === companyFilter)
   ) || [];
   const updateMutation = trpc.clients.update.useMutation();
   const deleteMutation = trpc.clients.delete.useMutation();
@@ -102,12 +105,25 @@ export default function AdminClients() {
 
         {/* Search and Add Button Row */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <Input
-            placeholder="Search by name, email, or company..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 min-w-0"
-          />
+          <div className="flex gap-2 flex-1 min-w-0">
+            <Input
+              placeholder="Search by name, email, or company..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 min-w-0"
+            />
+            <Select value={companyFilter} onValueChange={setCompanyFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Company" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Companies</SelectItem>
+                {[...new Set(clientsQuery.data?.map(c => c.companyName).filter(Boolean))].map(company => (
+                  <SelectItem key={company} value={company || ""}>{company}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => { form.reset(); setEditingId(null); }} className="gap-2 whitespace-nowrap">

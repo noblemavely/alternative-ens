@@ -34,13 +34,15 @@ export default function AdminProjects() {
   const [screeningQuestions, setScreeningQuestions] = useState<string[]>([]);
   const [newQuestion, setNewQuestion] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [projectTypeFilter, setProjectTypeFilter] = useState<string>("");
 
   const clientsQuery = trpc.clients.list.useQuery();
   const projectsQuery = trpc.projects.list.useQuery();
   
   const filteredProjects = projectsQuery.data?.filter(project => 
-    project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    (project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    project.description?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    (!projectTypeFilter || project.projectType === projectTypeFilter)
   ) || [];
   
   const createMutation = trpc.projects.create.useMutation();
@@ -138,12 +140,25 @@ export default function AdminProjects() {
 
         {/* Search and Add Button Row */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <Input
-            placeholder="Search by project name or description..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 min-w-0"
-          />
+          <div className="flex gap-2 flex-1 min-w-0">
+            <Input
+              placeholder="Search by project name or description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 min-w-0"
+            />
+            <Select value={projectTypeFilter} onValueChange={setProjectTypeFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="Call">Call</SelectItem>
+                <SelectItem value="Advisory">Advisory</SelectItem>
+                <SelectItem value="ID">ID</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button

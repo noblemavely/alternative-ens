@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -34,14 +35,19 @@ export default function AdminExperts() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [parsingLinkedin, setParsingLinkedin] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sectorFilter, setSectorFilter] = useState<string>("");
+  const [functionFilter, setFunctionFilter] = useState<string>("");
 
   const expertsQuery = trpc.experts.list.useQuery();
   
   const filteredExperts = expertsQuery.data?.filter(expert => 
-    ((expert.firstName || "") + " " + (expert.lastName || "")).toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (((expert.firstName || "") + " " + (expert.lastName || "")).toLowerCase().includes(searchTerm.toLowerCase()) ||
     expert.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     expert.sector?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expert.function?.toLowerCase().includes(searchTerm.toLowerCase())
+    expert.function?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    expert.biography?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    (!sectorFilter || expert.sector === sectorFilter) &&
+    (!functionFilter || expert.function === functionFilter)
   ) || [];
   const createMutation = trpc.experts.create.useMutation();
   const updateMutation = trpc.experts.update.useMutation();
@@ -135,12 +141,36 @@ export default function AdminExperts() {
 
         {/* Search and Add Button Row */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <Input
-            placeholder="Search by name, email, sector, or function..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 min-w-0"
-          />
+          <div className="flex gap-2 flex-1 min-w-0">
+            <Input
+              placeholder="Search by name, email, sector, or function..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 min-w-0"
+            />
+            <Select value={sectorFilter} onValueChange={setSectorFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Sector" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Sectors</SelectItem>
+                {[...new Set(expertsQuery.data?.map(e => e.sector).filter(Boolean))].map(sector => (
+                  <SelectItem key={sector} value={sector || ""}>{sector}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={functionFilter} onValueChange={setFunctionFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Function" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Functions</SelectItem>
+                {[...new Set(expertsQuery.data?.map(e => e.function).filter(Boolean))].map(func => (
+                  <SelectItem key={func} value={func || ""}>{func}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button
@@ -331,7 +361,6 @@ export default function AdminExperts() {
                       <th className="text-left py-3 px-4 font-semibold">Email</th>
                       <th className="text-left py-3 px-4 font-semibold">Sector</th>
                       <th className="text-left py-3 px-4 font-semibold">Function</th>
-                      <th className="text-left py-3 px-4 font-semibold">Status</th>
                       <th className="text-right py-3 px-4 font-semibold">Actions</th>
                     </tr>
                   </thead>
@@ -344,15 +373,6 @@ export default function AdminExperts() {
                         <td className="py-3 px-4 text-muted-foreground">{expert.email}</td>
                         <td className="py-3 px-4 text-muted-foreground">{expert.sector || "-"}</td>
                         <td className="py-3 px-4 text-muted-foreground">{expert.function || "-"}</td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`text-xs px-2 py-1 rounded ${
-                              expert.isVerified ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                            }`}
-                          >
-                            {expert.isVerified ? "Verified" : "Pending"}
-                          </span>
-                        </td>
                         <td className="py-3 px-4 text-right space-x-2 flex justify-end">
                           <Button variant="ghost" size="sm" onClick={() => handleEdit(expert)} className="gap-1">
                             <Edit2 size={16} />
