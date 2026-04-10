@@ -32,7 +32,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-          <p className="text-muted mb-6">You don't have permission to access this area.</p>
+          <p className="text-muted-foreground mb-6">You don't have permission to access this area.</p>
           <Button onClick={() => setLocation("/")} variant="default">
             Go Home
           </Button>
@@ -89,7 +89,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <div className="border-t border-border p-4 space-y-3">
           {sidebarOpen && (
             <div className="px-2 py-2">
-              <p className="text-xs text-muted">Logged in as</p>
+              <p className="text-xs text-muted-foreground">Logged in as</p>
               <p className="text-sm font-medium text-foreground truncate">{user?.name || user?.email}</p>
             </div>
           )}

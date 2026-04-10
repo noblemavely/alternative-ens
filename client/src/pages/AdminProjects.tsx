@@ -318,7 +318,7 @@ export default function AdminProjects() {
           </CardHeader>
           <CardContent>
             {projectsQuery.isLoading ? (
-              <div className="text-center py-8 text-muted">Loading projects...</div>
+              <div className="text-center py-8 text-muted-foreground">Loading projects...</div>
             ) : projectsQuery.data && projectsQuery.data.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -338,8 +338,8 @@ export default function AdminProjects() {
                         <td className="py-3 px-4">
                           <span className="text-xs px-2 py-1 bg-accent/10 text-accent rounded">{project.projectType}</span>
                         </td>
-                        <td className="py-3 px-4 text-muted text-sm">{project.targetPersona || "-"}</td>
-                        <td className="py-3 px-4 text-muted">${project.hourlyRate || "-"}</td>
+                        <td className="py-3 px-4 text-muted-foreground text-sm">{project.targetPersona || "-"}</td>
+                        <td className="py-3 px-4 text-muted-foreground">${project.hourlyRate || "-"}</td>
                         <td className="py-3 px-4 text-right space-x-2 flex justify-end">
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/projects/${project.id}`)} className="gap-1" title="View Shortlisted Experts">
                             <Eye size={16} />
@@ -363,7 +363,7 @@ export default function AdminProjects() {
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-muted mb-4">No projects yet</p>
+                <p className="text-muted-foreground mb-4">No projects yet</p>
                 <Button onClick={() => setOpen(true)} className="gap-2">
                   <Plus size={18} />
                   Create First Project

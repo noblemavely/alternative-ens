@@ -1,13 +1,38 @@
 import React from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { Users, Briefcase, FileText, TrendingUp } from "lucide-react";
+import { Users, Briefcase, FileText, TrendingUp, Trash2, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function AdminDashboard() {
+  const [clearing, setClearing] = useState(false);
   const clientsQuery = trpc.clients.list.useQuery();
   const expertsQuery = trpc.experts.list.useQuery();
   const projectsQuery = trpc.projects.list.useQuery();
+  const clearDbMutation = trpc.system.clearAllData.useMutation();
+
+  const handleClearDatabase = async () => {
+    if (!window.confirm("⚠️ Are you sure you want to delete ALL data from the database? This cannot be undone!")) {
+      return;
+    }
+    
+    setClearing(true);
+    try {
+      await clearDbMutation.mutateAsync();
+      toast.success("✅ Database cleared successfully!");
+      // Refresh all queries
+      clientsQuery.refetch();
+      expertsQuery.refetch();
+      projectsQuery.refetch();
+    } catch (error: any) {
+      toast.error(`❌ Failed to clear database: ${error.message}`);
+    } finally {
+      setClearing(false);
+    }
+  };
 
   const stats = [
     {
@@ -42,7 +67,7 @@ export default function AdminDashboard() {
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-foreground">Welcome to Alternative</h1>
-          <p className="text-muted mt-2">Manage your expert network with elegance and precision</p>
+          <p className="text-muted-foreground mt-2">Manage your expert network with elegance and precision</p>
         </div>
 
         {/* Stats Grid */}
@@ -57,11 +82,33 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted mt-1">Network overview</p>
+                  <p className="text-xs text-muted-foreground mt-1">Network overview</p>
                 </CardContent>
               </Card>
             );
           })}
+        </div>
+
+        {/* Admin Actions */}
+        <div className="flex gap-4 mb-6">
+          <Button
+            onClick={handleClearDatabase}
+            disabled={clearing}
+            variant="destructive"
+            className="gap-2"
+          >
+            {clearing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Clearing...
+              </>
+            ) : (
+              <>
+                <Trash2 className="h-4 w-4" />
+                Clear All Data
+              </>
+            )}
+          </Button>
         </div>
 
         {/* Quick Actions */}
@@ -73,20 +120,20 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               {clientsQuery.isLoading ? (
-                <div className="text-center py-8 text-muted">Loading...</div>
+                <div className="text-center py-8 text-muted-foreground">Loading...</div>
               ) : clientsQuery.data && clientsQuery.data.length > 0 ? (
                 <div className="space-y-3">
                   {clientsQuery.data.slice(0, 5).map((client) => (
                     <div key={client.id} className="flex items-center justify-between p-2 rounded hover:bg-muted transition-colors">
                       <div>
                         <p className="font-medium text-sm">{client.name}</p>
-                        <p className="text-xs text-muted">{client.email}</p>
+                        <p className="text-xs text-muted-foreground">{client.email}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted">No clients yet</div>
+                <div className="text-center py-8 text-muted-foreground">No clients yet</div>
               )}
             </CardContent>
           </Card>
@@ -98,7 +145,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               {expertsQuery.isLoading ? (
-                <div className="text-center py-8 text-muted">Loading...</div>
+                <div className="text-center py-8 text-muted-foreground">Loading...</div>
               ) : expertsQuery.data && expertsQuery.data.length > 0 ? (
                 <div className="space-y-3">
                   {expertsQuery.data.slice(0, 5).map((expert) => (
@@ -107,7 +154,7 @@ export default function AdminDashboard() {
                         <p className="font-medium text-sm">
                           {expert.firstName} {expert.lastName}
                         </p>
-                        <p className="text-xs text-muted">{expert.sector || "No sector"}</p>
+                        <p className="text-xs text-muted-foreground">{expert.sector || "No sector"}</p>
                       </div>
                       <span className={`text-xs px-2 py-1 rounded ${expert.isVerified ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
                         {expert.isVerified ? "Verified" : "Pending"}
@@ -116,7 +163,7 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted">No experts yet</div>
+                <div className="text-center py-8 text-muted-foreground">No experts yet</div>
               )}
             </CardContent>
           </Card>

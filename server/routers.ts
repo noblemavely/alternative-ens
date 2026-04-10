@@ -336,7 +336,7 @@ export const appRouter = router({
           type: z.enum(["Call", "Advisory", "ID"]).optional(),
           targetCompanies: z.string().optional(),
           hourlyRate: z.number().optional(),
-          status: z.string().optional(),
+          status: z.enum(["pending", "interested", "rejected", "new", "contacted", "attempting_contact", "engaged", "qualified", "proposal_sent", "negotiation", "verbal_agreement", "closed_won", "closed_lost"]).optional(),
         })
       )
       .mutation(async ({ input }) => {
@@ -360,6 +360,7 @@ export const appRouter = router({
         z.object({
           projectId: z.number(),
           question: z.string(),
+          order: z.number().default(0),
         })
       )
       .mutation(async ({ input }) => {
@@ -401,11 +402,16 @@ export const appRouter = router({
         z.object({
           projectId: z.number(),
           expertId: z.number(),
-          status: z.string().optional(),
+          status: z.enum(["pending", "interested", "rejected", "new", "contacted", "attempting_contact", "engaged", "qualified", "proposal_sent", "negotiation", "verbal_agreement", "closed_won", "closed_lost"]).optional(),
+          notes: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
-        const shortlist = await addToShortlist(input);
+        const shortlist = await addToShortlist({
+          ...input,
+          status: input.status || "pending",
+          notes: input.notes || null,
+        });
         return shortlist;
       }),
 
@@ -425,46 +431,51 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number(),
-          status: z.string().optional(),
+          status: z.enum(["pending", "interested", "rejected", "new", "contacted", "attempting_contact", "engaged", "qualified", "proposal_sent", "negotiation", "verbal_agreement", "closed_won", "closed_lost"]).optional(),
+          notes: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
-        await updateShortlist(id, data);
+        await updateShortlist(id, {
+          ...data,
+          status: data.status || "pending",
+          notes: data.notes || null,
+        });
         return { success: true };
       }),
 
     remove: adminProcedure
-      .input(z.object({ projectId: z.number(), expertId: z.number() }))
+      .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
-        await removeFromShortlist(input.projectId, input.expertId);
+        await removeFromShortlist(input.id);
         return { success: true };
       }),
   }),
 
   // ============ EXPERT EMPLOYMENT ROUTERS ============
   expertEmployment: router({
-    add: publicProcedure
+    add: protectedProcedure
       .input(
         z.object({
           expertId: z.number().optional(),
-          company: z.string(),
+          companyName: z.string(),
           position: z.string(),
           startDate: z.string(),
           endDate: z.string().optional(),
-          currentlyWorking: z.boolean().optional(),
+          isCurrent: z.boolean().optional(),
           description: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
-        const { company, position, startDate, endDate, currentlyWorking, description } = input;
+        const { companyName, position, startDate, endDate, isCurrent, description } = input;
         const employment = await createExpertEmployment({
           expertId: input.expertId || 0,
-          company,
+          companyName,
           position,
           startDate,
           endDate: endDate || null,
-          currentlyWorking: currentlyWorking || false,
+          isCurrent: isCurrent || false,
           description: description || null,
         });
         return employment;
@@ -508,22 +519,24 @@ export const appRouter = router({
       .input(
         z.object({
           expertId: z.number().optional(),
-          school: z.string(),
+          schoolName: z.string(),
           degree: z.string(),
           fieldOfStudy: z.string(),
           startDate: z.string(),
           endDate: z.string().optional(),
+          description: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
-        const { school, degree, fieldOfStudy, startDate, endDate } = input;
+        const { schoolName, degree, fieldOfStudy, startDate, endDate, description } = input;
         const education = await createExpertEducation({
           expertId: input.expertId || 0,
-          school,
+          schoolName,
           degree,
           fieldOfStudy,
           startDate,
           endDate: endDate || null,
+          description: description || null,
         });
         return education;
       }),

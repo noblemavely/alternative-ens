@@ -168,3 +168,6 @@
 - [x] Show profile preview page after expert registration completes
 - [x] Add "Back to Home" button on profile preview page
 - [x] Test end-to-end registration flow with profile preview
+
+## Accessibility Issues - Completed
+- [x] Fix invisible text in admin dashboard - replaced text-muted with text-muted-foreground for better contrast across all admin pages (Dashboard, Experts, Clients, Projects, Search)

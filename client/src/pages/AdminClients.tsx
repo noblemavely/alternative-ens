@@ -219,7 +219,7 @@ export default function AdminClients() {
           </CardHeader>
           <CardContent>
             {clientsQuery.isLoading ? (
-              <div className="text-center py-8 text-muted">Loading clients...</div>
+              <div className="text-center py-8 text-muted-foreground">Loading clients...</div>
             ) : filteredClients.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -236,9 +236,9 @@ export default function AdminClients() {
                     {filteredClients.map((client) => (
                       <tr key={client.id} className="border-b border-border hover:bg-muted/50 transition-colors">
                         <td className="py-3 px-4 font-medium">{client.name}</td>
-                        <td className="py-3 px-4 text-muted">{client.email}</td>
-                        <td className="py-3 px-4 text-muted">{client.companyName || "-"}</td>
-                        <td className="py-3 px-4 text-muted">{client.phone || "-"}</td>
+                        <td className="py-3 px-4 text-muted-foreground">{client.email}</td>
+                        <td className="py-3 px-4 text-muted-foreground">{client.companyName || "-"}</td>
+                        <td className="py-3 px-4 text-muted-foreground">{client.phone || "-"}</td>
                         <td className="py-3 px-4 text-right space-x-2 flex justify-end">
                           <Button
                             variant="ghost"
@@ -264,7 +264,7 @@ export default function AdminClients() {
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-muted mb-4">{searchTerm ? "No clients match your search" : "No clients yet"}</p>
+                <p className="text-muted-foreground mb-4">{searchTerm ? "No clients match your search" : "No clients yet"}</p>
                 <Button onClick={() => setOpen(true)} className="gap-2">
                   <Plus size={18} />
                   Add First Client

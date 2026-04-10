@@ -127,7 +127,7 @@ export default function AdminExperts() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Experts</h1>
-            <p className="text-muted mt-2">Manage your expert network</p>
+            <p className="text-muted-foreground mt-2">Manage your expert network</p>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -172,7 +172,7 @@ export default function AdminExperts() {
                     {parsingLinkedin ? <Loader2 size={16} className="animate-spin" /> : "Parse"}
                   </Button>
                 </div>
-                <p className="text-xs text-muted">Enter a LinkedIn URL to auto-populate profile fields</p>
+                <p className="text-xs text-muted-foreground">Enter a LinkedIn URL to auto-populate profile fields</p>
               </div>
 
               {/* Expert Form */}
@@ -321,7 +321,7 @@ export default function AdminExperts() {
           </CardHeader>
           <CardContent>
             {expertsQuery.isLoading ? (
-              <div className="text-center py-8 text-muted">Loading experts...</div>
+              <div className="text-center py-8 text-muted-foreground">Loading experts...</div>
             ) : filteredExperts.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -341,9 +341,9 @@ export default function AdminExperts() {
                         <td className="py-3 px-4 font-medium">
                           {expert.firstName} {expert.lastName}
                         </td>
-                        <td className="py-3 px-4 text-muted">{expert.email}</td>
-                        <td className="py-3 px-4 text-muted">{expert.sector || "-"}</td>
-                        <td className="py-3 px-4 text-muted">{expert.function || "-"}</td>
+                        <td className="py-3 px-4 text-muted-foreground">{expert.email}</td>
+                        <td className="py-3 px-4 text-muted-foreground">{expert.sector || "-"}</td>
+                        <td className="py-3 px-4 text-muted-foreground">{expert.function || "-"}</td>
                         <td className="py-3 px-4">
                           <span
                             className={`text-xs px-2 py-1 rounded ${
@@ -373,7 +373,7 @@ export default function AdminExperts() {
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-muted mb-4">No experts yet</p>
+                <p className="text-muted-foreground mb-4">No experts yet</p>
                 <Button onClick={() => setOpen(true)} className="gap-2">
                   <Plus size={18} />
                   Add First Expert

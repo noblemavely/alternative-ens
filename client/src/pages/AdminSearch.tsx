@@ -96,7 +96,7 @@ export default function AdminSearch() {
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-foreground">Search Experts</h1>
-          <p className="text-muted mt-2">Find and shortlist experts for your projects</p>
+          <p className="text-muted-foreground mt-2">Find and shortlist experts for your projects</p>
         </div>
 
         {/* Search Filters */}
@@ -181,12 +181,12 @@ export default function AdminSearch() {
                           </p>
                         )}
                         {expert.function && (
-                          <p className="text-sm text-muted">
+                          <p className="text-sm text-muted-foreground">
                             <span className="font-medium">Function:</span> {expert.function}
                           </p>
                         )}
                         {expert.biography && (
-                          <p className="text-sm text-muted mt-2 line-clamp-2">{expert.biography}</p>
+                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{expert.biography}</p>
                         )}
                       </div>
                       <div className="flex flex-col gap-2">
@@ -280,7 +280,7 @@ export default function AdminSearch() {
             <CardContent className="pt-12 pb-12 text-center">
               <Search size={48} className="mx-auto text-muted mb-4 opacity-50" />
               <p className="text-muted mb-4">No search results yet</p>
-              <p className="text-sm text-muted">Use the search filters above to find experts</p>
+              <p className="text-sm text-muted-foreground">Use the search filters above to find experts</p>
             </CardContent>
           </Card>
         )}
