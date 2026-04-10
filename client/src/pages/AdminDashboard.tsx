@@ -3,16 +3,18 @@ import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { Users, Briefcase, FileText, Trash2, Loader2 } from "lucide-react";
+import { Users, Briefcase, FileText, Trash2, Loader2, Database } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
   const [clearing, setClearing] = useState(false);
+  const [seeding, setSeeding] = useState(false);
   const clientsQuery = trpc.clients.list.useQuery();
   const expertsQuery = trpc.experts.list.useQuery();
   const projectsQuery = trpc.projects.list.useQuery();
   const clearDbMutation = trpc.system.clearAllData.useMutation();
+  const seedDbMutation = trpc.system.seedDatabase.useMutation();
 
   const handleClearDatabase = async () => {
     if (!window.confirm("⚠️ Are you sure you want to delete ALL data from the database? This cannot be undone!")) {
@@ -31,6 +33,22 @@ export default function AdminDashboard() {
       toast.error(`❌ Failed to clear database: ${error.message}`);
     } finally {
       setClearing(false);
+    }
+  };
+
+  const handleSeedDatabase = async () => {
+    setSeeding(true);
+    try {
+      const result = await seedDbMutation.mutateAsync();
+      toast.success(`✅ Database seeded successfully! Added ${result.summary.clients} clients, ${result.summary.experts} experts, and more.`);
+      // Refresh all queries
+      clientsQuery.refetch();
+      expertsQuery.refetch();
+      projectsQuery.refetch();
+    } catch (error: any) {
+      toast.error(`❌ Failed to seed database: ${error.message}`);
+    } finally {
+      setSeeding(false);
     }
   };
 
@@ -94,6 +112,24 @@ export default function AdminDashboard() {
 
         {/* Admin Actions */}
         <div className="flex gap-4 mb-6">
+          <Button
+            onClick={handleSeedDatabase}
+            disabled={seeding}
+            variant="outline"
+            className="gap-2"
+          >
+            {seeding ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Seeding...
+              </>
+            ) : (
+              <>
+                <Database className="h-4 w-4" />
+                Seed Sample Data
+              </>
+            )}
+          </Button>
           <Button
             onClick={handleClearDatabase}
             disabled={clearing}

@@ -360,5 +360,6 @@
 - [x] Fix admin dashboard logo (uploaded new AlterNatives logo and updated all dashboard components)
 - [ ] CV document viewer in expert profile page
 - [x] Add sample data to all tables (seed-db.mjs created with 60+ records across all tables)
+- [x] Add Seed Sample Data button to admin dashboard UI (alongside Clear All Data button)
 - [ ] /admin route redirect to login when not authenticated
 - [ ] Run full workflow test via UI after all fixes

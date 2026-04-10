@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { notifyOwner } from "./notification";
 import { adminProcedure, publicProcedure, router } from "./trpc";
-import { getDb } from "../db";
+import { getDb, seedDatabase } from "../db";
 import { experts, clients, projects, shortlists, expertEmployment, expertEducation, expertVerification, screeningQuestions, users, expertClientMapping } from "../../drizzle/schema";
 
 export const systemRouter = router({
@@ -52,6 +52,16 @@ export const systemRouter = router({
     } catch (error) {
       console.error("Error clearing database:", error);
       throw new Error("Failed to clear database");
+    }
+  }),
+
+  seedDatabase: adminProcedure.mutation(async () => {
+    try {
+      const result = await seedDatabase();
+      return result;
+    } catch (error) {
+      console.error("Error seeding database:", error);
+      throw new Error("Failed to seed database");
     }
   }),
 });
