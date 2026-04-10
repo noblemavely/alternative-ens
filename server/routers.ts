@@ -99,7 +99,15 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const client = await createClient(input);
+        const clientData = {
+          name: input.name,
+          email: input.email,
+          phone: input.phone ?? null,
+          companyName: input.companyName ?? null,
+          companyWebsite: input.companyWebsite ?? null,
+          contactPerson: input.contactPerson ?? null,
+        };
+        const client = await createClient(clientData);
         return client;
       }),
 
@@ -317,7 +325,15 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const project = await createProject(input);
+        const projectData = {
+          ...input,
+          description: input.description ?? null,
+          targetCompanies: input.targetCompanies ?? null,
+          targetPersona: input.targetPersona ?? null,
+          hourlyRate: input.hourlyRate ? input.hourlyRate.toString() : null,
+          clientContactId: null,
+        };
+        const project = await createProject(projectData);
         return project;
       }),
 
@@ -354,7 +370,12 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
-        await updateProject(id, data);
+        const normalizedData = {
+          ...data,
+          hourlyRate: data.hourlyRate ? data.hourlyRate.toString() : undefined,
+          type: data.type ? (data.type as "Call" | "Advisory" | "ID") : undefined,
+        };
+        await updateProject(id, normalizedData);
         return { success: true };
       }),
 
@@ -669,9 +690,9 @@ export const appRouter = router({
           return {
             success: true,
             profile: {
-              firstName: profile.localizedFirstName || "",
-              lastName: profile.localizedLastName || "",
-              email: profile.elements?.[0]?.["handle~"]?.emailAddress || "",
+              firstName: profile.firstName || "",
+              lastName: profile.lastName || "",
+              email: profile.email || "",
               headline: profile.headline || "",
             },
           };

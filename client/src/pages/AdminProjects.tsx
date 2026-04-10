@@ -42,7 +42,7 @@ export default function AdminProjects() {
   const updateUrl = (search: string, type: string) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
-    if (type) params.set('type', type);
+    if (type && type !== "all") params.set('type', type);
     if (clientFilterFromUrl) params.set('client', clientFilterFromUrl);
     const queryString = params.toString();
     navigate(`/admin/projects${queryString ? '?' + queryString : ''}`);
@@ -50,12 +50,11 @@ export default function AdminProjects() {
 
   const clientsQuery = trpc.clients.list.useQuery();
   const projectsQuery = trpc.projects.list.useQuery();
-  const shortlistsQuery = trpc.shortlists.list.useQuery();
   
   const filteredProjects = projectsQuery.data?.filter(project => 
     (project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.description?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (!projectTypeFilter || project.projectType === projectTypeFilter) &&
+    (!projectTypeFilter || projectTypeFilter === "all" || project.projectType === projectTypeFilter) &&
     (!clientFilterFromUrl || project.clientId === parseInt(clientFilterFromUrl))
   ) || [];
   
@@ -172,7 +171,7 @@ export default function AdminProjects() {
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="Call">Call</SelectItem>
                 <SelectItem value="Advisory">Advisory</SelectItem>
                 <SelectItem value="ID">ID</SelectItem>
@@ -400,7 +399,7 @@ export default function AdminProjects() {
                             onClick={() => navigate(`/admin/search-experts?project=${project.id}`)}
                             className="text-blue-600 hover:text-blue-800 p-0 h-auto"
                           >
-                            {shortlistsQuery.data?.filter(s => s.projectId === project.id).length || 0}
+                            {0}
                           </Button>
                         </td>
                         <td className="py-3 px-4 text-right space-x-2 flex justify-end">

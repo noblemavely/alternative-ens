@@ -43,8 +43,8 @@ export default function AdminExperts() {
   const updateUrl = (search: string, sector: string, func: string) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
-    if (sector) params.set('sector', sector);
-    if (func) params.set('function', func);
+    if (sector && sector !== "all") params.set('sector', sector);
+    if (func && func !== "all") params.set('function', func);
     const queryString = params.toString();
     navigate(`/admin/experts${queryString ? '?' + queryString : ''}`);
   };
@@ -57,8 +57,8 @@ export default function AdminExperts() {
     expert.sector?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     expert.function?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     expert.biography?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (!sectorFilter || expert.sector === sectorFilter) &&
-    (!functionFilter || expert.function === functionFilter)
+    (!sectorFilter || sectorFilter === "all" || expert.sector === sectorFilter) &&
+    (!functionFilter || functionFilter === "all" || expert.function === functionFilter)
   ) || [];
   const createMutation = trpc.experts.create.useMutation();
   const updateMutation = trpc.experts.update.useMutation();
@@ -170,9 +170,9 @@ export default function AdminExperts() {
                 <SelectValue placeholder="Sector" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Sectors</SelectItem>
-                {[...new Set(expertsQuery.data?.map(e => e.sector).filter(Boolean))].map(sector => (
-                  <SelectItem key={sector} value={sector || ""}>{sector}</SelectItem>
+                <SelectItem value="all">All Sectors</SelectItem>
+                {Array.from(new Set((expertsQuery.data?.map(e => e.sector).filter(Boolean) || []) as string[])).map(sector => (
+                  <SelectItem key={sector} value={sector}>{sector}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -184,9 +184,9 @@ export default function AdminExperts() {
                 <SelectValue placeholder="Function" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Functions</SelectItem>
-                {[...new Set(expertsQuery.data?.map(e => e.function).filter(Boolean))].map(func => (
-                  <SelectItem key={func} value={func || ""}>{func}</SelectItem>
+                <SelectItem value="all">All Functions</SelectItem>
+                {Array.from(new Set((expertsQuery.data?.map(e => e.function).filter(Boolean) || []) as string[])).map(func => (
+                  <SelectItem key={func} value={func}>{func}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

@@ -37,7 +37,7 @@ export default function AdminClients() {
   const updateUrl = (search: string, company: string) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
-    if (company) params.set('company', company);
+    if (company && company !== "all") params.set('company', company);
     const queryString = params.toString();
     navigate(`/admin/clients${queryString ? '?' + queryString : ''}`);
   };
@@ -50,7 +50,7 @@ export default function AdminClients() {
     (client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.companyName?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (!companyFilter || client.companyName === companyFilter)
+    (!companyFilter || companyFilter === "all" || client.companyName === companyFilter)
   ) || [];
   const updateMutation = trpc.clients.update.useMutation();
   const deleteMutation = trpc.clients.delete.useMutation();
@@ -134,9 +134,9 @@ export default function AdminClients() {
                 <SelectValue placeholder="Company" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Companies</SelectItem>
-                {[...new Set(clientsQuery.data?.map(c => c.companyName).filter(Boolean))].map(company => (
-                  <SelectItem key={company} value={company || ""}>{company}</SelectItem>
+                <SelectItem value="all">All Companies</SelectItem>
+                {Array.from(new Set((clientsQuery.data?.map(c => c.companyName).filter(Boolean) || []) as string[])).map(company => (
+                  <SelectItem key={company} value={company}>{company}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

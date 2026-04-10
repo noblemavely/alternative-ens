@@ -251,3 +251,31 @@
 - [x] Execute migration: CREATE clientContacts table, ALTER projects ADD clientContactId, ALTER expertEducation MODIFY degree
 - [x] Verify migration applied successfully
 - [x] Run tests to confirm schema changes work - All 63 tests passing
+
+
+## Bug Fixes & New Features (In Progress)
+
+### Select Component Fixes
+- [x] Fix Select.Item empty value error in AdminExperts (Sector/Function filters)
+- [x] Fix Select.Item empty value error in AdminClients (Company filter)
+- [x] Fix Select.Item empty value error in AdminProjects (Type filter)
+- [x] Update filter logic to handle "all" value correctly in all 3 pages
+
+### Admin Settings Page
+- [x] Build Admin Settings page to configure Sector/Function master lists - AdminSettings.tsx created
+- [x] Wire Sector/Function dropdowns to use master list from database - tRPC hooks integrated
+- [x] Add UI to manage Sector master list (add/edit/delete) - Full CRUD UI implemented
+- [x] Add UI to manage Function master list (add/edit/delete) - Full CRUD UI implemented
+- [x] Ensure admin-only access to settings page - AdminLayout checks admin role
+- [x] Add navigation link to Settings in admin sidebar - Settings menu item added
+
+### Testing & Verification
+- [ ] Verify logo is displayed correctly in Admin Dashboard
+- [ ] Test Clients page: Add/Edit/Delete operations via UI
+- [ ] Test Experts page: Add/Edit/Delete operations via UI
+- [ ] Test Projects page: Add/Edit/Delete operations via UI
+- [ ] Verify all sample records (3 clients, 3 experts, 3 projects) are visible
+- [ ] Test search functionality on all pages
+- [ ] Test filters (Sector, Function, Project Type, Company) on all pages
+- [ ] Test cross-linking (project count in clients, expert count in projects)
+- [ ] Verify URL parameters persist for bookmarkable searches

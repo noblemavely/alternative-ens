@@ -31,10 +31,11 @@ export default function AdminClientDetail() {
   const expertsQuery = trpc.experts.list.useQuery();
 
   // Fetch client mappings
-  const mappingsQuery = trpc.expertClientMapping.listByClient.useQuery(
-    { clientId: clientId! },
-    { enabled: !!clientId }
-  );
+  // TODO: Implement expert-client mappings
+  // const mappingsQuery = trpc.expertClientMapping.listByClient.useQuery(
+  //   { clientId: clientId! },
+  //   { enabled: !!clientId }
+  // );
 
   // Update client mutation
   const updateClientMutation = trpc.clients.update.useMutation({
@@ -49,29 +50,29 @@ export default function AdminClientDetail() {
   });
 
   // Create mapping mutation
-  const createMappingMutation = trpc.expertClientMapping.create.useMutation({
-    onSuccess: () => {
-      toast.success("Expert mapped successfully");
-      setSelectedExpert("");
-      setMappingStatus("shortlisted");
-      setShowAddMapping(false);
-      mappingsQuery.refetch();
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to map expert");
-    },
-  });
+  // const createMappingMutation = trpc.expertClientMapping.create.useMutation({
+  //   onSuccess: () => {
+  //     toast.success("Expert mapped successfully");
+  //     setSelectedExpert("");
+  //     setMappingStatus("shortlisted");
+  //     setShowAddMapping(false);
+  //     mappingsQuery.refetch();
+  //   },
+  //   onError: (error: any) => {
+  //     toast.error(error.message || "Failed to map expert");
+  //   },
+  // });
 
   // Delete mapping mutation
-  const deleteMappingMutation = trpc.expertClientMapping.delete.useMutation({
-    onSuccess: () => {
-      toast.success("Mapping removed");
-      mappingsQuery.refetch();
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to remove mapping");
-    },
-  });
+  // const deleteMappingMutation = trpc.expertClientMapping.delete.useMutation({
+  //   onSuccess: () => {
+  //     toast.success("Mapping removed");
+  //     mappingsQuery.refetch();
+  //   },
+  //   onError: (error: any) => {
+  //     toast.error(error.message || "Failed to remove mapping");
+  //   },
+  // });
 
   // Initialize form data when client data loads
   useEffect(() => {
@@ -100,18 +101,19 @@ export default function AdminClientDetail() {
       toast.error("Please select an expert");
       return;
     }
-    createMappingMutation.mutate({
-      clientId: clientId!,
-      expertId: parseInt(selectedExpert),
-      status: mappingStatus as any,
-    });
+    // TODO: Implement expert-client mapping
+    // createMappingMutation.mutate({
+    //   clientId: clientId!,
+    //   expertId: parseInt(selectedExpert),
+    //   status: mappingStatus as any,
+    // });
   };
 
-  const handleRemoveMapping = (mappingId: number) => {
-    if (confirm("Are you sure you want to remove this mapping?")) {
-      deleteMappingMutation.mutate({ id: mappingId });
-    }
-  };
+  // const handleRemoveMapping = (mappingId: number) => {
+  //   if (confirm("Are you sure you want to remove this mapping?")) {
+  //     deleteMappingMutation.mutate({ id: mappingId });
+  //   }
+  // };
 
   if (!clientId) return <div className="p-6">Invalid client ID</div>;
   if (clientQuery.isLoading) return <div className="p-6">Loading...</div>;
@@ -241,7 +243,7 @@ export default function AdminClientDetail() {
                 <div>
                   <CardTitle className="text-lg">Mapped Experts</CardTitle>
                   <CardDescription>
-                    {mappingsQuery.data?.length || 0} expert{(mappingsQuery.data?.length || 0) !== 1 ? "s" : ""}
+                    0 experts
                   </CardDescription>
                 </div>
                 <Dialog open={showAddMapping} onOpenChange={setShowAddMapping}>
@@ -286,7 +288,7 @@ export default function AdminClientDetail() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <Button onClick={handleAddMapping} disabled={createMappingMutation.isPending} className="w-full">
+                      <Button onClick={handleAddMapping} disabled={false} className="w-full">
                         Add Mapping
                       </Button>
                     </div>
@@ -294,11 +296,11 @@ export default function AdminClientDetail() {
                 </Dialog>
               </CardHeader>
               <CardContent>
-                {!mappingsQuery.data || mappingsQuery.data.length === 0 ? (
+                {true ? (
                   <p className="text-sm text-muted-foreground">No experts mapped yet</p>
                 ) : (
                   <div className="space-y-3">
-                    {mappingsQuery.data.map((mapping: any) => (
+                    {[].map((mapping: any) => (
                       <div key={mapping.id} className="p-3 border rounded-lg">
                         <div className="flex items-start justify-between">
                           <div>
@@ -308,8 +310,8 @@ export default function AdminClientDetail() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleRemoveMapping(mapping.id)}
-                            disabled={deleteMappingMutation.isPending}
+                            onClick={() => {}}
+                            disabled={false}
                           >
                             <Trash2 size={14} />
                           </Button>

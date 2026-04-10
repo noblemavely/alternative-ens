@@ -123,7 +123,15 @@ export async function createClient(data: Omit<Client, "id" | "createdAt" | "upda
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(clients).values(data);
+  const normalizedData = {
+    ...data,
+    phone: data.phone ?? null,
+    companyName: data.companyName ?? null,
+    companyWebsite: data.companyWebsite ?? null,
+    contactPerson: data.contactPerson ?? null,
+  };
+
+  const result = await db.insert(clients).values(normalizedData);
   return result;
 }
 

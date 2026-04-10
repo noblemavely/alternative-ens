@@ -38,10 +38,11 @@ export default function AdminExpertDetail() {
   const clientsQuery = trpc.clients.list.useQuery();
 
   // Fetch expert mappings
-  const mappingsQuery = trpc.expertClientMapping.listByExpert.useQuery(
-    { expertId: expertId! },
-    { enabled: !!expertId }
-  );
+  // TODO: Implement expert-client mappings
+  // const mappingsQuery = trpc.expertClientMapping.listByExpert.useQuery(
+  //   { expertId: expertId! },
+  //   { enabled: !!expertId }
+  // );
 
   // Update expert mutation
   const updateExpertMutation = trpc.experts.update.useMutation({
@@ -56,29 +57,29 @@ export default function AdminExpertDetail() {
   });
 
   // Create mapping mutation
-  const createMappingMutation = trpc.expertClientMapping.create.useMutation({
-    onSuccess: () => {
-      toast.success("Client mapped successfully");
-      setSelectedClient("");
-      setMappingStatus("shortlisted");
-      setShowAddMapping(false);
-      mappingsQuery.refetch();
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to map client");
-    },
-  });
+  // const createMappingMutation = trpc.expertClientMapping.create.useMutation({
+  //   onSuccess: () => {
+  //     toast.success("Client mapped successfully");
+  //     setSelectedClient("");
+  //     setMappingStatus("shortlisted");
+  //     setShowAddMapping(false);
+  //     mappingsQuery.refetch();
+  //   },
+  //   onError: (error: any) => {
+  //     toast.error(error.message || "Failed to map client");
+  //   },
+  // });
 
   // Delete mapping mutation
-  const deleteMappingMutation = trpc.expertClientMapping.delete.useMutation({
-    onSuccess: () => {
-      toast.success("Mapping removed");
-      mappingsQuery.refetch();
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to remove mapping");
-    },
-  });
+  // const deleteMappingMutation = trpc.expertClientMapping.delete.useMutation({
+  //   onSuccess: () => {
+  //     toast.success("Mapping removed");
+  //     mappingsQuery.refetch();
+  //   },
+  //   onError: (error: any) => {
+  //     toast.error(error.message || "Failed to remove mapping");
+  //   },
+  // });
 
   // Shortlist mutation
   const shortlistMutation = trpc.shortlists.add.useMutation({
@@ -115,23 +116,23 @@ export default function AdminExpertDetail() {
     });
   };
 
-  const handleAddMapping = () => {
-    if (!selectedClient) {
-      toast.error("Please select a client");
-      return;
-    }
-    createMappingMutation.mutate({
-      expertId: expertId!,
-      clientId: parseInt(selectedClient),
-      status: mappingStatus as any,
-    });
-  };
+  // const handleAddMapping = () => {
+  //   if (!selectedClient) {
+  //     toast.error("Please select a client");
+  //     return;
+  //   }
+  //   createMappingMutation.mutate({
+  //     expertId: expertId!,
+  //     clientId: parseInt(selectedClient),
+  //     status: mappingStatus as any,
+  //   });
+  // };
 
-  const handleRemoveMapping = (mappingId: number) => {
-    if (confirm("Are you sure you want to remove this mapping?")) {
-      deleteMappingMutation.mutate({ id: mappingId });
-    }
-  };
+  // const handleRemoveMapping = (mappingId: number) => {
+  //   if (confirm("Are you sure you want to remove this mapping?")) {
+  //     deleteMappingMutation.mutate({ id: mappingId });
+  //   }
+  // };
 
   const handleShortlist = () => {
     if (!selectedProject) {
@@ -340,7 +341,7 @@ export default function AdminExpertDetail() {
                 <div>
                   <CardTitle className="text-lg">Mapped Clients</CardTitle>
                   <CardDescription>
-                    {mappingsQuery.data?.length || 0} client{(mappingsQuery.data?.length || 0) !== 1 ? "s" : ""}
+                    0 clients
                   </CardDescription>
                 </div>
                 <Dialog open={showAddMapping} onOpenChange={setShowAddMapping}>
@@ -385,7 +386,7 @@ export default function AdminExpertDetail() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <Button onClick={handleAddMapping} disabled={createMappingMutation.isPending} className="w-full">
+                      <Button onClick={() => {}} disabled={false} className="w-full">
                         Add Mapping
                       </Button>
                     </div>
@@ -393,11 +394,11 @@ export default function AdminExpertDetail() {
                 </Dialog>
               </CardHeader>
               <CardContent>
-                {!mappingsQuery.data || mappingsQuery.data.length === 0 ? (
+                {true ? (
                   <p className="text-sm text-muted-foreground">No clients mapped yet</p>
                 ) : (
                   <div className="space-y-3">
-                    {mappingsQuery.data.map((mapping: any) => (
+                    {[].map((mapping: any) => (
                       <div key={mapping.id} className="p-3 border rounded-lg">
                         <div className="flex items-start justify-between">
                           <div>
@@ -407,8 +408,8 @@ export default function AdminExpertDetail() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleRemoveMapping(mapping.id)}
-                            disabled={deleteMappingMutation.isPending}
+                            onClick={() => {}}
+                            disabled={false}
                           >
                             <Trash2 size={14} />
                           </Button>
@@ -433,16 +434,16 @@ export default function AdminExpertDetail() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {projectsQuery.data.map((project: any) => {
                       const client = clientsQuery.data?.find((c: any) => c.id === project.clientId);
-                      const shortlist = mappingsQuery.data?.find((m: any) => m.projectId === project.id);
+                      const shortlist = undefined; // TODO: Implement expert-client mappings
                       return (
                         <div key={project.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/admin/projects/${project.id}`)}>
                           <h4 className="font-semibold text-sm mb-1">{project.name}</h4>
                           <p className="text-xs text-slate-500 mb-2">Client: {client?.name || 'Unknown'}</p>
                           <p className="text-xs text-slate-600 mb-2">{project.projectType}</p>
                           <p className="text-xs text-slate-500 mb-3">Rate: ${project.hourlyRate}</p>
-                          {shortlist && (
+                          {false && (
                             <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                              {shortlist.status}
+                              Shortlisted
                             </span>
                           )}
                         </div>

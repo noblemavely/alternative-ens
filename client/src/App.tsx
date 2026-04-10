@@ -13,6 +13,7 @@ import AdminSearch from "./pages/AdminSearch";
 import AdminExpertDetail from "./pages/AdminExpertDetail";
 import AdminClientDetail from "./pages/AdminClientDetail";
 import AdminProjectDetail from "./pages/AdminProjectDetail";
+import AdminSettings from "./pages/AdminSettings";
 import ExpertPortal from "./pages/ExpertPortal";
 import ExpertProfileView from "./pages/ExpertProfileView";
 
@@ -28,6 +29,7 @@ function Router() {
       <Route path={"/admin/experts/:id"} component={AdminExpertDetail} />
       <Route path={"/admin/clients/:id"} component={AdminClientDetail} />
       <Route path={"/admin/projects/:id"} component={AdminProjectDetail} />
+      <Route path={"/admin/settings"} component={AdminSettings} />
       <Route path={"/expert/register"} component={ExpertPortal} />
       <Route path={"/expert/profile/:id"} component={ExpertProfileView} />
       <Route path={"/404"} component={NotFound} />
