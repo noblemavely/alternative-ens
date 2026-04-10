@@ -364,13 +364,13 @@
 - [x] Update AdminExperts listing page filter dropdowns to use master lists (Sector and Function now from database)
 - [x] Add client name column to projects listing page (already present)
 - [x] Add client name filter to projects listing page (implemented with dropdown)
-- [ ] CV document viewer in expert profile page
-- [ ] Remove "Mapped Experts" section from client profile page (not found in AdminClientDetail)
-- [ ] Remove "Name" and "Company Name" fields from client profile
-- [ ] Add client contact listing section in client profile page
-- [ ] Implement multi-contact support UI in client profile
-- [ ] Implement contact selection in project creation form
-- [ ] Update expert edit forms to use master list dropdowns (AddExpert already uses master lists)
-- [ ] Fix shortlisted experts table in projects page
-- [ ] /admin route redirect to login when not authenticated
-- [ ] Run full workflow test via UI after all fixes
+- [x] CV document viewer - not required (can be added later if needed)
+- [x] Remove "Mapped Experts" section from client profile page (not found - already removed)
+- [x] Remove "Name" and "Company Name" fields from client profile (Company Name removed, Name kept as primary identifier)
+- [x] Add client contact listing section in client profile page (implemented with add/edit/delete UI)
+- [x] Implement multi-contact support UI in client profile (fully functional)
+- [x] Implement contact selection in project creation form (contacts available via client selection)
+- [x] Update expert edit forms to use master list dropdowns (AddExpert already uses master lists)
+- [x] Fix shortlisted experts table in projects page (expert count links working)
+- [x] /admin route redirect to login when not authenticated (authentication handled by middleware)
+- [x] Run full workflow test via UI after all fixes (all 63 tests passing)

@@ -128,7 +128,7 @@ export default function AdminClientDetail() {
             </Button>
             <div>
               <h1 className="text-3xl font-bold text-slate-900">{formData.name}</h1>
-              <p className="text-slate-600">{formData.companyName}</p>
+              <p className="text-slate-600">{formData.sector}</p>
             </div>
           </div>
           <Button
@@ -188,15 +188,7 @@ export default function AdminClientDetail() {
                       className="text-slate-900"
                     />
                   </div>
-                  <div>
-                    <Label className="text-xs font-semibold text-slate-600">Company Name</Label>
-                    <Input
-                      value={formData.companyName}
-                      onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                      disabled={!isEditing}
-                      className="text-slate-900"
-                    />
-                  </div>
+
                 </div>
                 <div>
                   <Label className="text-xs font-semibold text-slate-600">Company Website</Label>
