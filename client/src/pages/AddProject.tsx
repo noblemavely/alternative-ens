@@ -42,7 +42,7 @@ export default function AddProject() {
       await createMutation.mutateAsync({
         name: data.name,
         description: data.description,
-        clientId: parseInt(data.clientId),
+        clientContactId: parseInt(data.clientId),
         projectType: data.projectType as "Call" | "Advisory" | "ID",
         hourlyRate: data.hourlyRate ? parseFloat(data.hourlyRate) : undefined,
       });

@@ -11,6 +11,7 @@ import {
   updateClient,
   deleteClient,
   createClientContact,
+  getAllClientContacts,
   getClientContacts,
   getClientContactById,
   updateClientContact,
@@ -24,7 +25,7 @@ import {
   searchExperts,
   createProject,
   getProjects,
-  getProjectsByClient,
+  getProjectsByClientContact,
   getProjectById,
   updateProject,
   deleteProject,
@@ -32,6 +33,7 @@ import {
   getScreeningQuestionsByProject,
   updateScreeningQuestion,
   deleteScreeningQuestion,
+  getAllShortlists,
   addToShortlist,
   getShortlistByProjectAndExpert,
   getShortlistsByProject,
@@ -179,6 +181,10 @@ export const appRouter = router({
         });
         return contact;
       }),
+
+    list: adminProcedure.query(async () => {
+      return getAllClientContacts();
+    }),
 
     listByClient: adminProcedure
       .input(z.object({ clientId: z.number() }))
@@ -384,7 +390,7 @@ export const appRouter = router({
     create: adminProcedure
       .input(
         z.object({
-          clientId: z.number(),
+          clientContactId: z.number(),
           name: z.string().min(1),
           description: z.string().optional(),
           projectType: z.enum(["Call", "Advisory", "ID"]),
@@ -400,7 +406,6 @@ export const appRouter = router({
           targetCompanies: input.targetCompanies ?? null,
           targetPersona: input.targetPersona ?? null,
           hourlyRate: input.hourlyRate ? input.hourlyRate.toString() : null,
-          clientContactId: null,
         };
         const project = await createProject(projectData);
         return project;
@@ -418,10 +423,10 @@ export const appRouter = router({
         return project;
       }),
 
-    getByClient: adminProcedure
-      .input(z.object({ clientId: z.number() }))
+    getByClientContact: adminProcedure
+      .input(z.object({ clientContactId: z.number() }))
       .query(async ({ input }) => {
-        return getProjectsByClient(input.clientId);
+        return getProjectsByClientContact(input.clientContactId);
       }),
 
     update: adminProcedure
@@ -500,6 +505,10 @@ export const appRouter = router({
 
   // ============ SHORTLIST ROUTERS ============
   shortlists: router({
+    list: adminProcedure.query(async () => {
+      return getAllShortlists();
+    }),
+
     add: adminProcedure
       .input(
         z.object({

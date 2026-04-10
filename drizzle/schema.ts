@@ -135,8 +135,7 @@ export type InsertExpertEducation = typeof expertEducation.$inferInsert;
  */
 export const projects = mysqlTable("projects", {
   id: int("id").autoincrement().primaryKey(),
-  clientId: int("clientId").notNull(),
-  clientContactId: int("clientContactId"), // Reference to specific contact for this project
+  clientContactId: int("clientContactId").notNull(), // Reference to specific contact for this project
   name: varchar("name", { length: 255 }).notNull(),
   description: longtext("description"),
   projectType: mysqlEnum("projectType", ["Call", "Advisory", "ID"]).notNull(),

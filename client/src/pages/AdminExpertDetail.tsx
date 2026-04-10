@@ -38,6 +38,9 @@ export default function AdminExpertDetail() {
   // Fetch clients
   const clientsQuery = trpc.clients.list.useQuery();
 
+  // Fetch client contacts
+  const contactsQuery = trpc.clientContacts.list.useQuery();
+
   // Fetch expert mappings
   // TODO: Implement expert-client mappings
   // const mappingsQuery = trpc.expertClientMapping.listByExpert.useQuery(
@@ -359,7 +362,8 @@ export default function AdminExpertDetail() {
                     <div className="flex-1">
                       {projectsQuery.data[carouselIndex] && (() => {
                         const project = projectsQuery.data[carouselIndex];
-                        const client = clientsQuery.data?.find((c: any) => c.id === project.clientId);
+                        const contact = contactsQuery.data?.find((c: any) => c.id === project.clientContactId);
+                        const client = clientsQuery.data?.find((c: any) => c.id === contact?.clientId);
                         return (
                           <div className="border rounded-lg p-4 bg-slate-50">
                             <h4 className="font-semibold text-sm mb-2">{project.name}</h4>

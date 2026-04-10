@@ -374,3 +374,15 @@
 - [x] Fix shortlisted experts table in projects page (expert count links working)
 - [x] /admin route redirect to login when not authenticated (authentication handled by middleware)
 - [x] Run full workflow test via UI after all fixes (all 63 tests passing)
+
+
+## Major Refactoring - Expert Profile & Project Management
+- [ ] Update database schema: change projects.clientId to projects.clientContactId
+- [ ] Update tRPC routers and db functions for clientContactId relationship
+- [ ] Fix expert profile: show only tagged projects, merge with shortlist section, remove carousel styling
+- [ ] Update client listing: remove Name column, make client name hyperlinked to profile
+- [ ] Update client profile: remove Name and Email fields from display
+- [ ] Convert project creation from dialog popup to full page
+- [ ] Add client contact selection dropdown in project creation form
+- [ ] Update AdminProjects listing to show client contact instead of client
+- [ ] Update seed data to use clientContactId instead of clientId

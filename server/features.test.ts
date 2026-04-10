@@ -10,6 +10,7 @@ import {
   searchExperts,
   addToShortlist,
   getShortlistsByProject,
+  getAllClientContacts,
 } from "./db";
 import { parseLinkedInProfile, isValidLinkedInUrl } from "./linkedinParser";
 
@@ -75,13 +76,13 @@ describe("Expert Management", () => {
 
 describe("Project Management", () => {
   it("should create a project", async () => {
-    const clients = await getClients();
-    if (clients.length === 0) {
-      throw new Error("No clients available for project creation");
+    const contacts = await getAllClientContacts();
+    if (contacts.length === 0) {
+      throw new Error("No client contacts available for project creation");
     }
 
     const project = await createProject({
-      clientId: clients[0].id,
+      clientContactId: contacts[0].id,
       name: "Market Research Initiative",
       description: "Research market trends in technology sector",
       projectType: "Advisory",

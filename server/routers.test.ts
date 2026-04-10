@@ -196,7 +196,7 @@ describe("Project Router", () => {
 
     // Then create a project
     const result = await caller.projects.create({
-      clientId: 1, // Using first client ID
+      clientContactId: 1, // Using first client contact ID
       name: "Test Project",
       description: "Test project description",
       projectType: "Advisory",

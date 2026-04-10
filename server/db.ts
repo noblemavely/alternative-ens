@@ -266,18 +266,22 @@ export async function getProjects() {
   return db.select().from(projects).orderBy(projects.createdAt);
 }
 
-export async function getProjectsByClient(clientId: number) {
+export async function getProjectsByClientContact(clientContactId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return db.select().from(projects).where(eq(projects.clientId, clientId)).orderBy(projects.createdAt);
+  return db.select().from(projects).where(eq(projects.clientContactId, clientContactId)).orderBy(projects.createdAt);
 }
 
 export async function getProjectById(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.select().from(projects).where(eq(projects.id, id)).limit(1);
+  const result = await db
+    .select()
+    .from(projects)
+    .where(eq(projects.id, id))
+    .limit(1);
   return result.length > 0 ? result[0] : null;
 }
 
@@ -330,6 +334,13 @@ export async function deleteScreeningQuestion(id: number) {
 }
 
 // ============ SHORTLIST FUNCTIONS ============
+
+export async function getAllShortlists() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.select().from(shortlists);
+}
 
 export async function addToShortlist(data: Omit<Shortlist, "id" | "createdAt" | "updatedAt">) {
   const db = await getDb();
@@ -581,6 +592,13 @@ export async function createClientContact(data: Omit<ClientContact, "id" | "crea
 
   const result = await db.insert(clientContacts).values(data);
   return result;
+}
+
+export async function getAllClientContacts() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.select().from(clientContacts);
 }
 
 export async function getClientContacts(clientId: number) {

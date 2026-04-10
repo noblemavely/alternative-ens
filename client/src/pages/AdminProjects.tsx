@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,7 @@ import { Plus, Trash2, Edit2, X, Eye } from "lucide-react";
 import { useLocation } from "wouter";
 
 const projectSchema = z.object({
-  clientId: z.number(),
+  clientContactId: z.number(),
   name: z.string().min(1, "Project name is required"),
   description: z.string().optional(),
   projectType: z.enum(["Call", "Advisory", "ID"]),
@@ -37,28 +37,24 @@ export default function AdminProjects() {
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
   const [projectTypeFilter, setProjectTypeFilter] = useState<string>(urlParams.get('type') || "");
-  const [clientFilter, setClientFilter] = useState<string>(urlParams.get('client') || "");
 
-  
-  const updateUrl = (search: string, type: string, clientFilter?: string) => {
+  const updateUrl = (search: string, type: string) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     if (type && type !== "all") params.set('type', type);
-    if (clientFilter && clientFilter !== "all") params.set('client', clientFilter);
     const queryString = params.toString();
     navigate(`/admin/projects${queryString ? '?' + queryString : ''}`);
   };
 
-  const clientsQuery = trpc.clients.list.useQuery();
   const projectsQuery = trpc.projects.list.useQuery();
-  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
-  const contactsQuery = selectedClientId ? trpc.clientContacts.listByClient.useQuery({ clientId: selectedClientId }) : { data: [] };
+  const clientsQuery = trpc.clients.list.useQuery();
+  const contactsQuery = trpc.clientContacts.list.useQuery();
+  const shortlistsQuery = trpc.shortlists.list.useQuery();
   
-  const filteredProjects = projectsQuery.data?.filter(project => 
+  const filteredProjects = projectsQuery.data?.filter((project: any) => 
     (project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.description?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (!projectTypeFilter || projectTypeFilter === "all" || project.projectType === projectTypeFilter) &&
-    (!clientFilter || clientFilter === "all" || project.clientId === parseInt(clientFilter))
+    (!projectTypeFilter || projectTypeFilter === "all" || project.projectType === projectTypeFilter)
   ) || [];
   
   const createMutation = trpc.projects.create.useMutation();
@@ -69,7 +65,7 @@ export default function AdminProjects() {
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
-      clientId: 0,
+      clientContactId: 0,
       name: "",
       description: "",
       projectType: "Call",
@@ -90,9 +86,8 @@ export default function AdminProjects() {
         projectId = editingId;
         toast.success("Project updated successfully");
       } else {
-        await createMutation.mutateAsync(data);
-        // For new projects, we'll fetch the list to get the ID
-        projectId = 0;
+        const result = await createMutation.mutateAsync(data);
+        projectId = (result as any).insertId || (result as any).id || data.clientContactId;
         toast.success("Project created successfully");
       }
 
@@ -102,14 +97,15 @@ export default function AdminProjects() {
           await createQuestionMutation.mutateAsync({
             projectId,
             question: question.trim(),
+            order: screeningQuestions.indexOf(question),
           });
         }
       }
 
+      setScreeningQuestions([]);
       form.reset();
       setOpen(false);
       setEditingId(null);
-      setScreeningQuestions([]);
       projectsQuery.refetch();
     } catch (error) {
       toast.error("Failed to save project");
@@ -117,7 +113,15 @@ export default function AdminProjects() {
   };
 
   const handleEdit = (project: any) => {
-    form.reset(project);
+    form.reset({
+      clientContactId: project.clientContactId,
+      name: project.name,
+      description: project.description || "",
+      projectType: project.projectType,
+      targetCompanies: project.targetCompanies || "",
+      targetPersona: project.targetPersona || "",
+      hourlyRate: project.hourlyRate ? parseFloat(project.hourlyRate) : undefined,
+    });
     setEditingId(project.id);
     setOpen(true);
   };
@@ -134,115 +138,54 @@ export default function AdminProjects() {
     }
   };
 
-  const addQuestion = () => {
-    if (newQuestion.trim()) {
-      setScreeningQuestions([...screeningQuestions, newQuestion]);
-      setNewQuestion("");
-    }
+  const getClientContactName = (contactId: number) => {
+    const contact = contactsQuery.data?.find((c: any) => c.id === contactId);
+    if (!contact) return "Unknown";
+    const client = clientsQuery.data?.find((c: any) => c.id === contact.clientId);
+    return `${client?.name} - ${contact.contactName}`;
   };
 
-  const removeQuestion = (index: number) => {
-    setScreeningQuestions(screeningQuestions.filter((_, i) => i !== index));
+  const getExpertCountForProject = (projectId: number) => {
+    return shortlistsQuery.data?.filter((s: any) => s.projectId === projectId).length || 0;
   };
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Projects</h1>
-            <p className="text-muted-foreground mt-2">Manage client projects and requirements</p>
-          </div>
-        </div>
-
-        {/* Search and Add Button Row */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div className="flex gap-2 flex-1 min-w-0">
-            <Input
-              placeholder="Search by project name or description..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                updateUrl(e.target.value, projectTypeFilter);
-              }}
-              className="flex-1 min-w-0"
-            />
-            <Select value={projectTypeFilter} onValueChange={(value) => {
-              setProjectTypeFilter(value);
-              updateUrl(searchTerm, value);
-            }}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="Call">Call</SelectItem>
-                <SelectItem value="Advisory">Advisory</SelectItem>
-                <SelectItem value="ID">ID</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={clientFilter} onValueChange={(value) => {
-              setClientFilter(value);
-              updateUrl(searchTerm, projectTypeFilter, value);
-            }}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Client" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Clients</SelectItem>
-                {clientsQuery.data?.map((client) => (
-                  <SelectItem key={client.id} value={String(client.id)}>
-                    {client.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Projects</h1>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button
-                onClick={() => {
-                  form.reset();
-                  setEditingId(null);
-                  setScreeningQuestions([]);
-                }}
-                className="gap-2 whitespace-nowrap"
-              >
-                <Plus size={18} />
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
                 Add Project
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>{editingId ? "Edit Project" : "Create New Project"}</DialogTitle>
                 <DialogDescription>
-                  {editingId ? "Update project information" : "Create a new project and define requirements"}
+                  {editingId ? "Update project details" : "Create a new project and define requirements"}
                 </DialogDescription>
               </DialogHeader>
-
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="clientId"
+                    name="clientContactId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Client *</FormLabel>
-                        <Select onValueChange={(v) => {
-                          const clientId = Number(v);
-                          field.onChange(clientId);
-                          setSelectedClientId(clientId);
-                        }} value={String(field.value)}>
+                        <FormLabel>Client Contact *</FormLabel>
+                        <Select value={field.value.toString()} onValueChange={(value) => field.onChange(parseInt(value))}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a client" />
+                              <SelectValue placeholder="Select a client contact" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {clientsQuery.data?.map((client) => (
-                              <SelectItem key={client.id} value={String(client.id)}>
-                                {client.name}
+                            {selectedClientContacts.map((contact: any) => (
+                              <SelectItem key={contact.id} value={contact.id.toString()}>
+                                {getClientContactName(contact.id)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -272,7 +215,7 @@ export default function AdminProjects() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Project Type *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select value={field.value} onValueChange={field.onChange}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue />
@@ -296,7 +239,7 @@ export default function AdminProjects() {
                       <FormItem>
                         <FormLabel>Description / Scope</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Project details and scope..." {...field} rows={4} />
+                          <Textarea placeholder="Project details and scope..." {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -338,46 +281,33 @@ export default function AdminProjects() {
                       <FormItem>
                         <FormLabel>Hourly Rate ($)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="250" {...field} onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)} />
+                          <Input type="number" placeholder="250" {...field} onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
 
-                  {/* Screening Questions */}
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <FormLabel>Screening Questions</FormLabel>
-                    <div className="space-y-2">
-                      {screeningQuestions.map((q, i) => (
-                        <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded">
-                          <span className="text-sm flex-1">{q}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeQuestion(i)}
-                            className="text-destructive"
-                          >
-                            <X size={16} />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Add a screening question..."
-                        value={newQuestion}
-                        onChange={(e) => setNewQuestion(e.target.value)}
-                        onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addQuestion())}
-                      />
-                      <Button type="button" variant="outline" onClick={addQuestion}>
-                        Add
-                      </Button>
-                    </div>
+                    {screeningQuestions.map((q, idx) => (
+                      <div key={idx} className="flex gap-2">
+                        <Input value={q} onChange={(e) => {
+                          const updated = [...screeningQuestions];
+                          updated[idx] = e.target.value;
+                          setScreeningQuestions(updated);
+                        }} placeholder={`Question ${idx + 1}`} />
+                        <Button type="button" variant="ghost" size="sm" onClick={() => setScreeningQuestions(screeningQuestions.filter((_, i) => i !== idx))}>
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button type="button" variant="outline" size="sm" onClick={() => setScreeningQuestions([...screeningQuestions, ""])}>
+                      Add Question
+                    </Button>
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={createMutation.isPending || updateMutation.isPending}>
+                  <Button type="submit" className="w-full">
                     {editingId ? "Update Project" : "Create Project"}
                   </Button>
                 </form>
@@ -386,83 +316,80 @@ export default function AdminProjects() {
           </Dialog>
         </div>
 
-        {/* Projects Table */}
-        <Card className="card-elegant">
+        <Card>
           <CardHeader>
             <CardTitle>All Projects</CardTitle>
             <CardDescription>Active and archived projects</CardDescription>
           </CardHeader>
           <CardContent>
-            {projectsQuery.isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading projects...</div>
-            ) : filteredProjects.length > 0 ? (
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                <Input
+                  placeholder="Search by project name or description..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    updateUrl(e.target.value, projectTypeFilter);
+                  }}
+                  className="flex-1"
+                />
+                <Select value={projectTypeFilter} onValueChange={(value) => {
+                  setProjectTypeFilter(value);
+                  updateUrl(searchTerm, value);
+                }}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="Call">Call</SelectItem>
+                    <SelectItem value="Advisory">Advisory</SelectItem>
+                    <SelectItem value="ID">ID</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full">
                   <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 font-semibold">Project Name</th>
-                      <th className="text-left py-3 px-4 font-semibold">Client</th>
-                      <th className="text-left py-3 px-4 font-semibold">Type</th>
-                      <th className="text-left py-3 px-4 font-semibold">Target Persona</th>
-                      <th className="text-left py-3 px-4 font-semibold">Rate</th>
-                      <th className="text-center py-3 px-4 font-semibold">Experts</th>
-                      <th className="text-right py-3 px-4 font-semibold">Actions</th>
+                    <tr className="border-b">
+                      <th className="text-left py-2 px-4">Project Name</th>
+                      <th className="text-left py-2 px-4">Client Contact</th>
+                      <th className="text-left py-2 px-4">Type</th>
+                      <th className="text-left py-2 px-4">Rate</th>
+                      <th className="text-left py-2 px-4">Experts</th>
+                      <th className="text-left py-2 px-4">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredProjects.map((project) => {
-                      const client = clientsQuery.data?.find(c => c.id === project.clientId);
-                      const expertCount = projectsQuery.data?.filter(p => p.id === project.id).length || 0;
-                      return (
-                      <tr key={project.id} className="border-b border-border hover:bg-muted/50 transition-colors">
-                        <td className="py-3 px-4 font-medium">{project.name}</td>
-                        <td className="py-3 px-4 text-muted-foreground">{client?.name || "-"}</td>
-                        <td className="py-3 px-4">
-                          <span className="text-xs px-2 py-1 bg-accent/10 text-accent rounded">{project.projectType}</span>
+                    {filteredProjects.map((project: any) => (
+                      <tr key={project.id} className="border-b hover:bg-gray-50">
+                        <td className="py-2 px-4 font-medium">{project.name}</td>
+                        <td className="py-2 px-4">{getClientContactName(project.clientContactId)}</td>
+                        <td className="py-2 px-4">{project.projectType}</td>
+                        <td className="py-2 px-4">${project.hourlyRate || "-"}</td>
+                        <td className="py-2 px-4">
+                          <button onClick={() => navigate(`/admin/projects/${project.id}`)} className="text-blue-600 hover:underline">
+                            {getExpertCountForProject(project.id)}
+                          </button>
                         </td>
-                        <td className="py-3 px-4 text-muted-foreground text-sm">{project.targetPersona || "-"}</td>
-                        <td className="py-3 px-4 text-muted-foreground">${project.hourlyRate || "-"}</td>
-                        <td className="py-3 px-4 text-center">
-                          <Button
-                            variant="link"
-                            size="sm"
-                            onClick={() => navigate(`/admin/projects/${project.id}`)}
-                            className="text-blue-600 hover:text-blue-800 p-0 h-auto"
-                          >
-                            {expertCount}
+                        <td className="py-2 px-4 space-x-2">
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/projects/${project.id}`)}>
+                            <Eye className="w-4 h-4" />
                           </Button>
-                        </td>
-                        <td className="py-3 px-4 text-right space-x-2 flex justify-end">
-                          <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/projects/${project.id}`)} className="gap-1" title="View Shortlisted Experts">
-                            <Eye size={16} />
+                          <Button variant="ghost" size="sm" onClick={() => handleEdit(project)}>
+                            <Edit2 className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleEdit(project)} className="gap-1">
-                            <Edit2 size={16} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(project.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 size={16} />
+                          <Button variant="ghost" size="sm" onClick={() => handleDelete(project.id)}>
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </td>
                       </tr>
-                    );
-                    })}
+                    ))}
                   </tbody>
                 </table>
               </div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">{searchTerm ? "No projects match your search" : "No projects yet"}</p>
-                <Button onClick={() => setOpen(true)} className="gap-2">
-                  <Plus size={18} />
-                  Create First Project
-                </Button>
-              </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>
