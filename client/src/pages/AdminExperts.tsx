@@ -50,6 +50,8 @@ export default function AdminExperts() {
   };
 
   const expertsQuery = trpc.experts.list.useQuery();
+  const sectorsQuery = trpc.sectors.list.useQuery();
+  const functionsQuery = trpc.functions.list.useQuery();
   
   const filteredExperts = expertsQuery.data?.filter(expert => 
     (((expert.firstName || "") + " " + (expert.lastName || "")).toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -171,8 +173,8 @@ export default function AdminExperts() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Sectors</SelectItem>
-                {Array.from(new Set((expertsQuery.data?.map(e => e.sector).filter(Boolean) || []) as string[])).map(sector => (
-                  <SelectItem key={sector} value={sector}>{sector}</SelectItem>
+                {sectorsQuery.data?.map(sector => (
+                  <SelectItem key={sector.id} value={sector.name}>{sector.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -185,8 +187,8 @@ export default function AdminExperts() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Functions</SelectItem>
-                {Array.from(new Set((expertsQuery.data?.map(e => e.function).filter(Boolean) || []) as string[])).map(func => (
-                  <SelectItem key={func} value={func}>{func}</SelectItem>
+                {functionsQuery.data?.map(func => (
+                  <SelectItem key={func.id} value={func.name}>{func.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

@@ -358,8 +358,19 @@
 - [x] Fix hyperlinks showing 0 in listing pages (AdminClients project count fixed, AdminProjects expert count fixed)
 - [x] Remove "Search Experts" from navigation menu (removed from AdminLayout)
 - [x] Fix admin dashboard logo (uploaded new AlterNatives logo and updated all dashboard components)
-- [ ] CV document viewer in expert profile page
+- [x] Remove "Mapped Clients" section from expert profile page (removed from AdminExpertDetail)
 - [x] Add sample data to all tables (seed-db.mjs created with 60+ records across all tables)
 - [x] Add Seed Sample Data button to admin dashboard UI (alongside Clear All Data button)
+- [x] Update AdminExperts listing page filter dropdowns to use master lists (Sector and Function now from database)
+- [x] Add client name column to projects listing page (already present)
+- [x] Add client name filter to projects listing page (implemented with dropdown)
+- [ ] CV document viewer in expert profile page
+- [ ] Remove "Mapped Experts" section from client profile page (not found in AdminClientDetail)
+- [ ] Remove "Name" and "Company Name" fields from client profile
+- [ ] Add client contact listing section in client profile page
+- [ ] Implement multi-contact support UI in client profile
+- [ ] Implement contact selection in project creation form
+- [ ] Update expert edit forms to use master list dropdowns (AddExpert already uses master lists)
+- [ ] Fix shortlisted experts table in projects page
 - [ ] /admin route redirect to login when not authenticated
 - [ ] Run full workflow test via UI after all fixes

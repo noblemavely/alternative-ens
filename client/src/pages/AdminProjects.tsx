@@ -37,13 +37,13 @@ export default function AdminProjects() {
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
   const [projectTypeFilter, setProjectTypeFilter] = useState<string>(urlParams.get('type') || "");
-  const clientFilterFromUrl = urlParams.get('client');
+  const [clientFilter, setClientFilter] = useState<string>(urlParams.get('client') || "");
   
-  const updateUrl = (search: string, type: string) => {
+  const updateUrl = (search: string, type: string, clientFilter?: string) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     if (type && type !== "all") params.set('type', type);
-    if (clientFilterFromUrl) params.set('client', clientFilterFromUrl);
+    if (clientFilter && clientFilter !== "all") params.set('client', clientFilter);
     const queryString = params.toString();
     navigate(`/admin/projects${queryString ? '?' + queryString : ''}`);
   };
@@ -55,7 +55,7 @@ export default function AdminProjects() {
     (project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.description?.toLowerCase().includes(searchTerm.toLowerCase())) &&
     (!projectTypeFilter || projectTypeFilter === "all" || project.projectType === projectTypeFilter) &&
-    (!clientFilterFromUrl || project.clientId === parseInt(clientFilterFromUrl))
+    (!clientFilter || clientFilter === "all" || project.clientId === parseInt(clientFilter))
   ) || [];
   
   const createMutation = trpc.projects.create.useMutation();
@@ -177,14 +177,9 @@ export default function AdminProjects() {
                 <SelectItem value="ID">ID</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={clientFilterFromUrl || "all"} onValueChange={(value) => {
-              const newClientFilter = value === "all" ? "" : value;
-              const params = new URLSearchParams();
-              if (searchTerm) params.set('search', searchTerm);
-              if (projectTypeFilter && projectTypeFilter !== "all") params.set('type', projectTypeFilter);
-              if (newClientFilter) params.set('client', newClientFilter);
-              const queryString = params.toString();
-              navigate(`/admin/projects${queryString ? '?' + queryString : ''}`);
+            <Select value={clientFilter} onValueChange={(value) => {
+              setClientFilter(value);
+              updateUrl(searchTerm, projectTypeFilter, value);
             }}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Client" />
