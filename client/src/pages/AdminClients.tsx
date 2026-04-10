@@ -167,8 +167,7 @@ export default function AdminClients() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Name</th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Company</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Client Name</th>
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Email</th>
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Sector</th>
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Projects</th>
@@ -188,7 +187,6 @@ export default function AdminClients() {
                               {client.name}
                             </button>
                           </td>
-                          <td className="py-3 px-4 text-muted-foreground">{client.companyName || "-"}</td>
                           <td className="py-3 px-4 text-muted-foreground">{client.email}</td>
                           <td className="py-3 px-4 text-muted-foreground">{client.sector || "-"}</td>
                           <td className="py-3 px-4">

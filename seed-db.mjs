@@ -249,7 +249,6 @@ async function seedDatabase() {
     console.log('📁 Seeding projects...');
     const projects = [
       {
-        clientId: clientIds[0],
         clientContactId: clientContactIds[0],
         name: 'Cloud Migration Initiative',
         description: 'Migrate legacy systems to AWS cloud infrastructure',
@@ -259,7 +258,6 @@ async function seedDatabase() {
         hourlyRate: '250.00',
       },
       {
-        clientId: clientIds[0],
         clientContactId: clientContactIds[1],
         name: 'AI/ML Expert Search',
         description: 'Find senior AI/ML engineers for new research division',
@@ -269,7 +267,6 @@ async function seedDatabase() {
         hourlyRate: '200.00',
       },
       {
-        clientId: clientIds[1],
         clientContactId: clientContactIds[2],
         name: 'Financial Strategy Review',
         description: 'Review and optimize financial strategy for next 5 years',
@@ -279,7 +276,6 @@ async function seedDatabase() {
         hourlyRate: '300.00',
       },
       {
-        clientId: clientIds[1],
         clientContactId: clientContactIds[3],
         name: 'Market Research - Fintech',
         description: 'Conduct market research on fintech disruption',
@@ -289,7 +285,6 @@ async function seedDatabase() {
         hourlyRate: '180.00',
       },
       {
-        clientId: clientIds[2],
         clientContactId: clientContactIds[4],
         name: 'Digital Health Transformation',
         description: 'Plan digital transformation for healthcare provider',
@@ -299,7 +294,6 @@ async function seedDatabase() {
         hourlyRate: '280.00',
       },
       {
-        clientId: clientIds[2],
         clientContactId: clientContactIds[5],
         name: 'Regulatory Compliance Study',
         description: 'Study new healthcare regulations and compliance requirements',
@@ -313,8 +307,8 @@ async function seedDatabase() {
     const projectIds = [];
     for (const project of projects) {
       const [result] = await connection.execute(
-        'INSERT INTO projects (clientId, clientContactId, name, description, projectType, targetCompanies, targetPersona, hourlyRate) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [project.clientId, project.clientContactId, project.name, project.description, project.projectType, project.targetCompanies, project.targetPersona, project.hourlyRate]
+        'INSERT INTO projects (clientContactId, name, description, projectType, targetCompanies, targetPersona, hourlyRate) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [project.clientContactId, project.name, project.description, project.projectType, project.targetCompanies, project.targetPersona, project.hourlyRate]
       );
       projectIds.push(result.insertId);
     }

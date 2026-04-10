@@ -161,25 +161,6 @@ export default function AdminClientDetail() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-xs font-semibold text-slate-600">Name</Label>
-                    <Input
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      disabled={!isEditing}
-                      className="text-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs font-semibold text-slate-600">Email</Label>
-                    <Input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      disabled={!isEditing}
-                      className="text-slate-900"
-                    />
-                  </div>
-                  <div>
                     <Label className="text-xs font-semibold text-slate-600">Phone</Label>
                     <Input
                       value={formData.phone}
@@ -188,7 +169,6 @@ export default function AdminClientDetail() {
                       className="text-slate-900"
                     />
                   </div>
-
                 </div>
                 <div>
                   <Label className="text-xs font-semibold text-slate-600">Company Website</Label>
