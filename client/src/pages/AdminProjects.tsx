@@ -38,6 +38,7 @@ export default function AdminProjects() {
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
   const [projectTypeFilter, setProjectTypeFilter] = useState<string>(urlParams.get('type') || "");
   const [clientFilter, setClientFilter] = useState<string>(urlParams.get('client') || "");
+
   
   const updateUrl = (search: string, type: string, clientFilter?: string) => {
     const params = new URLSearchParams();
@@ -50,6 +51,8 @@ export default function AdminProjects() {
 
   const clientsQuery = trpc.clients.list.useQuery();
   const projectsQuery = trpc.projects.list.useQuery();
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const contactsQuery = selectedClientId ? trpc.clientContacts.listByClient.useQuery({ clientId: selectedClientId }) : { data: [] };
   
   const filteredProjects = projectsQuery.data?.filter(project => 
     (project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -75,6 +78,8 @@ export default function AdminProjects() {
       hourlyRate: undefined,
     },
   });
+
+  const selectedClientContacts = contactsQuery.data || [];
 
   const onSubmit = async (data: ProjectFormData) => {
     try {
@@ -224,7 +229,11 @@ export default function AdminProjects() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Client *</FormLabel>
-                        <Select onValueChange={(v) => field.onChange(Number(v))} value={String(field.value)}>
+                        <Select onValueChange={(v) => {
+                          const clientId = Number(v);
+                          field.onChange(clientId);
+                          setSelectedClientId(clientId);
+                        }} value={String(field.value)}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a client" />

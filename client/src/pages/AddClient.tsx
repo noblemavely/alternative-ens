@@ -16,7 +16,6 @@ const clientSchema = z.object({
   email: z.string().email("Valid email required"),
   phone: z.string().optional(),
   companyWebsite: z.string().optional(),
-  contactPerson: z.string().optional(),
   sector: z.string().optional(),
 });
 
@@ -34,7 +33,6 @@ export default function AddClient() {
       email: "",
       phone: "",
       companyWebsite: "",
-      contactPerson: "",
       sector: "",
     },
   });
@@ -46,7 +44,6 @@ export default function AddClient() {
         email: data.email,
         phone: data.phone,
         companyWebsite: data.companyWebsite,
-        contactPerson: data.contactPerson,
         sector: data.sector,
       });
       toast.success("Client created successfully");
@@ -74,7 +71,7 @@ export default function AddClient() {
         <Card className="border-slate-200 shadow-sm">
           <CardHeader>
             <CardTitle>Client Information</CardTitle>
-            <CardDescription>Enter the details for the new client</CardDescription>
+            <CardDescription>Enter the details for the new client. Add contacts after creation.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -129,20 +126,6 @@ export default function AddClient() {
                       <FormLabel>Company Website</FormLabel>
                       <FormControl>
                         <Input placeholder="https://example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="contactPerson"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Contact Person</FormLabel>
-                      <FormControl>
-                        <Input placeholder="John Doe" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
