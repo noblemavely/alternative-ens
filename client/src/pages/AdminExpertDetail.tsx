@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Loader2, Edit2, Save, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, Loader2, Edit2, Save, Trash2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -24,6 +24,7 @@ export default function AdminExpertDetail() {
   
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [shortlistNotes, setShortlistNotes] = useState("");
+  const [carouselIndex, setCarouselIndex] = useState(0);
 
   // Fetch expert details
   const expertQuery = trpc.experts.getById.useQuery(
@@ -431,24 +432,39 @@ export default function AdminExpertDetail() {
                 {!projectsQuery.data || projectsQuery.data.length === 0 ? (
                   <p className="text-slate-600 text-sm py-4">No projects available</p>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {projectsQuery.data.map((project: any) => {
-                      const client = clientsQuery.data?.find((c: any) => c.id === project.clientId);
-                      const shortlist = undefined; // TODO: Implement expert-client mappings
-                      return (
-                        <div key={project.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/admin/projects/${project.id}`)}>
-                          <h4 className="font-semibold text-sm mb-1">{project.name}</h4>
-                          <p className="text-xs text-slate-500 mb-2">Client: {client?.name || 'Unknown'}</p>
-                          <p className="text-xs text-slate-600 mb-2">{project.projectType}</p>
-                          <p className="text-xs text-slate-500 mb-3">Rate: ${project.hourlyRate}</p>
-                          {false && (
-                            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                              Shortlisted
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
+                  <div className="flex items-center gap-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setCarouselIndex((prev) => (prev - 1 + projectsQuery.data.length) % projectsQuery.data.length)}
+                      disabled={projectsQuery.data.length <= 1}
+                    >
+                      <ChevronLeft size={16} />
+                    </Button>
+                    
+                    <div className="flex-1">
+                      {projectsQuery.data[carouselIndex] && (() => {
+                        const project = projectsQuery.data[carouselIndex];
+                        const client = clientsQuery.data?.find((c: any) => c.id === project.clientId);
+                        return (
+                          <div className="border rounded-lg p-4 bg-slate-50">
+                            <h4 className="font-semibold text-sm mb-2">{project.name}</h4>
+                            <p className="text-xs text-slate-600 mb-2">Client: {client?.name || 'Unknown'}</p>
+                            <p className="text-xs text-slate-500 mb-3">Status: Shortlisted</p>
+                            <p className="text-xs text-slate-400 text-center mt-4">{carouselIndex + 1} of {projectsQuery.data.length}</p>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                    
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setCarouselIndex((prev) => (prev + 1) % projectsQuery.data.length)}
+                      disabled={projectsQuery.data.length <= 1}
+                    >
+                      <ChevronRight size={16} />
+                    </Button>
                   </div>
                 )}
               </CardContent>

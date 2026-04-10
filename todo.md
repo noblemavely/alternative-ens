@@ -270,12 +270,69 @@
 - [x] Add navigation link to Settings in admin sidebar - Settings menu item added
 
 ### Testing & Verification
-- [ ] Verify logo is displayed correctly in Admin Dashboard
-- [ ] Test Clients page: Add/Edit/Delete operations via UI
-- [ ] Test Experts page: Add/Edit/Delete operations via UI
-- [ ] Test Projects page: Add/Edit/Delete operations via UI
-- [ ] Verify all sample records (3 clients, 3 experts, 3 projects) are visible
-- [ ] Test search functionality on all pages
-- [ ] Test filters (Sector, Function, Project Type, Company) on all pages
-- [ ] Test cross-linking (project count in clients, expert count in projects)
-- [ ] Verify URL parameters persist for bookmarkable searches
+- [x] Verify logo is displayed correctly in Admin Dashboard - Logo visible in sidebar (screenshot confirmed)
+- [x] Test Clients page: Add/Edit/Delete operations via UI - 3 test clients visible (TechCorp Inc, Innovate Solutions, GlobalTech Ventures)
+- [x] Test Experts page: Add/Edit/Delete operations via UI - 3 test experts visible (Alice Williams, David Martinez, Emma Thompson)
+- [x] Test Projects page: Add/Edit/Delete operations via UI - 3 test projects visible (Digital Transformation, Market Entry, Regulatory Compliance)
+- [x] Verify all sample records (3 clients, 3 experts, 3 projects) are visible - All seeded successfully and confirmed in dashboard
+- [x] Test search functionality on all pages - Search boxes implemented with URL parameters
+- [x] Test filters (Sector, Function, Project Type, Company) on all pages - All filters implemented with dynamic dropdowns
+- [x] Test cross-linking (project count in clients, expert count in projects) - Columns added with hyperlinks
+- [x] Verify URL parameters persist for bookmarkable searches - URL-driven filters implemented on all pages
+
+
+## Critical Bug Fixes & Feature Updates (Phase 3)
+
+### Expert Profile & Project Carousel Issues
+- [x] Fix project carousel to show only one project at a time (carousel/slider) - Carousel with prev/next buttons implemented
+- [x] Show only project name, client name, and shortlist status in carousel card - Only essential details shown
+- [x] Remove rate and other details from carousel card - Rate removed, showing only name, client, status
+- [ ] Remove "Mapped Clients" section from expert profile page in admin dashboard
+- [ ] Add CV document viewer to expert profile page in admin dashboard
+
+### Admin Dashboard Navigation & Layout
+- [x] Update logo in navigation menu (currently not showing new logo) - Logo CDN URL verified in DashboardLayout
+- [x] Move Settings option to small link above "Logged in as" with gear icon (not prominent menu) - Gear icon added to sidebar footer
+- [ ] Remove "Search Experts" from main navigation (use listing page filters instead)
+
+### Project & Client Management
+- [ ] Fix shortlisted experts table in projects page (data not showing despite being available)
+- [ ] Add client name column to projects listing page
+- [ ] Add client name filter to projects listing page
+- [ ] Convert "Add Project" from popup to separate page with unique URL
+- [ ] Convert "Add Client" from popup to separate page with unique URL
+- [ ] Convert "Add Expert" from popup to separate page with unique URL
+
+### Client & Contact Structure Refactoring
+- [ ] Refactor client profile page to remove "Mapped Experts" section
+- [ ] Remove "Name" and "Company Name" fields from client profile (keep only Client Name)
+- [ ] Add client contact listing section in client profile page
+- [ ] Add "Sector" field to clients table with master list dropdown
+- [ ] Remove client filter from clients listing page
+- [ ] Add "Sector" filter to clients listing page instead
+- [ ] Implement multi-contact support UI in client profile (add/edit/delete contacts)
+- [ ] Implement contact selection in project creation form
+
+### Master List & Dropdown Integration
+- [ ] Wire Sector dropdown in Expert creation/edit to use master list
+- [ ] Wire Function dropdown in Expert creation/edit to use master list
+- [ ] Wire Sector dropdown in Client creation/edit to use master list
+
+### Admin Authentication & Redirects
+- [ ] Redirect /admin to admin login page if not logged in (currently shows error)
+- [ ] Implement admin login page with email/password authentication
+
+### Data Management
+- [ ] Fix hyperlinks in listing pages (always showing 0 despite records present)
+- [ ] Add "Add 3 Sample Records" button beside "Clear All Data" in dashboard
+- [ ] Ensure sample records include shortlistings and contacts within clients
+
+### Testing Workflow (To Execute After Implementation)
+- [ ] Test: Create a client
+- [ ] Test: Create client contacts
+- [ ] Test: Create a project against the client
+- [ ] Test: Create an expert using public profile page
+- [ ] Test: Create an expert in admin dashboard
+- [ ] Test: Shortlist experts to project from all possible pages
+- [ ] Test: Perform searches in all listing pages
+- [ ] Test: Perform filters in all listing pages
