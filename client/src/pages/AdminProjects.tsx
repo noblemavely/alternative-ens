@@ -177,6 +177,27 @@ export default function AdminProjects() {
                 <SelectItem value="ID">ID</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={clientFilterFromUrl || "all"} onValueChange={(value) => {
+              const newClientFilter = value === "all" ? "" : value;
+              const params = new URLSearchParams();
+              if (searchTerm) params.set('search', searchTerm);
+              if (projectTypeFilter && projectTypeFilter !== "all") params.set('type', projectTypeFilter);
+              if (newClientFilter) params.set('client', newClientFilter);
+              const queryString = params.toString();
+              navigate(`/admin/projects${queryString ? '?' + queryString : ''}`);
+            }}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Client" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Clients</SelectItem>
+                {clientsQuery.data?.map((client) => (
+                  <SelectItem key={client.id} value={String(client.id)}>
+                    {client.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -376,6 +397,7 @@ export default function AdminProjects() {
                   <thead>
                     <tr className="border-b border-border">
                       <th className="text-left py-3 px-4 font-semibold">Project Name</th>
+                      <th className="text-left py-3 px-4 font-semibold">Client</th>
                       <th className="text-left py-3 px-4 font-semibold">Type</th>
                       <th className="text-left py-3 px-4 font-semibold">Target Persona</th>
                       <th className="text-left py-3 px-4 font-semibold">Rate</th>
@@ -384,9 +406,12 @@ export default function AdminProjects() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredProjects.map((project) => (
+                    {filteredProjects.map((project) => {
+                      const client = clientsQuery.data?.find(c => c.id === project.clientId);
+                      return (
                       <tr key={project.id} className="border-b border-border hover:bg-muted/50 transition-colors">
                         <td className="py-3 px-4 font-medium">{project.name}</td>
+                        <td className="py-3 px-4 text-muted-foreground">{client?.name || "-"}</td>
                         <td className="py-3 px-4">
                           <span className="text-xs px-2 py-1 bg-accent/10 text-accent rounded">{project.projectType}</span>
                         </td>
@@ -419,7 +444,8 @@ export default function AdminProjects() {
                           </Button>
                         </td>
                       </tr>
-                    ))}
+                    );
+                    })}
                   </tbody>
                 </table>
               </div>
