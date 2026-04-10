@@ -186,5 +186,5 @@
 - [x] Test expert-client mapping end-to-end - all 61 tests passing
 
 
-## Bug Reports - Current Issues
-- [ ] Clear All Data button in admin dashboard is not working - mutation not registered or not calling correctly
+## Bug Reports - Fixed
+- [x] Clear All Data button in admin dashboard is not working - FIXED: Added clearAllData mutation to systemRouter with proper database deletion order

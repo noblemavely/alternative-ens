@@ -344,3 +344,58 @@ describe("Auth Router", () => {
     expect(result?.role).toBe("admin");
   });
 });
+
+
+describe("System Router - Clear All Data", () => {
+  it("admin can clear all data from database", async () => {
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    // First create some test data
+    await caller.clients.create({
+      name: "Test Client",
+      contactName: "John Doe",
+      email: `test-${Date.now()}@example.com`,
+      phone: "+1234567890",
+      company: "Test Company",
+    });
+    
+    await caller.experts.create({
+      email: `expert-${Date.now()}@example.com`,
+      phone: "+1234567890",
+      firstName: "Jane",
+      lastName: "Expert",
+      sector: "Technology",
+      function: "Engineer",
+      biography: "Test bio",
+    });
+    
+    // Verify data exists
+    let clients = await caller.clients.list();
+    let experts = await caller.experts.list();
+    expect(clients.length).toBeGreaterThan(0);
+    expect(experts.length).toBeGreaterThan(0);
+    
+    // Clear all data
+    const result = await caller.system.clearAllData();
+    expect(result.success).toBe(true);
+    
+    // Verify data is cleared
+    clients = await caller.clients.list();
+    experts = await caller.experts.list();
+    expect(clients.length).toBe(0);
+    expect(experts.length).toBe(0);
+  });
+
+  it("non-admin cannot clear all data", async () => {
+    const ctx = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    try {
+      await caller.system.clearAllData();
+      expect.fail("Should have thrown FORBIDDEN error");
+    } catch (error: any) {
+      expect(error.code).toBe("FORBIDDEN");
+    }
+  });
+});
