@@ -15,7 +15,6 @@ const clientSchema = z.object({
   name: z.string().min(1, "Client name is required"),
   email: z.string().email("Valid email required"),
   phone: z.string().optional(),
-  companyName: z.string().optional(),
   companyWebsite: z.string().optional(),
   contactPerson: z.string().optional(),
   sector: z.string().optional(),
@@ -34,7 +33,6 @@ export default function AddClient() {
       name: "",
       email: "",
       phone: "",
-      companyName: "",
       companyWebsite: "",
       contactPerson: "",
       sector: "",
@@ -47,7 +45,6 @@ export default function AddClient() {
         name: data.name,
         email: data.email,
         phone: data.phone,
-        companyName: data.companyName,
         companyWebsite: data.companyWebsite,
         contactPerson: data.contactPerson,
         sector: data.sector,
@@ -118,20 +115,6 @@ export default function AddClient() {
                       <FormLabel>Phone</FormLabel>
                       <FormControl>
                         <Input placeholder="+1 (555) 123-4567" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="companyName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Company Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Company Name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
