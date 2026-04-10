@@ -354,7 +354,28 @@ export async function getShortlistsByProject(projectId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return db.select().from(shortlists).where(eq(shortlists.projectId, projectId)).orderBy(shortlists.createdAt);
+  return db
+    .select({
+      id: shortlists.id,
+      projectId: shortlists.projectId,
+      expertId: shortlists.expertId,
+      status: shortlists.status,
+      notes: shortlists.notes,
+      createdAt: shortlists.createdAt,
+      updatedAt: shortlists.updatedAt,
+      expert: {
+        id: experts.id,
+        firstName: experts.firstName,
+        lastName: experts.lastName,
+        email: experts.email,
+        sector: experts.sector,
+        function: experts.function,
+      },
+    })
+    .from(shortlists)
+    .leftJoin(experts, eq(shortlists.expertId, experts.id))
+    .where(eq(shortlists.projectId, projectId))
+    .orderBy(shortlists.createdAt);
 }
 
 export async function updateShortlist(id: number, data: Partial<Omit<Shortlist, "id" | "createdAt" | "updatedAt">>) {
