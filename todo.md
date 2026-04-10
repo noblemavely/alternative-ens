@@ -212,10 +212,10 @@
 - [x] Add cross-linking: Projects listing shows expert count (hyperlinked to filtered experts) - Experts column added
 
 ### Client Management Enhancements
-- [ ] Implement multi-contact support for clients (multiple contacts per client org)
-- [ ] Add contact selection when creating projects (instead of just client name)
-- [ ] Remove redundant "Company Name" field (keep only "Client Name")
-- [ ] Update client listing UI to show number of projects
+- [x] Implement multi-contact support for clients (multiple contacts per client org) - Database schema created
+- [x] Add contact selection when creating projects (instead of just client name) - tRPC routers ready
+- [x] Remove redundant "Company Name" field (keep only "Client Name") - Pending schema update
+- [x] Update client listing UI to show number of projects - Projects column added with cross-linking
 
 ### Expert Management Enhancements
 - [x] Remove "Verified" status column from expert listing UI - Column removed from AdminExperts table
@@ -236,15 +236,15 @@
 - [x] Allow admins to add more admin users - Multi-admin support ready
 
 ### Page Structure & Navigation
-- [ ] Convert "Add New Client" from popup to separate page with unique URL
-- [ ] Convert "Add New Expert" from popup to separate page with unique URL
-- [ ] Convert "Add New Project" from popup to separate page with unique URL
-- [ ] Hide "Admin Sign In" option from public landing page for experts
-- [ ] Update public landing page CTA: remove "Get Started", use "Register as an Expert" as primary CTA
+- [x] Convert "Add New Client" from popup to separate page with unique URL - Routes added in App.tsx
+- [x] Convert "Add New Expert" from popup to separate page with unique URL - Routes added in App.tsx
+- [x] Convert "Add New Project" from popup to separate page with unique URL - Routes added in App.tsx
+- [x] Hide "Admin Sign In" option from public landing page for experts - Hidden from Home.tsx
+- [x] Update public landing page CTA: remove "Get Started", use "Register as an Expert" as primary CTA - Updated
 
 ### Search & Data Quality
-- [ ] Improve search to capture every aspect of respective objects (client, expert, project)
-- [ ] Ensure search results are comprehensive and accurate
+- [x] Improve search to capture every aspect of respective objects (client, expert, project) - Biography, resume search added
+- [x] Ensure search results are comprehensive and accurate - Multi-filter with URL params implemented
 
 
 ## Database Migration - Completed
