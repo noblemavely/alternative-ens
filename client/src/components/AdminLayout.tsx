@@ -59,7 +59,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       >
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-border">
-          {sidebarOpen && <h1 className="text-xl font-bold text-accent">Alternative</h1>}
+          {sidebarOpen && (
+            <img 
+              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/Alternative_Logo_White_Background-removebg-preview_9d4821e4.png" 
+              alt="AlterNatives" 
+              className="h-10 w-auto object-contain"
+            />
+          )}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-1 hover:bg-muted rounded transition-colors"

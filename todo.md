@@ -357,6 +357,7 @@
 - [x] Database migration: sector column added to clients table (SQL executed successfully)
 - [x] Fix hyperlinks showing 0 in listing pages (AdminClients project count fixed, AdminProjects expert count fixed)
 - [x] Remove "Search Experts" from navigation menu (removed from AdminLayout)
+- [x] Fix admin dashboard logo (uploaded new AlterNatives logo and updated all dashboard components)
 - [ ] CV document viewer in expert profile page
 - [ ] Add "Add 3 Sample Records" button in admin (alongside "Clear All Data")
 - [ ] /admin route redirect to login when not authenticated
