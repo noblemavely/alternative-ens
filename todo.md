@@ -336,3 +336,28 @@
 - [ ] Test: Shortlist experts to project from all possible pages
 - [ ] Test: Perform searches in all listing pages
 - [ ] Test: Perform filters in all listing pages
+
+
+## Phase 4 - Client Structure Refactor
+- [x] Add sector field to clients database table (migration applied successfully)
+- [x] Update tRPC clients router to include sector field in create/update procedures
+- [x] Update AddClient.tsx with sector dropdown populated from master list
+- [x] Update AdminClientDetail.tsx with sector field and contact listing UI
+- [x] Add clientContacts router to tRPC with CRUD procedures
+- [x] Update AdminClients.tsx listing page with sector filter (replaced company filter)
+- [x] Apply database migration to add sector column to clients table
+
+## Phase 5 - Wire Sector/Function to Master Lists
+- [x] Update AddExpert.tsx to use Sector/Function dropdowns from master lists
+- [ ] Update AdminExperts listing page filter dropdowns to use master lists
+- [ ] Update expert edit forms to use master list dropdowns
+- [ ] Test Sector/Function dropdowns in all expert forms
+
+## Remaining Issues
+- [ ] Database migration: sector column needs to be added to clients table (SQL: ALTER TABLE clients ADD COLUMN sector varchar(255))
+- [ ] Fix hyperlinks showing 0 in listing pages (project count, expert count)
+- [ ] CV document viewer in expert profile page
+- [ ] Remove "Search Experts" from navigation menu
+- [ ] Add "Add 3 Sample Records" button in admin (alongside "Clear All Data")
+- [ ] /admin route redirect to login when not authenticated
+- [ ] Run full workflow test via UI after all fixes

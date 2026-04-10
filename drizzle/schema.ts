@@ -40,6 +40,7 @@ export const clients = mysqlTable("clients", {
   companyName: varchar("companyName", { length: 255 }),
   companyWebsite: varchar("companyWebsite", { length: 255 }),
   contactPerson: varchar("contactPerson", { length: 255 }),
+  sector: varchar("sector", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

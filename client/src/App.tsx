@@ -14,6 +14,9 @@ import AdminExpertDetail from "./pages/AdminExpertDetail";
 import AdminClientDetail from "./pages/AdminClientDetail";
 import AdminProjectDetail from "./pages/AdminProjectDetail";
 import AdminSettings from "./pages/AdminSettings";
+import AddClient from "./pages/AddClient";
+import AddExpert from "./pages/AddExpert";
+import AddProject from "./pages/AddProject";
 import ExpertPortal from "./pages/ExpertPortal";
 import ExpertProfileView from "./pages/ExpertProfileView";
 
@@ -28,8 +31,10 @@ function Router() {
       <Route path={"/admin/search"} component={AdminSearch} />
       <Route path={"/admin/experts/:id"} component={AdminExpertDetail} />
       <Route path={"/admin/clients/:id"} component={AdminClientDetail} />
-      <Route path={"/admin/projects/:id"} component={AdminProjectDetail} />
-      <Route path={"/admin/settings"} component={AdminSettings} />
+      <Route path={"/admin/projects/:id"} component={AdminProjectDetail} />      <Route path={"/admin/settings"} component={AdminSettings} />
+      <Route path={"/admin/add-client"} component={AddClient} />
+      <Route path={"/admin/add-expert"} component={AddExpert} />
+      <Route path={"/admin/add-project"} component={AddProject} />
       <Route path={"/expert/register"} component={ExpertPortal} />
       <Route path={"/expert/profile/:id"} component={ExpertProfileView} />
       <Route path={"/404"} component={NotFound} />

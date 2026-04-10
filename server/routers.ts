@@ -10,6 +10,11 @@ import {
   getClientById,
   updateClient,
   deleteClient,
+  createClientContact,
+  getClientContacts,
+  getClientContactById,
+  updateClientContact,
+  deleteClientContact,
   createExpert,
   getExperts,
   getExpertById,
@@ -96,6 +101,7 @@ export const appRouter = router({
           companyName: z.string().optional(),
           companyWebsite: z.string().optional(),
           contactPerson: z.string().optional(),
+          sector: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
@@ -106,6 +112,7 @@ export const appRouter = router({
           companyName: input.companyName ?? null,
           companyWebsite: input.companyWebsite ?? null,
           contactPerson: input.contactPerson ?? null,
+          sector: input.sector ?? null,
         };
         const client = await createClient(clientData);
         return client;
@@ -145,6 +152,68 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteClient(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ============ CLIENT CONTACTS ROUTERS ============
+  clientContacts: router({
+    create: adminProcedure
+      .input(
+        z.object({
+          clientId: z.number(),
+          name: z.string(),
+          email: z.string().email(),
+          phone: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const contact = await createClientContact({
+          clientId: input.clientId,
+          contactName: input.name,
+          email: input.email,
+          phone: input.phone || null,
+          role: null,
+          workType: null,
+          isActive: true,
+        });
+        return contact;
+      }),
+
+    listByClient: adminProcedure
+      .input(z.object({ clientId: z.number() }))
+      .query(async ({ input }) => {
+        return getClientContacts(input.clientId);
+      }),
+
+    getById: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return getClientContactById(input.id);
+      }),
+
+    update: adminProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().optional(),
+          email: z.string().email().optional(),
+          phone: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { id, name, ...data } = input;
+        await updateClientContact(id, {
+          contactName: name,
+          ...data,
+        });
+        return { success: true };
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteClientContact(input.id);
         return { success: true };
       }),
   }),

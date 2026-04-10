@@ -17,9 +17,8 @@ export default function AdminClientDetail() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<any>({});
-  const [showAddMapping, setShowAddMapping] = useState(false);
-  const [selectedExpert, setSelectedExpert] = useState<string>("");
-  const [mappingStatus, setMappingStatus] = useState("shortlisted");
+  const [showAddContact, setShowAddContact] = useState(false);
+  const [contactForm, setContactForm] = useState({ name: "", email: "", phone: "" });
 
   // Fetch client details
   const clientQuery = trpc.clients.getById.useQuery(
@@ -27,15 +26,14 @@ export default function AdminClientDetail() {
     { enabled: !!clientId }
   );
 
-  // Fetch experts
-  const expertsQuery = trpc.experts.list.useQuery();
+  // Fetch sectors
+  const sectorsQuery = trpc.sectors.list.useQuery();
 
-  // Fetch client mappings
-  // TODO: Implement expert-client mappings
-  // const mappingsQuery = trpc.expertClientMapping.listByClient.useQuery(
-  //   { clientId: clientId! },
-  //   { enabled: !!clientId }
-  // );
+  // Fetch client contacts
+  const contactsQuery = trpc.clientContacts.listByClient.useQuery(
+    { clientId: clientId! },
+    { enabled: !!clientId }
+  );
 
   // Update client mutation
   const updateClientMutation = trpc.clients.update.useMutation({
@@ -49,30 +47,29 @@ export default function AdminClientDetail() {
     },
   });
 
-  // Create mapping mutation
-  // const createMappingMutation = trpc.expertClientMapping.create.useMutation({
-  //   onSuccess: () => {
-  //     toast.success("Expert mapped successfully");
-  //     setSelectedExpert("");
-  //     setMappingStatus("shortlisted");
-  //     setShowAddMapping(false);
-  //     mappingsQuery.refetch();
-  //   },
-  //   onError: (error: any) => {
-  //     toast.error(error.message || "Failed to map expert");
-  //   },
-  // });
+  // Create contact mutation
+  const createContactMutation = trpc.clientContacts.create.useMutation({
+    onSuccess: () => {
+      toast.success("Contact added successfully");
+      setContactForm({ name: "", email: "", phone: "" });
+      setShowAddContact(false);
+      contactsQuery.refetch();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to add contact");
+    },
+  });
 
-  // Delete mapping mutation
-  // const deleteMappingMutation = trpc.expertClientMapping.delete.useMutation({
-  //   onSuccess: () => {
-  //     toast.success("Mapping removed");
-  //     mappingsQuery.refetch();
-  //   },
-  //   onError: (error: any) => {
-  //     toast.error(error.message || "Failed to remove mapping");
-  //   },
-  // });
+  // Delete contact mutation
+  const deleteContactMutation = trpc.clientContacts.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Contact removed");
+      contactsQuery.refetch();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to remove contact");
+    },
+  });
 
   // Initialize form data when client data loads
   useEffect(() => {
@@ -84,6 +81,7 @@ export default function AdminClientDetail() {
         companyName: clientQuery.data.companyName || "",
         companyWebsite: clientQuery.data.companyWebsite || "",
         contactPerson: clientQuery.data.contactPerson || "",
+        sector: clientQuery.data.sector || "",
       });
     }
   }, [clientQuery.data]);
@@ -96,41 +94,28 @@ export default function AdminClientDetail() {
     });
   };
 
-  const handleAddMapping = () => {
-    if (!selectedExpert) {
-      toast.error("Please select an expert");
+  const handleAddContact = async () => {
+    if (!contactForm.name || !contactForm.email) {
+      toast.error("Name and email are required");
       return;
     }
-    // TODO: Implement expert-client mapping
-    // createMappingMutation.mutate({
-    //   clientId: clientId!,
-    //   expertId: parseInt(selectedExpert),
-    //   status: mappingStatus as any,
-    // });
+    await createContactMutation.mutateAsync({
+      clientId: clientId!,
+      name: contactForm.name,
+      email: contactForm.email,
+      phone: contactForm.phone || undefined,
+    });
   };
 
-  // const handleRemoveMapping = (mappingId: number) => {
-  //   if (confirm("Are you sure you want to remove this mapping?")) {
-  //     deleteMappingMutation.mutate({ id: mappingId });
-  //   }
-  // };
+  const handleDeleteContact = (contactId: number) => {
+    if (confirm("Are you sure you want to remove this contact?")) {
+      deleteContactMutation.mutate({ id: contactId });
+    }
+  };
 
   if (!clientId) return <div className="p-6">Invalid client ID</div>;
   if (clientQuery.isLoading) return <div className="p-6">Loading...</div>;
   if (!clientQuery.data) return <div className="p-6">Client not found</div>;
-
-  const statusOptions = [
-    "shortlisted",
-    "contacted",
-    "attempting_contact",
-    "engaged",
-    "qualified",
-    "proposal_sent",
-    "negotiation",
-    "verbal_agreement",
-    "closed_won",
-    "closed_lost",
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
@@ -232,86 +217,101 @@ export default function AdminClientDetail() {
                     className="text-slate-900"
                   />
                 </div>
+                <div>
+                  <Label className="text-xs font-semibold text-slate-600">Sector</Label>
+                  {isEditing ? (
+                    <Select value={formData.sector || ""} onValueChange={(value) => setFormData({ ...formData, sector: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a sector" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sectorsQuery.data?.map((sector) => (
+                          <SelectItem key={sector.id} value={sector.name}>
+                            {sector.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      value={formData.sector}
+                      disabled={true}
+                      className="text-slate-900"
+                    />
+                  )}
+                </div>
               </CardContent>
             </Card>
-          </div>
 
-          {/* Sidebar - Mapped Experts */}
-          <div className="space-y-6">
-            <Card>
+            {/* Contacts */}
+            <Card className="border-slate-200 shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                 <div>
-                  <CardTitle className="text-lg">Mapped Experts</CardTitle>
+                  <CardTitle className="text-lg">Client Contacts</CardTitle>
                   <CardDescription>
-                    0 experts
+                    {contactsQuery.data?.length || 0} contact{(contactsQuery.data?.length || 0) !== 1 ? "s" : ""}
                   </CardDescription>
                 </div>
-                <Dialog open={showAddMapping} onOpenChange={setShowAddMapping}>
+                <Dialog open={showAddContact} onOpenChange={setShowAddContact}>
                   <DialogTrigger asChild>
                     <Button size="sm" variant="outline">
                       <Plus size={16} className="mr-1" />
-                      Add
+                      Add Contact
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Map Expert to Client</DialogTitle>
+                      <DialogTitle>Add Contact</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
                       <div>
-                        <Label>Select Expert</Label>
-                        <Select value={selectedExpert} onValueChange={setSelectedExpert}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Choose an expert..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {expertsQuery.data?.map((expert) => (
-                              <SelectItem key={expert.id} value={expert.id.toString()}>
-                                {expert.firstName} {expert.lastName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Label>Name *</Label>
+                        <Input
+                          placeholder="John Doe"
+                          value={contactForm.name}
+                          onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                        />
                       </div>
                       <div>
-                        <Label>Status</Label>
-                        <Select value={mappingStatus} onValueChange={setMappingStatus}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {statusOptions.map((status) => (
-                              <SelectItem key={status} value={status}>
-                                {status.replace(/_/g, " ").toUpperCase()}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Label>Email *</Label>
+                        <Input
+                          type="email"
+                          placeholder="john@example.com"
+                          value={contactForm.email}
+                          onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                        />
                       </div>
-                      <Button onClick={handleAddMapping} disabled={false} className="w-full">
-                        Add Mapping
+                      <div>
+                        <Label>Phone</Label>
+                        <Input
+                          placeholder="+1 (555) 123-4567"
+                          value={contactForm.phone}
+                          onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
+                        />
+                      </div>
+                      <Button onClick={handleAddContact} disabled={createContactMutation.isPending} className="w-full">
+                        {createContactMutation.isPending ? "Adding..." : "Add Contact"}
                       </Button>
                     </div>
                   </DialogContent>
                 </Dialog>
               </CardHeader>
               <CardContent>
-                {true ? (
-                  <p className="text-sm text-muted-foreground">No experts mapped yet</p>
+                {!contactsQuery.data || contactsQuery.data.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No contacts added yet</p>
                 ) : (
                   <div className="space-y-3">
-                    {[].map((mapping: any) => (
-                      <div key={mapping.id} className="p-3 border rounded-lg">
+                    {contactsQuery.data.map((contact: any) => (
+                      <div key={contact.id} className="p-3 border rounded-lg">
                         <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-semibold text-sm">{mapping.expertName}</p>
-                            <p className="text-xs text-primary font-medium mt-1">{mapping.status}</p>
+                          <div>                            <p className="font-semibold text-sm">{contact.contactName || contact.name}</p>                       <p className="text-xs text-slate-600 mt-1">{contact.email}</p>
+                            {contact.phone && <p className="text-xs text-slate-600">{contact.phone}</p>}
                           </div>
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => {}}
-                            disabled={false}
+                            onClick={() => handleDeleteContact(contact.id)}
+                            disabled={deleteContactMutation.isPending}
                           >
                             <Trash2 size={14} />
                           </Button>
@@ -320,6 +320,25 @@ export default function AdminClientDetail() {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar - Stats */}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Client Stats</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-xs font-semibold text-slate-600">Total Contacts</p>
+                  <p className="text-2xl font-bold text-slate-900">{contactsQuery.data?.length || 0}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-600">Sector</p>
+                  <p className="text-sm font-medium text-slate-900">{formData.sector || "Not set"}</p>
+                </div>
               </CardContent>
             </Card>
           </div>

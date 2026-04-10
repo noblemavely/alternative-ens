@@ -21,6 +21,7 @@ const clientSchema = z.object({
   companyName: z.string().optional(),
   companyWebsite: z.string().optional(),
   contactPerson: z.string().optional(),
+  sector: z.string().optional(),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
@@ -32,17 +33,18 @@ export default function AdminClients() {
   
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
-  const [companyFilter, setCompanyFilter] = useState<string>(urlParams.get('company') || "");
+  const [sectorFilter, setSectorFilter] = useState<string>(urlParams.get('sector') || "");
   
-  const updateUrl = (search: string, company: string) => {
+  const updateUrl = (search: string, sector: string) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
-    if (company && company !== "all") params.set('company', company);
+    if (sector && sector !== "all") params.set('sector', sector);
     const queryString = params.toString();
     navigate(`/admin/clients${queryString ? '?' + queryString : ''}`);
   };
 
   const clientsQuery = trpc.clients.list.useQuery();
+  const sectorsQuery = trpc.sectors.list.useQuery();
   const projectsQuery = trpc.projects.list.useQuery();
   const createMutation = trpc.clients.create.useMutation();
   
@@ -50,8 +52,9 @@ export default function AdminClients() {
     (client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.companyName?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (!companyFilter || companyFilter === "all" || client.companyName === companyFilter)
+    (!sectorFilter || sectorFilter === "all" || client.sector === sectorFilter)
   ) || [];
+  
   const updateMutation = trpc.clients.update.useMutation();
   const deleteMutation = trpc.clients.delete.useMutation();
 
@@ -64,6 +67,7 @@ export default function AdminClients() {
       companyName: "",
       companyWebsite: "",
       contactPerson: "",
+      sector: "",
     },
   });
 
@@ -122,200 +126,100 @@ export default function AdminClients() {
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                updateUrl(e.target.value, companyFilter);
+                updateUrl(e.target.value, sectorFilter);
               }}
               className="flex-1 min-w-0"
             />
-            <Select value={companyFilter} onValueChange={(value) => {
-              setCompanyFilter(value);
+            <Select value={sectorFilter} onValueChange={(value) => {
+              setSectorFilter(value);
               updateUrl(searchTerm, value);
             }}>
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="Company" />
+                <SelectValue placeholder="Sector" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Companies</SelectItem>
-                {Array.from(new Set((clientsQuery.data?.map(c => c.companyName).filter(Boolean) || []) as string[])).map(company => (
-                  <SelectItem key={company} value={company}>{company}</SelectItem>
+                <SelectItem value="all">All Sectors</SelectItem>
+                {sectorsQuery.data?.map(sector => (
+                  <SelectItem key={sector.id} value={sector.name}>{sector.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => { form.reset(); setEditingId(null); }} className="gap-2 whitespace-nowrap">
-                <Plus size={18} />
-                Add Client
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{editingId ? "Edit Client" : "Add New Client"}</DialogTitle>
-                <DialogDescription>
-                  {editingId ? "Update client information" : "Create a new client in your network"}
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Client Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Company Name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="email@company.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone</FormLabel>
-                        <FormControl>
-                          <Input placeholder="+1 (555) 000-0000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="companyName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Company Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Company Name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="companyWebsite"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Company Website</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://company.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="contactPerson"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contact Person</FormLabel>
-                        <FormControl>
-                          <Input placeholder="John Doe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full" disabled={createMutation.isPending || updateMutation.isPending}>
-                    {editingId ? "Update Client" : "Create Client"}
-                  </Button>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={() => navigate("/admin/add-client")} className="gap-2 whitespace-nowrap">
+            <Plus size={18} />
+            Add Client
+          </Button>
         </div>
 
         {/* Clients Table */}
-        <Card className="card-elegant">
+        <Card>
           <CardHeader>
             <CardTitle>All Clients</CardTitle>
-            <CardDescription>Complete list of clients in your network</CardDescription>
+            <CardDescription>
+              {filteredClients.length} client{filteredClients.length !== 1 ? "s" : ""} found
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {clientsQuery.isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading clients...</div>
-            ) : filteredClients.length > 0 ? (
+            {filteredClients.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No clients found</p>
+            ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full">
                   <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 font-semibold">Name</th>
-                      <th className="text-left py-3 px-4 font-semibold">Email</th>
-                      <th className="text-left py-3 px-4 font-semibold">Company</th>
-                      <th className="text-left py-3 px-4 font-semibold">Phone</th>
-                      <th className="text-center py-3 px-4 font-semibold">Projects</th>
-                      <th className="text-right py-3 px-4 font-semibold">Actions</th>
+                    <tr className="border-b">
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Name</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Company</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Email</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Sector</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Projects</th>
+                      <th className="text-right py-3 px-4 font-semibold text-foreground">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredClients.map((client) => (
-                      <tr key={client.id} className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`/admin/clients/${client.id}`)}>
-                        <td className="py-3 px-4 font-medium">{client.name}</td>
-                        <td className="py-3 px-4 text-muted-foreground">{client.email}</td>
-                        <td className="py-3 px-4 text-muted-foreground">{client.companyName || "-"}</td>
-                        <td className="py-3 px-4 text-muted-foreground">{client.phone || "-"}</td>
-                        <td className="py-3 px-4 text-center">
-                          <Button
-                            variant="link"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/admin/projects?client=${client.id}`);
-                            }}
-                            className="text-blue-600 hover:text-blue-800 p-0 h-auto"
-                          >
-                            {projectsQuery.data?.filter(p => p.clientId === client.id).length || 0}
-                          </Button>
-                        </td>
-                        <td className="py-3 px-4 text-right space-x-2 flex justify-end">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(client)}
-                            className="gap-1"
-                          >
-                            <Edit2 size={16} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(client.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredClients.map((client: any) => {
+                      const projectCount = projectsQuery.data?.filter((p: any) => p.clientId === client.id).length || 0;
+                      return (
+                        <tr key={client.id} className="border-b hover:bg-muted/50">
+                          <td className="py-3 px-4">
+                            <button
+                              onClick={() => navigate(`/admin/clients/${client.id}`)}
+                              className="text-primary hover:underline font-medium"
+                            >
+                              {client.name}
+                            </button>
+                          </td>
+                          <td className="py-3 px-4 text-muted-foreground">{client.companyName || "-"}</td>
+                          <td className="py-3 px-4 text-muted-foreground">{client.email}</td>
+                          <td className="py-3 px-4 text-muted-foreground">{client.sector || "-"}</td>
+                          <td className="py-3 px-4">
+                            <button
+                              onClick={() => navigate(`/admin/projects?client=${client.id}`)}
+                              className="text-primary hover:underline font-medium"
+                            >
+                              {projectCount}
+                            </button>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => navigate(`/admin/clients/${client.id}`)}
+                            >
+                              <Edit2 size={16} />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDelete(client.id)}
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">{searchTerm ? "No clients match your search" : "No clients yet"}</p>
-                <Button onClick={() => setOpen(true)} className="gap-2">
-                  <Plus size={18} />
-                  Add First Client
-                </Button>
               </div>
             )}
           </CardContent>
