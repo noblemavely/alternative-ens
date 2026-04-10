@@ -4,6 +4,7 @@ import {
   InsertUser,
   users,
   clients,
+  clientContacts,
   experts,
   projects,
   screeningQuestions,
@@ -13,6 +14,7 @@ import {
   expertVerification,
   expertClientMapping,
   type Client,
+  type ClientContact,
   type Expert,
   type Project,
   type ScreeningQuestion,
@@ -535,4 +537,57 @@ export async function getExpertClientMapping(id: number) {
     .limit(1);
 
   return result.length > 0 ? result[0] : null;
+}
+
+
+// ============ CLIENT CONTACTS FUNCTIONS ============
+
+export async function createClientContact(data: Omit<ClientContact, "id" | "createdAt" | "updatedAt">) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(clientContacts).values(data);
+  return result;
+}
+
+export async function getClientContacts(clientId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(clientContacts)
+    .where(eq(clientContacts.clientId, clientId));
+}
+
+export async function getClientContactById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .select()
+    .from(clientContacts)
+    .where(eq(clientContacts.id, id))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function updateClientContact(id: number, data: Partial<Omit<ClientContact, "id" | "createdAt" | "updatedAt">>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(clientContacts)
+    .set(data)
+    .where(eq(clientContacts.id, id));
+}
+
+export async function deleteClientContact(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .delete(clientContacts)
+    .where(eq(clientContacts.id, id));
 }

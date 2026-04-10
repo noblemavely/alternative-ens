@@ -3,7 +3,7 @@ import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { Users, Briefcase, FileText, TrendingUp, Trash2, Loader2 } from "lucide-react";
+import { Users, Briefcase, FileText, Trash2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -53,12 +53,6 @@ export default function AdminDashboard() {
       icon: Briefcase,
       color: "text-purple-600",
     },
-    {
-      title: "Growth",
-      value: "+12%",
-      icon: TrendingUp,
-      color: "text-amber-600",
-    },
   ];
 
   return (
@@ -71,18 +65,27 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {stats.map((stat) => {
             const Icon = stat.icon;
+            const handleClick = () => {
+              if (stat.title === "Total Clients") window.location.href = "/admin/clients";
+              if (stat.title === "Total Experts") window.location.href = "/admin/experts";
+              if (stat.title === "Active Projects") window.location.href = "/admin/projects";
+            };
             return (
-              <Card key={stat.title} className="card-elegant">
+              <Card 
+                key={stat.title} 
+                className="card-elegant cursor-pointer hover:shadow-lg transition-all hover:border-primary/50"
+                onClick={handleClick}
+              >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
                   <Icon className={`h-4 w-4 ${stat.color}`} />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Network overview</p>
+                  <p className="text-xs text-muted-foreground mt-1">Click to view</p>
                 </CardContent>
               </Card>
             );

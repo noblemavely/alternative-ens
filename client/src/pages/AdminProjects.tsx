@@ -33,13 +33,20 @@ export default function AdminProjects() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [screeningQuestions, setScreeningQuestions] = useState<string[]>([]);
   const [newQuestion, setNewQuestion] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const clientsQuery = trpc.clients.list.useQuery();
   const projectsQuery = trpc.projects.list.useQuery();
+  
+  const filteredProjects = projectsQuery.data?.filter(project => 
+    project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    project.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+  
   const createMutation = trpc.projects.create.useMutation();
   const updateMutation = trpc.projects.update.useMutation();
   const deleteMutation = trpc.projects.delete.useMutation();
-  const createQuestionMutation = trpc.screeningQuestions.create.useMutation();
+  const createQuestionMutation = trpc.screeningQuestions.add.useMutation();
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
@@ -125,8 +132,18 @@ export default function AdminProjects() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Projects</h1>
-            <p className="text-muted mt-2">Manage client projects and requirements</p>
+            <p className="text-muted-foreground mt-2">Manage client projects and requirements</p>
           </div>
+        </div>
+
+        {/* Search and Add Button Row */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <Input
+            placeholder="Search by project name or description..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1 min-w-0"
+          />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button
@@ -135,7 +152,7 @@ export default function AdminProjects() {
                   setEditingId(null);
                   setScreeningQuestions([]);
                 }}
-                className="gap-2"
+                className="gap-2 whitespace-nowrap"
               >
                 <Plus size={18} />
                 Add Project
@@ -319,7 +336,7 @@ export default function AdminProjects() {
           <CardContent>
             {projectsQuery.isLoading ? (
               <div className="text-center py-8 text-muted-foreground">Loading projects...</div>
-            ) : projectsQuery.data && projectsQuery.data.length > 0 ? (
+            ) : filteredProjects.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -332,7 +349,7 @@ export default function AdminProjects() {
                     </tr>
                   </thead>
                   <tbody>
-                    {projectsQuery.data.map((project) => (
+                    {filteredProjects.map((project) => (
                       <tr key={project.id} className="border-b border-border hover:bg-muted/50 transition-colors">
                         <td className="py-3 px-4 font-medium">{project.name}</td>
                         <td className="py-3 px-4">
@@ -363,7 +380,7 @@ export default function AdminProjects() {
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">No projects yet</p>
+                <p className="text-muted-foreground mb-4">{searchTerm ? "No projects match your search" : "No projects yet"}</p>
                 <Button onClick={() => setOpen(true)} className="gap-2">
                   <Plus size={18} />
                   Create First Project

@@ -188,3 +188,66 @@
 
 ## Bug Reports - Fixed
 - [x] Clear All Data button in admin dashboard is not working - FIXED: Added clearAllData mutation to systemRouter with proper database deletion order
+
+
+## User-Requested Improvements - Phase 2
+
+### Logo & Branding Updates
+- [x] Replace current logo with new AlterNatives logo (with "Powered by Native" tagline)
+- [x] Update logo in all pages (DashboardLayout, Home, ExpertPortal)
+- [x] Add "Powered by Native" tagline to header/footer
+
+### UI/UX Consistency & Layout
+- [x] Fix search box and Add button positioning consistency across Clients, Experts, Projects pages
+- [x] Increase search box sizing across all listing pages
+- [x] Make placeholder text visible in search boxes
+- [x] Make entire cards clickable in dashboard and listing pages
+- [x] Remove Growth card from Admin Dashboard (no longer needed)
+
+### Search & Filter Enhancements
+- [ ] Add resume content search for expert search (search within CV/resume text)
+- [ ] Implement filter options across all listing pages (Clients, Experts, Projects)
+- [ ] Make search/filter URL-driven using URL parameters for unique URLs per search/filter
+- [ ] Add cross-linking: Client listing shows project count (hyperlinked to filtered projects)
+- [ ] Add cross-linking: Projects listing shows expert count (hyperlinked to filtered experts)
+
+### Client Management Enhancements
+- [ ] Implement multi-contact support for clients (multiple contacts per client org)
+- [ ] Add contact selection when creating projects (instead of just client name)
+- [ ] Remove redundant "Company Name" field (keep only "Client Name")
+- [ ] Update client listing UI to show number of projects
+
+### Expert Management Enhancements
+- [ ] Remove "Verified" status column from expert listing UI
+- [ ] Enhance expert profile creation to properly handle names (fix random name issue)
+- [ ] Test expert profile creation thoroughly with proper name handling
+
+### Project Management Enhancements
+- [ ] Fix project creation error handling (error shown but project created successfully)
+- [ ] Enhance project detail page: show full expert listing table with all expert details
+- [ ] Add project carousel in expert detail page showing all projects expert is tagged to
+- [ ] Display project name, client name, and application status in project carousel cards
+
+### Admin Settings & Authentication
+- [ ] Convert Sector and Function to configurable master list dropdowns
+- [ ] Add admin settings page to configure Sector and Function master lists (hidden option, not too evident)
+- [ ] Implement admin user management in settings
+- [ ] Add email/password authentication for admin login (replace Manus OAuth for admin)
+- [ ] Allow admins to add more admin users
+
+### Page Structure & Navigation
+- [ ] Convert "Add New Client" from popup to separate page with unique URL
+- [ ] Convert "Add New Expert" from popup to separate page with unique URL
+- [ ] Convert "Add New Project" from popup to separate page with unique URL
+- [ ] Hide "Admin Sign In" option from public landing page for experts
+- [ ] Update public landing page CTA: remove "Get Started", use "Register as an Expert" as primary CTA
+
+### Search & Data Quality
+- [ ] Improve search to capture every aspect of respective objects (client, expert, project)
+- [ ] Ensure search results are comprehensive and accurate
+
+
+## Database Migration - Completed
+- [x] Execute migration: CREATE clientContacts table, ALTER projects ADD clientContactId, ALTER expertEducation MODIFY degree
+- [x] Verify migration applied successfully
+- [x] Run tests to confirm schema changes work - All 63 tests passing

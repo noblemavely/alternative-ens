@@ -131,6 +131,16 @@ export default function AdminExperts() {
             <h1 className="text-3xl font-bold text-foreground">Experts</h1>
             <p className="text-muted-foreground mt-2">Manage your expert network</p>
           </div>
+        </div>
+
+        {/* Search and Add Button Row */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <Input
+            placeholder="Search by name, email, sector, or function..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1 min-w-0"
+          />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button
@@ -139,7 +149,7 @@ export default function AdminExperts() {
                   setEditingId(null);
                   setLinkedinUrl("");
                 }}
-                className="gap-2"
+                className="gap-2 whitespace-nowrap"
               >
                 <Plus size={18} />
                 Add Expert
@@ -302,18 +312,6 @@ export default function AdminExperts() {
             </DialogContent>
           </Dialog>
         </div>
-
-        {/* Search Bar */}
-        <Card className="card-elegant">
-          <CardContent className="pt-6">
-            <Input
-              placeholder="Search by name, email, sector, or function..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-md"
-            />
-          </CardContent>
-        </Card>
 
         {/* Experts Table */}
         <Card className="card-elegant">

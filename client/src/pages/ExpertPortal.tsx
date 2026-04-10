@@ -288,12 +288,15 @@ export default function ExpertPortal() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-3 mb-2">
             <img 
-              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/alternative-logo-trimmed-RgZCb6bccbkFnj5ejWPUg4.webp" 
+              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/Alternative_Logo_White_Background-removebg-preview_7e66f836.png" 
               alt="AlterNatives" 
               className="h-8 w-auto object-contain"
             />
           </div>
-          <p className="text-sm text-muted-foreground">Expert Network Service</p>
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-muted-foreground">Expert Network Service</p>
+            <span className="text-xs text-muted-foreground">Powered by Native</span>
+          </div>
         </div>
       </header>
 

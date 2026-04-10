@@ -48,6 +48,25 @@ export type Client = typeof clients.$inferSelect;
 export type InsertClient = typeof clients.$inferInsert;
 
 /**
+ * Client Contacts table - multiple contacts per client for different work types
+ */
+export const clientContacts = mysqlTable("clientContacts", {
+  id: int("id").autoincrement().primaryKey(),
+  clientId: int("clientId").notNull(),
+  contactName: varchar("contactName", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  phone: varchar("phone", { length: 20 }),
+  role: varchar("role", { length: 255 }), // e.g., "Hiring Manager", "Project Lead", "SPOC"
+  workType: varchar("workType", { length: 255 }), // e.g., "Advisory", "Recruitment", "Research"
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ClientContact = typeof clientContacts.$inferSelect;
+export type InsertClientContact = typeof clientContacts.$inferInsert;
+
+/**
  * Experts table - represents expert professionals in the network
  */
 export const experts = mysqlTable("experts", {
@@ -98,7 +117,7 @@ export const expertEducation = mysqlTable("expertEducation", {
   id: int("id").autoincrement().primaryKey(),
   expertId: int("expertId").notNull(),
   schoolName: varchar("schoolName", { length: 255 }).notNull(),
-  degree: varchar("degree", { length: 255 }).notNull(),
+  degree: varchar("degree", { length: 255 }),
   fieldOfStudy: varchar("fieldOfStudy", { length: 255 }),
   startDate: varchar("startDate", { length: 10 }), // YYYY-MM format
   endDate: varchar("endDate", { length: 10 }), // YYYY-MM format
@@ -111,11 +130,12 @@ export type ExpertEducation = typeof expertEducation.$inferSelect;
 export type InsertExpertEducation = typeof expertEducation.$inferInsert;
 
 /**
- * Projects table - represents projects created by clients
+ * Projects table - represents projects/opportunities
  */
 export const projects = mysqlTable("projects", {
   id: int("id").autoincrement().primaryKey(),
   clientId: int("clientId").notNull(),
+  clientContactId: int("clientContactId"), // Reference to specific contact for this project
   name: varchar("name", { length: 255 }).notNull(),
   description: longtext("description"),
   projectType: mysqlEnum("projectType", ["Call", "Advisory", "ID"]).notNull(),

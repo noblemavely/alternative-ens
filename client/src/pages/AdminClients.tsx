@@ -96,11 +96,21 @@ export default function AdminClients() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Clients</h1>
-            <p className="text-muted mt-2">Manage your client network</p>
+            <p className="text-muted-foreground mt-2">Manage your client network</p>
           </div>
+        </div>
+
+        {/* Search and Add Button Row */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <Input
+            placeholder="Search by name, email, or company..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1 min-w-0"
+          />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => { form.reset(); setEditingId(null); }} className="gap-2">
+              <Button onClick={() => { form.reset(); setEditingId(null); }} className="gap-2 whitespace-nowrap">
                 <Plus size={18} />
                 Add Client
               </Button>
@@ -199,18 +209,6 @@ export default function AdminClients() {
               </Form>
             </DialogContent>
           </Dialog>
-        {/* Search Bar */}
-        <Card className="card-elegant">
-          <CardContent className="pt-6">
-            <Input
-              placeholder="Search by name, email, or company..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-md"
-            />
-          </CardContent>
-        </Card>
-
         </div>
 
         {/* Clients Table */}

@@ -22,10 +22,11 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img 
-                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/alternative-logo-trimmed-RgZCb6bccbkFnj5ejWPUg4.webp" 
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/Alternative_Logo_White_Background-removebg-preview_7e66f836.png" 
                 alt="AlterNatives" 
                 className="h-8 w-auto object-contain"
               />
+              <span className="text-xs text-muted-foreground">Powered by Native</span>
             </div>
             <Button variant="outline" size="sm" onClick={() => window.location.href = getLoginUrl()}>
               Logout
@@ -70,18 +71,13 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
-              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/alternative-logo-trimmed-RgZCb6bccbkFnj5ejWPUg4.webp" 
+              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/Alternative_Logo_White_Background-removebg-preview_7e66f836.png" 
               alt="AlterNatives" 
               className="h-8 w-auto object-contain"
             />
+            <span className="text-xs text-muted-foreground">Powered by Native</span>
           </div>
-          <Button
-            size="sm"
-            onClick={() => (window.location.href = getLoginUrl())}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
-          >
-            Sign In
-          </Button>
+          {/* Admin Sign In hidden from public page */}
         </div>
       </nav>
 
@@ -101,16 +97,8 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Button
               size="lg"
-              onClick={() => (window.location.href = getLoginUrl())}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
-            >
-              Get Started
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
               onClick={() => navigate("/expert/register")}
-              className="border-border text-foreground hover:bg-secondary px-8"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
             >
               Register as Expert
             </Button>

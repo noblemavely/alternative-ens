@@ -32,6 +32,7 @@ export const systemRouter = router({
   clearAllData: adminProcedure.mutation(async () => {
     try {
       const db = await getDb();
+      if (!db) throw new Error("Database not available");
       // Delete in order of dependencies (reverse of creation order)
       await db.delete(expertClientMapping);
       await db.delete(shortlists);
