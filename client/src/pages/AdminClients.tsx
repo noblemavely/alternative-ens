@@ -1,3 +1,4 @@
+import { useLocation } from "wouter";
 import React, { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ const clientSchema = z.object({
 type ClientFormData = z.infer<typeof clientSchema>;
 
 export default function AdminClients() {
+  const [, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -234,7 +236,7 @@ export default function AdminClients() {
                   </thead>
                   <tbody>
                     {filteredClients.map((client) => (
-                      <tr key={client.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                      <tr key={client.id} className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`/admin/clients/${client.id}`)}>
                         <td className="py-3 px-4 font-medium">{client.name}</td>
                         <td className="py-3 px-4 text-muted-foreground">{client.email}</td>
                         <td className="py-3 px-4 text-muted-foreground">{client.companyName || "-"}</td>

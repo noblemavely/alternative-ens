@@ -11,6 +11,7 @@ import {
   expertEmployment,
   expertEducation,
   expertVerification,
+  expertClientMapping,
   type Client,
   type Expert,
   type Project,
@@ -450,4 +451,88 @@ export async function deleteExpertVerification(id: number) {
   if (!db) throw new Error("Database not available");
 
   await db.delete(expertVerification).where(eq(expertVerification.id, id));
+}
+
+
+// Expert-Client Mapping Functions
+export async function createExpertClientMapping(
+  expertId: number,
+  clientId: number,
+  status: string = "shortlisted",
+  notes?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .insert(expertClientMapping)
+    .values({
+      expertId,
+      clientId,
+      status: status as any,
+      notes,
+    });
+
+  return result;
+}
+
+export async function getExpertClientMappingsByExpert(expertId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db
+    .select()
+    .from(expertClientMapping)
+    .where(eq(expertClientMapping.expertId, expertId));
+}
+
+export async function getExpertClientMappingsByClient(clientId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db
+    .select()
+    .from(expertClientMapping)
+    .where(eq(expertClientMapping.clientId, clientId));
+}
+
+export async function updateExpertClientMappingStatus(
+  id: number,
+  status: string,
+  notes?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const updates: any = { status: status as any };
+  if (notes !== undefined) {
+    updates.notes = notes;
+  }
+
+  await db
+    .update(expertClientMapping)
+    .set(updates)
+    .where(eq(expertClientMapping.id, id));
+}
+
+export async function deleteExpertClientMapping(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .delete(expertClientMapping)
+    .where(eq(expertClientMapping.id, id));
+}
+
+export async function getExpertClientMapping(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .select()
+    .from(expertClientMapping)
+    .where(eq(expertClientMapping.id, id))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
 }

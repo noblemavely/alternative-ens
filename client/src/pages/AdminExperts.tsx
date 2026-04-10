@@ -1,3 +1,4 @@
+import { useLocation } from "wouter";
 import React, { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ const expertSchema = z.object({
 type ExpertFormData = z.infer<typeof expertSchema>;
 
 export default function AdminExperts() {
+  const [, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [linkedinUrl, setLinkedinUrl] = useState("");
@@ -337,7 +339,7 @@ export default function AdminExperts() {
                   </thead>
                   <tbody>
                     {filteredExperts.map((expert) => (
-                      <tr key={expert.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                      <tr key={expert.id} className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`/admin/experts/${expert.id}`)}>
                         <td className="py-3 px-4 font-medium">
                           {expert.firstName} {expert.lastName}
                         </td>

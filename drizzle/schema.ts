@@ -173,3 +173,19 @@ export const expertVerification = mysqlTable("expertVerification", {
 
 export type ExpertVerification = typeof expertVerification.$inferSelect;
 export type InsertExpertVerification = typeof expertVerification.$inferInsert;
+
+/**
+ * Expert-Client Mapping table - tracks relationship between experts and clients with status
+ */
+export const expertClientMapping = mysqlTable("expertClientMapping", {
+  id: int("id").autoincrement().primaryKey(),
+  expertId: int("expertId").notNull(),
+  clientId: int("clientId").notNull(),
+  status: mysqlEnum("status", ["shortlisted", "contacted", "attempting_contact", "engaged", "qualified", "proposal_sent", "negotiation", "verbal_agreement", "closed_won", "closed_lost"]).default("shortlisted").notNull(),
+  notes: longtext("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ExpertClientMapping = typeof expertClientMapping.$inferSelect;
+export type InsertExpertClientMapping = typeof expertClientMapping.$inferInsert;

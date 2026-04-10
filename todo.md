@@ -171,3 +171,16 @@
 
 ## Accessibility Issues - Completed
 - [x] Fix invisible text in admin dashboard - replaced text-muted with text-muted-foreground for better contrast across all admin pages (Dashboard, Experts, Clients, Projects, Search)
+
+
+## Expert-Client Mapping Feature - Completed
+- [x] Create expertClientMapping table in database schema with statuses (Shortlisted, Contacted, Attempting Contact, Engaged, Qualified, Proposal/Quotation Sent, Negotiation, Verbal Agreement, Closed-Won, Closed-Lost)
+- [x] Add tRPC procedures: create mapping, list mappings by expert/client, update status, delete mapping
+- [x] Create ExpertDetail page showing all expert info, employment, education, CV, and mapped clients
+- [x] Create ClientDetail page showing all client info and mapped experts
+- [x] Add expert-to-client mapping UI in both detail pages
+- [x] Add edit functionality for expert and client info within detail pages
+- [x] Update AdminExperts to link to ExpertDetail page (click row to navigate)
+- [x] Update AdminClients to link to ClientDetail page (click row to navigate)
+- [x] Add back buttons to detail pages
+- [x] Test expert-client mapping end-to-end - all 61 tests passing

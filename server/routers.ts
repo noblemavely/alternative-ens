@@ -43,6 +43,11 @@ import {
   createExpertVerification,
   getVerificationByToken,
   deleteExpertVerification,
+  createExpertClientMapping,
+  getExpertClientMappingsByExpert,
+  getExpertClientMappingsByClient,
+  updateExpertClientMappingStatus,
+  deleteExpertClientMapping,
 } from "./db";
 import { storagePut, storageGet } from "./storage";
 import { nanoid } from "nanoid";
@@ -672,6 +677,55 @@ export const appRouter = router({
   }),
 
   linkedin: router({
+
+  // ============ EXPERT-CLIENT MAPPING ROUTERS ============
+  expertClientMapping: router({
+    create: adminProcedure
+      .input(
+        z.object({
+          expertId: z.number(),
+          clientId: z.number(),
+          status: z.enum(["shortlisted", "contacted", "attempting_contact", "engaged", "qualified", "proposal_sent", "negotiation", "verbal_agreement", "closed_won", "closed_lost"]).default("shortlisted"),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await createExpertClientMapping(input.expertId, input.clientId, input.status, input.notes);
+        return { success: true };
+      }),
+
+    listByExpert: adminProcedure
+      .input(z.object({ expertId: z.number() }))
+      .query(async ({ input }) => {
+        return getExpertClientMappingsByExpert(input.expertId);
+      }),
+
+    listByClient: adminProcedure
+      .input(z.object({ clientId: z.number() }))
+      .query(async ({ input }) => {
+        return getExpertClientMappingsByClient(input.clientId);
+      }),
+
+    updateStatus: adminProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          status: z.enum(["shortlisted", "contacted", "attempting_contact", "engaged", "qualified", "proposal_sent", "negotiation", "verbal_agreement", "closed_won", "closed_lost"]),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await updateExpertClientMappingStatus(input.id, input.status, input.notes);
+        return { success: true };
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteExpertClientMapping(input.id);
+        return { success: true };
+      }),
+  }),
     parseProfile: publicProcedure
       .input(z.object({ url: z.string().url() }))
       .mutation(async ({ input }) => {
