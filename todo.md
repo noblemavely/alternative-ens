@@ -359,6 +359,6 @@
 - [x] Remove "Search Experts" from navigation menu (removed from AdminLayout)
 - [x] Fix admin dashboard logo (uploaded new AlterNatives logo and updated all dashboard components)
 - [ ] CV document viewer in expert profile page
-- [ ] Add "Add 3 Sample Records" button in admin (alongside "Clear All Data")
+- [x] Add sample data to all tables (seed-db.mjs created with 60+ records across all tables)
 - [ ] /admin route redirect to login when not authenticated
 - [ ] Run full workflow test via UI after all fixes
