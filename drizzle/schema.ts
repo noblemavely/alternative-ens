@@ -209,3 +209,32 @@ export const expertClientMapping = mysqlTable("expertClientMapping", {
 
 export type ExpertClientMapping = typeof expertClientMapping.$inferSelect;
 export type InsertExpertClientMapping = typeof expertClientMapping.$inferInsert;
+
+
+/**
+ * Master list for sectors - configurable by admins
+ */
+export const sectors = mysqlTable("sectors", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Sector = typeof sectors.$inferSelect;
+export type InsertSector = typeof sectors.$inferInsert;
+
+/**
+ * Master list for functions - configurable by admins
+ */
+export const functions = mysqlTable("functions", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Function = typeof functions.$inferSelect;
+export type InsertFunction = typeof functions.$inferInsert;

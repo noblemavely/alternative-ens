@@ -29,14 +29,25 @@ const expertSchema = z.object({
 type ExpertFormData = z.infer<typeof expertSchema>;
 
 export default function AdminExperts() {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [parsingLinkedin, setParsingLinkedin] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sectorFilter, setSectorFilter] = useState<string>("");
-  const [functionFilter, setFunctionFilter] = useState<string>("");
+  
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
+  const [sectorFilter, setSectorFilter] = useState<string>(urlParams.get('sector') || "");
+  const [functionFilter, setFunctionFilter] = useState<string>(urlParams.get('function') || "");
+  
+  const updateUrl = (search: string, sector: string, func: string) => {
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (sector) params.set('sector', sector);
+    if (func) params.set('function', func);
+    const queryString = params.toString();
+    navigate(`/admin/experts${queryString ? '?' + queryString : ''}`);
+  };
 
   const expertsQuery = trpc.experts.list.useQuery();
   
@@ -145,10 +156,16 @@ export default function AdminExperts() {
             <Input
               placeholder="Search by name, email, sector, or function..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                updateUrl(e.target.value, sectorFilter, functionFilter);
+              }}
               className="flex-1 min-w-0"
             />
-            <Select value={sectorFilter} onValueChange={setSectorFilter}>
+            <Select value={sectorFilter} onValueChange={(value) => {
+              setSectorFilter(value);
+              updateUrl(searchTerm, value, functionFilter);
+            }}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Sector" />
               </SelectTrigger>
@@ -159,7 +176,10 @@ export default function AdminExperts() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={functionFilter} onValueChange={setFunctionFilter}>
+            <Select value={functionFilter} onValueChange={(value) => {
+              setFunctionFilter(value);
+              updateUrl(searchTerm, sectorFilter, value);
+            }}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Function" />
               </SelectTrigger>

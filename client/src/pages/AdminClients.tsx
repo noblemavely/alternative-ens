@@ -26,13 +26,24 @@ const clientSchema = z.object({
 type ClientFormData = z.infer<typeof clientSchema>;
 
 export default function AdminClients() {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [companyFilter, setCompanyFilter] = useState<string>("");
+  
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
+  const [companyFilter, setCompanyFilter] = useState<string>(urlParams.get('company') || "");
+  
+  const updateUrl = (search: string, company: string) => {
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (company) params.set('company', company);
+    const queryString = params.toString();
+    navigate(`/admin/clients${queryString ? '?' + queryString : ''}`);
+  };
 
   const clientsQuery = trpc.clients.list.useQuery();
+  const projectsQuery = trpc.projects.list.useQuery();
   const createMutation = trpc.clients.create.useMutation();
   
   const filteredClients = clientsQuery.data?.filter(client => 
@@ -109,10 +120,16 @@ export default function AdminClients() {
             <Input
               placeholder="Search by name, email, or company..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                updateUrl(e.target.value, companyFilter);
+              }}
               className="flex-1 min-w-0"
             />
-            <Select value={companyFilter} onValueChange={setCompanyFilter}>
+            <Select value={companyFilter} onValueChange={(value) => {
+              setCompanyFilter(value);
+              updateUrl(searchTerm, value);
+            }}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Company" />
               </SelectTrigger>
@@ -245,6 +262,7 @@ export default function AdminClients() {
                       <th className="text-left py-3 px-4 font-semibold">Email</th>
                       <th className="text-left py-3 px-4 font-semibold">Company</th>
                       <th className="text-left py-3 px-4 font-semibold">Phone</th>
+                      <th className="text-center py-3 px-4 font-semibold">Projects</th>
                       <th className="text-right py-3 px-4 font-semibold">Actions</th>
                     </tr>
                   </thead>
@@ -255,6 +273,19 @@ export default function AdminClients() {
                         <td className="py-3 px-4 text-muted-foreground">{client.email}</td>
                         <td className="py-3 px-4 text-muted-foreground">{client.companyName || "-"}</td>
                         <td className="py-3 px-4 text-muted-foreground">{client.phone || "-"}</td>
+                        <td className="py-3 px-4 text-center">
+                          <Button
+                            variant="link"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/admin/projects?client=${client.id}`);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 p-0 h-auto"
+                          >
+                            {projectsQuery.data?.filter(p => p.clientId === client.id).length || 0}
+                          </Button>
+                        </td>
                         <td className="py-3 px-4 text-right space-x-2 flex justify-end">
                           <Button
                             variant="ghost"

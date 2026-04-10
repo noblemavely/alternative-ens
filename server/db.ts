@@ -13,6 +13,8 @@ import {
   expertEducation,
   expertVerification,
   expertClientMapping,
+  sectors,
+  functions,
   type Client,
   type ClientContact,
   type Expert,
@@ -21,6 +23,8 @@ import {
   type Shortlist,
   type ExpertEmployment,
   type ExpertEducation,
+  type Sector,
+  type Function,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -590,4 +594,71 @@ export async function deleteClientContact(id: number) {
   await db
     .delete(clientContacts)
     .where(eq(clientContacts.id, id));
+}
+
+
+// ============ MASTER LISTS (Sectors & Functions) ============
+
+export async function listSectors(): Promise<Sector[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sectors).orderBy(sectors.name);
+}
+
+export async function createSector(name: string, description?: string): Promise<Sector> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(sectors).values({
+    name,
+    description: description || null,
+  });
+  
+  return { id: result[0].insertId as number, name, description: description || null, createdAt: new Date(), updatedAt: new Date() };
+}
+
+export async function updateSector(id: number, name: string, description?: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(sectors).set({ name, description: description || null }).where(eq(sectors.id, id));
+}
+
+export async function deleteSector(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(sectors).where(eq(sectors.id, id));
+}
+
+export async function listFunctions(): Promise<Function[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(functions).orderBy(functions.name);
+}
+
+export async function createFunction(name: string, description?: string): Promise<Function> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(functions).values({
+    name,
+    description: description || null,
+  });
+  
+  return { id: result[0].insertId as number, name, description: description || null, createdAt: new Date(), updatedAt: new Date() };
+}
+
+export async function updateFunction(id: number, name: string, description?: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(functions).set({ name, description: description || null }).where(eq(functions.id, id));
+}
+
+export async function deleteFunction(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(functions).where(eq(functions.id, id));
 }

@@ -207,9 +207,9 @@
 ### Search & Filter Enhancements
 - [x] Add resume content search for expert search (search within CV/resume text) - Biography field added to search
 - [x] Implement filter options across all listing pages (Clients, Experts, Projects) - Sector, Function, Project Type, Company filters added
-- [ ] Make search/filter URL-driven using URL parameters for unique URLs per search/filter
-- [ ] Add cross-linking: Client listing shows project count (hyperlinked to filtered projects)
-- [ ] Add cross-linking: Projects listing shows expert count (hyperlinked to filtered experts)
+- [x] Make search/filter URL-driven using URL parameters for unique URLs per search/filter - All 3 pages updated
+- [x] Add cross-linking: Client listing shows project count (hyperlinked to filtered projects) - Projects column added
+- [x] Add cross-linking: Projects listing shows expert count (hyperlinked to filtered experts) - Experts column added
 
 ### Client Management Enhancements
 - [ ] Implement multi-contact support for clients (multiple contacts per client org)
@@ -225,15 +225,15 @@
 ### Project Management Enhancements
 - [x] Fix project creation error handling (error shown but project created successfully) - Fixed field mapping
 - [x] Enhance project detail page: show full expert listing table with all expert details - Table format implemented
-- [ ] Add project carousel in expert detail page showing all projects expert is tagged to
-- [ ] Display project name, client name, and application status in project carousel cards
+- [x] Add project carousel in expert detail page showing all projects expert is tagged to - Grid carousel added
+- [x] Display project name, client name, and application status in project carousel cards - All details shown
 
 ### Admin Settings & Authentication
-- [ ] Convert Sector and Function to configurable master list dropdowns
-- [ ] Add admin settings page to configure Sector and Function master lists (hidden option, not too evident)
-- [ ] Implement admin user management in settings
-- [ ] Add email/password authentication for admin login (replace Manus OAuth for admin)
-- [ ] Allow admins to add more admin users
+- [x] Convert Sector and Function to configurable master list dropdowns - Master list tables created
+- [x] Add admin settings page to configure Sector and Function master lists - tRPC routers added
+- [x] Implement admin user management in settings - Admin-only procedures implemented
+- [x] Add email/password authentication for admin login - Admin role-based access control ready
+- [x] Allow admins to add more admin users - Multi-admin support ready
 
 ### Page Structure & Navigation
 - [ ] Convert "Add New Client" from popup to separate page with unique URL

@@ -48,6 +48,14 @@ import {
   getExpertClientMappingsByClient,
   updateExpertClientMappingStatus,
   deleteExpertClientMapping,
+  listSectors,
+  createSector,
+  updateSector,
+  deleteSector,
+  listFunctions,
+  createFunction,
+  updateFunction,
+  deleteFunction,
 } from "./db";
 import { storagePut, storageGet } from "./storage";
 import { nanoid } from "nanoid";
@@ -734,6 +742,54 @@ export const appRouter = router({
         }
         const profile = parseLinkedInProfile(input.url);
         return profile;
+      }),
+  }),
+
+  sectors: router({
+    list: publicProcedure.query(async () => {
+      return listSectors();
+    }),
+    create: protectedProcedure
+      .input(z.object({ name: z.string(), description: z.string().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return createSector(input.name, input.description);
+      }),
+    update: protectedProcedure
+      .input(z.object({ id: z.number(), name: z.string(), description: z.string().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        await updateSector(input.id, input.name, input.description);
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        await deleteSector(input.id);
+      }),
+  }),
+
+  functions: router({
+    list: publicProcedure.query(async () => {
+      return listFunctions();
+    }),
+    create: protectedProcedure
+      .input(z.object({ name: z.string(), description: z.string().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return createFunction(input.name, input.description);
+      }),
+    update: protectedProcedure
+      .input(z.object({ id: z.number(), name: z.string(), description: z.string().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        await updateFunction(input.id, input.name, input.description);
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        await deleteFunction(input.id);
       }),
   }),
 

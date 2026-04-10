@@ -419,6 +419,39 @@ export default function AdminExpertDetail() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Project Carousel */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg">Projects</CardTitle>
+                <CardDescription>Projects this expert is tagged to</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!projectsQuery.data || projectsQuery.data.length === 0 ? (
+                  <p className="text-slate-600 text-sm py-4">No projects available</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {projectsQuery.data.map((project: any) => {
+                      const client = clientsQuery.data?.find((c: any) => c.id === project.clientId);
+                      const shortlist = mappingsQuery.data?.find((m: any) => m.projectId === project.id);
+                      return (
+                        <div key={project.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/admin/projects/${project.id}`)}>
+                          <h4 className="font-semibold text-sm mb-1">{project.name}</h4>
+                          <p className="text-xs text-slate-500 mb-2">Client: {client?.name || 'Unknown'}</p>
+                          <p className="text-xs text-slate-600 mb-2">{project.projectType}</p>
+                          <p className="text-xs text-slate-500 mb-3">Rate: ${project.hourlyRate}</p>
+                          {shortlist && (
+                            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                              {shortlist.status}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

@@ -28,21 +28,35 @@ const projectSchema = z.object({
 type ProjectFormData = z.infer<typeof projectSchema>;
 
 export default function AdminProjects() {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [screeningQuestions, setScreeningQuestions] = useState<string[]>([]);
   const [newQuestion, setNewQuestion] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [projectTypeFilter, setProjectTypeFilter] = useState<string>("");
+  
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
+  const [projectTypeFilter, setProjectTypeFilter] = useState<string>(urlParams.get('type') || "");
+  const clientFilterFromUrl = urlParams.get('client');
+  
+  const updateUrl = (search: string, type: string) => {
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (type) params.set('type', type);
+    if (clientFilterFromUrl) params.set('client', clientFilterFromUrl);
+    const queryString = params.toString();
+    navigate(`/admin/projects${queryString ? '?' + queryString : ''}`);
+  };
 
   const clientsQuery = trpc.clients.list.useQuery();
   const projectsQuery = trpc.projects.list.useQuery();
+  const shortlistsQuery = trpc.shortlists.list.useQuery();
   
   const filteredProjects = projectsQuery.data?.filter(project => 
     (project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.description?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (!projectTypeFilter || project.projectType === projectTypeFilter)
+    (!projectTypeFilter || project.projectType === projectTypeFilter) &&
+    (!clientFilterFromUrl || project.clientId === parseInt(clientFilterFromUrl))
   ) || [];
   
   const createMutation = trpc.projects.create.useMutation();
@@ -144,10 +158,16 @@ export default function AdminProjects() {
             <Input
               placeholder="Search by project name or description..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                updateUrl(e.target.value, projectTypeFilter);
+              }}
               className="flex-1 min-w-0"
             />
-            <Select value={projectTypeFilter} onValueChange={setProjectTypeFilter}>
+            <Select value={projectTypeFilter} onValueChange={(value) => {
+              setProjectTypeFilter(value);
+              updateUrl(searchTerm, value);
+            }}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
@@ -360,6 +380,7 @@ export default function AdminProjects() {
                       <th className="text-left py-3 px-4 font-semibold">Type</th>
                       <th className="text-left py-3 px-4 font-semibold">Target Persona</th>
                       <th className="text-left py-3 px-4 font-semibold">Rate</th>
+                      <th className="text-center py-3 px-4 font-semibold">Experts</th>
                       <th className="text-right py-3 px-4 font-semibold">Actions</th>
                     </tr>
                   </thead>
@@ -372,6 +393,16 @@ export default function AdminProjects() {
                         </td>
                         <td className="py-3 px-4 text-muted-foreground text-sm">{project.targetPersona || "-"}</td>
                         <td className="py-3 px-4 text-muted-foreground">${project.hourlyRate || "-"}</td>
+                        <td className="py-3 px-4 text-center">
+                          <Button
+                            variant="link"
+                            size="sm"
+                            onClick={() => navigate(`/admin/search-experts?project=${project.id}`)}
+                            className="text-blue-600 hover:text-blue-800 p-0 h-auto"
+                          >
+                            {shortlistsQuery.data?.filter(s => s.projectId === project.id).length || 0}
+                          </Button>
+                        </td>
                         <td className="py-3 px-4 text-right space-x-2 flex justify-end">
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/projects/${project.id}`)} className="gap-1" title="View Shortlisted Experts">
                             <Eye size={16} />
