@@ -81,6 +81,17 @@ export const appRouter = router({
   // ============ AUTH ROUTERS ============
   auth: router({
     me: publicProcedure.query(({ ctx }) => {
+      // Return admin user if authenticated via JWT
+      if (ctx.adminUser) {
+        return {
+          id: ctx.adminUser.adminId,
+          email: ctx.adminUser.email,
+          name: ctx.adminUser.email, // Use email as name for now
+          role: ctx.adminUser.role,
+          isAdmin: true,
+        };
+      }
+      // Otherwise return regular OAuth user
       return ctx.user || null;
     }),
 
