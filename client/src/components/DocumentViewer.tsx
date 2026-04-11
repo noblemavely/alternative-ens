@@ -1,4 +1,4 @@
-import { useState, Suspense } from "react";
+import { useState, Suspense, useMemo, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -6,8 +6,11 @@ import { ChevronLeft, ChevronRight, Download, Loader2 } from "lucide-react";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-// Set the PDF.js worker source
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Set the PDF.js worker source - use dynamic import for better compatibility
+if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+  // Try to use a reliable CDN source that works with absolute URLs
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+}
 
 interface DocumentViewerProps {
   open: boolean;
@@ -26,6 +29,14 @@ export default function DocumentViewer({
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Convert relative URLs to absolute URLs for proper PDF.js loading
+  const absoluteUrl = useMemo(() => {
+    if (!documentUrl) return "";
+    if (documentUrl.startsWith("http")) return documentUrl;
+    // Convert relative path to absolute URL
+    return `${window.location.origin}${documentUrl.startsWith("/") ? "" : "/"}${documentUrl}`;
+  }, [documentUrl]);
+
   const handleDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
     setCurrentPage(1);
@@ -42,7 +53,7 @@ export default function DocumentViewer({
 
   const handleDownload = () => {
     const link = document.createElement("a");
-    link.href = documentUrl;
+    link.href = absoluteUrl;
     link.download = `${documentTitle}.pdf`;
     document.body.appendChild(link);
     link.click();
@@ -80,7 +91,7 @@ export default function DocumentViewer({
                 </div>
               )}
               <Document
-                file={documentUrl}
+                file={absoluteUrl}
                 onLoadSuccess={handleDocumentLoadSuccess}
                 loading={
                   <div className="flex items-center justify-center p-8">
@@ -89,7 +100,7 @@ export default function DocumentViewer({
                 }
                 error={
                   <div className="flex items-center justify-center p-8">
-                    <p className="text-slate-600">Failed to load document</p>
+                    <p className="text-slate-600">Failed to load document: {absoluteUrl}</p>
                   </div>
                 }
               >
