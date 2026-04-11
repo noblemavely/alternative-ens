@@ -338,7 +338,8 @@ export const appRouter = router({
           }
           return { success: true };
         } catch (error) {
-          console.error(`[submitProfile] Error:`, error);
+          console.error(`[submitProfile] Error:`, error instanceof Error ? error.message : error);
+          console.error(`[submitProfile] Stack:`, error instanceof Error ? error.stack : "");
           throw error;
         }
       }),

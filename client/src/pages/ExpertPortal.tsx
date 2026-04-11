@@ -275,10 +275,14 @@ export default function ExpertPortal() {
       setCreatedExpertData(data);
       setStep("preview");
     } catch (error: any) {
+      console.error("[handleCompleteProfile] Error:", error);
+      const errorMessage = error?.message || error?.data?.zodError || JSON.stringify(error);
       if (error.message?.includes("already exists")) {
         toast.error("An expert with this email already exists");
+      } else if (errorMessage?.includes("Failed to upload")) {
+        toast.error("CV upload failed. Please try again.");
       } else {
-        toast.error("Failed to create profile");
+        toast.error(`Failed to create profile: ${typeof errorMessage === 'string' ? errorMessage : 'Unknown error'}`);
       }
     }
   };
