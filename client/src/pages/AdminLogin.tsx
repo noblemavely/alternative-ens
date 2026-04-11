@@ -63,9 +63,9 @@ export default function AdminLogin() {
         {/* Logo Section */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <img 
-              src="https://cdn.manus.im/webdev/alternative-ens/logo.png" 
-              alt="AlterNatives" 
+            <img
+              src="/logo.svg"
+              alt="AlterNatives"
               className="h-10"
             />
             <span className="text-2xl font-bold text-slate-900">AlterNatives</span>
