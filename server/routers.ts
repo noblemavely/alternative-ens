@@ -553,6 +553,13 @@ export const appRouter = router({
         return getShortlistsByProject(input.projectId);
       }),
 
+    getByExpert: adminProcedure
+      .input(z.object({ expertId: z.number() }))
+      .query(async ({ input }) => {
+        const shortlists = await getAllShortlists();
+        return shortlists.filter((s: any) => s.expertId === input.expertId);
+      }),
+
     getByProjectAndExpert: adminProcedure
       .input(z.object({ projectId: z.number(), expertId: z.number() }))
       .query(async ({ input }) => {
