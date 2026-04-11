@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
+import { adminAuthRouter } from "./routers/adminAuth";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import {
   createClient,
@@ -91,6 +92,8 @@ export const appRouter = router({
       } as const;
     }),
   }),
+
+  adminAuth: adminAuthRouter,
 
   // ============ CLIENT ROUTERS ============
   clients: router({

@@ -238,3 +238,20 @@ export const functions = mysqlTable("functions", {
 
 export type Function = typeof functions.$inferSelect;
 export type InsertFunction = typeof functions.$inferInsert;
+
+/**
+ * Admin users table - for local email/password auth
+ */
+export const adminUsers = mysqlTable("admin_users", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  password: text("password").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  role: mysqlEnum("role", ["super_admin", "admin"]).default("admin"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  lastLogin: timestamp("last_login"),
+});
+
+export type AdminUser = typeof adminUsers.$inferSelect;
+export type NewAdminUser = typeof adminUsers.$inferInsert;

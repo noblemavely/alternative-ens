@@ -19,11 +19,13 @@ import AddExpert from "./pages/AddExpert";
 import AddProject from "./pages/AddProject";
 import ExpertPortal from "./pages/ExpertPortal";
 import ExpertProfileView from "./pages/ExpertProfileView";
+import AdminLogin from "./pages/AdminLogin";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/admin-login"} component={AdminLogin} />
       <Route path={"/admin"} component={AdminDashboard} />
       <Route path={"/admin/clients"} component={AdminClients} />
       <Route path={"/admin/experts"} component={AdminExperts} />

@@ -15,6 +15,7 @@ import {
   expertClientMapping,
   sectors,
   functions,
+  adminUsers,
   type Client,
   type ClientContact,
   type Expert,
@@ -25,6 +26,7 @@ import {
   type ExpertEducation,
   type Sector,
   type Function,
+  type AdminUser,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
