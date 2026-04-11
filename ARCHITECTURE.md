@@ -1,8 +1,9 @@
 # Alternative ENS Platform - Architecture Documentation
 
-**Last Updated**: April 10, 2026  
-**Version**: 1.0.0 (Checkpoint: e5e4d107)  
-**Status**: Production Ready ✅
+**Last Updated**: April 11, 2026 (PDF Viewer Implementation)  
+**Version**: 1.0.1 (PDF Viewer Architecture)  
+**Status**: Production Ready ✅  
+**PDF Viewer**: ✅ Implemented with iframe-based browser native viewer
 
 ## Table of Contents
 
@@ -442,7 +443,7 @@ App.tsx (Main Router)
 │   │   ├── Expert Info
 │   │   ├── Employment History
 │   │   ├── Education History
-│   │   ├── CV Viewer
+│   │   ├── CV Viewer (DocumentViewer component)
 │   │   └── Projects Carousel
 │   ├── AddExpert
 │   │   └── Expert Form
@@ -480,6 +481,44 @@ App.tsx (Main Router)
     │   └── LinkedIn Integration
     └── Profile Preview
 ```
+
+### Shared Components
+
+**DocumentViewer Component:**
+- **Location**: `client/src/components/DocumentViewer.tsx`
+- **Purpose**: Display PDF documents in a modal dialog with browser's native PDF viewer
+- **Implementation**: 
+  - Uses `<iframe>` element with HTML5 PDF viewer
+  - Supports absolute and relative URLs automatically
+  - Browser's native toolbar provides zoom, search, print, page navigation
+- **Props**:
+  ```typescript
+  interface DocumentViewerProps {
+    open: boolean;              // Modal visibility
+    onOpenChange: (open: boolean) => void;  // Modal state handler
+    documentUrl: string;        // PDF URL (absolute or relative)
+    documentTitle?: string;     // Modal title & download filename
+  }
+  ```
+- **Usage**: 
+  ```typescript
+  <DocumentViewer 
+    open={isOpen}
+    onOpenChange={setIsOpen}
+    documentUrl="/uploads/cv-uploads/resume.pdf"
+    documentTitle="Expert Resume"
+  />
+  ```
+- **Features**:
+  - Native browser PDF rendering (no external dependencies)
+  - Responsive modal layout (max-width: 4xl, height: 90vh)
+  - Download button in header
+  - Automatic URL conversion (relative → absolute)
+  - Error handling for invalid URLs
+- **Performance**:
+  - No react-pdf or pdfjs-dist dependencies
+  - Eliminates complex worker configuration
+  - Uses browser's optimized PDF rendering engine
 
 ### State Management
 

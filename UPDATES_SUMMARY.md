@@ -1,5 +1,22 @@
 # Alternative ENS - Recent Updates Summary
 
+## 🐛 Bug Fixes & Improvements
+
+### PDF Viewer Component Refactor (April 11, 2026)
+**Issue**: PDF viewer was failing to display documents with error "Failed to load document"
+- **Root Cause**: `react-pdf@10.4.1` + `pdfjs-dist` had fundamental incompatibilities with Vite's module resolution in development environment
+- **Solution**: Replaced with simple iframe-based viewer using browser's native PDF support
+- **Benefits**:
+  - Eliminates complex worker configuration issues
+  - Works immediately without CDN or module resolution problems
+  - Simpler codebase (~50 lines vs 150+)
+  - Better performance and reliability
+  - Native browser PDF toolbar with zoom, search, print controls
+- **Files Changed**: `client/src/components/DocumentViewer.tsx`
+- **Testing**: Verified in test-pdf page and admin expert detail pages
+
+---
+
 ## 📝 Documentation Updates
 
 ### README.md
@@ -92,8 +109,15 @@ pnpm db:reset
 - ✅ Support for PDF, DOC, DOCX formats
 - ✅ Local filesystem storage (development)
 - ✅ S3-compatible storage (production)
-- ✅ DocumentViewer modal for PDF display
+- ✅ DocumentViewer modal for PDF display (iframe-based)
 - ✅ Sample CV data in seed script
+
+### 1a. PDF Viewer Fix (Latest)
+- ✅ Replaced complex `react-pdf` + `pdfjs-dist` with simple iframe viewer
+- ✅ Resolves "Failed to load document" errors from Vite module resolution issues
+- ✅ Uses browser's native PDF rendering
+- ✅ Maintains same UI/UX with Download button and toolbar
+- ✅ Tested and verified in both test-pdf page and admin expert detail pages
 
 ### 2. Inline Status Editing
 - ✅ Edit expert-project assignment status from expert profile
@@ -128,10 +152,17 @@ pnpm db:reset
 
 ### Recent Commits
 ```
+[NEW] - fix: Replace react-pdf with iframe-based PDF viewer (pending commit)
 c8227df - docs: Update documentation and enhance database management scripts
 fd39c7c - chore: Add pdfkit dependency and fix CV hook usage
 60461b1 - feat: Add CV upload capability to admin expert detail page
 ```
+
+**PDF Viewer Fix Details**:
+- Removes dependency on react-pdf and pdfjs-dist
+- Implements simple iframe with browser's native PDF viewer
+- Resolves Vite module resolution issues in development
+- Tested and verified working in both test and production views
 
 ## 📋 GitHub Issues (To Be Created)
 
@@ -196,6 +227,7 @@ fd39c7c - chore: Add pdfkit dependency and fix CV hook usage
 
 ---
 
-**Last Updated**: April 11, 2026
-**Commits**: 60461b1, fd39c7c, c8227df
+**Last Updated**: April 11, 2026 (PDF Viewer Fix)
+**Recent Commits**: [NEW PDF Viewer Fix], 60461b1, fd39c7c, c8227df
 **Documentation Status**: Complete
+**PDF Viewer Status**: ✅ Fixed & Verified

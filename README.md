@@ -323,8 +323,22 @@ pnpm type-check
 - Upload CV files directly from the expert detail page (Edit mode)
 - Supported formats: PDF, DOC, DOCX
 - Automatic file storage in `/uploads` (development) or S3 (production)
-- View uploaded CVs via DocumentViewer modal with zoom and page navigation
+- View uploaded CVs via DocumentViewer modal with native browser PDF viewer
+- Browser's native PDF toolbar provides zoom, search, print, and page navigation
 - CVs are stored alongside expert profile data
+
+**PDF Viewer:**
+- **Implementation**: Simple iframe-based viewer using browser's native PDF support
+- **Features**:
+  - Native browser PDF toolbar (zoom, search, print, download)
+  - Full-page PDF display in responsive dialog modal
+  - Download button in dialog header for easy saving
+  - Handles both relative and absolute URLs automatically
+  - No external worker configuration required
+- **Performance**: 
+  - Eliminates complex pdfjs-dist worker initialization
+  - Works immediately without Vite module resolution issues
+  - Leverages browser's optimized PDF rendering
 
 **Expert Portal:**
 - Upload CV during profile registration
@@ -885,6 +899,7 @@ For issues, questions, or feature requests:
 
 ---
 
-**Last Updated**: April 10, 2026
-**Version**: 1.0.0 (Checkpoint: e5e4d107)
+**Last Updated**: April 11, 2026 (PDF Viewer Implementation)
+**Version**: 1.0.1 (PDF Viewer Fix)
 **Status**: Production Ready ✅
+**PDF Viewer**: ✅ Iframe-based Implementation (Browser Native)
