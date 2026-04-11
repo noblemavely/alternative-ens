@@ -13,7 +13,8 @@ export const publicProcedure = t.procedure;
 const requireUser = t.middleware(async opts => {
   const { ctx, next } = opts;
 
-  if (!ctx.user) {
+  // Allow both OAuth users and JWT admin users
+  if (!ctx.user && !ctx.adminUser) {
     throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
   }
 
@@ -31,7 +32,13 @@ export const adminProcedure = t.procedure.use(
   t.middleware(async opts => {
     const { ctx, next } = opts;
 
-    if (!ctx.user || ctx.user.role !== 'admin') {
+    // Check if user is admin via JWT or OAuth
+    const isAdmin =
+      ctx.adminUser?.role === "super_admin" ||
+      ctx.adminUser?.role === "admin" ||
+      ctx.user?.role === "admin";
+
+    if (!isAdmin) {
       throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
     }
 
