@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Loader2, Edit2, Save, Trash2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Loader2, Edit2, Save, Trash2, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -25,7 +25,7 @@ export default function AdminExpertDetail() {
   
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [shortlistNotes, setShortlistNotes] = useState("");
-  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [showShortlistModal, setShowShortlistModal] = useState(false);
 
   // Fetch expert details
   const expertQuery = trpc.experts.getById.useQuery(
@@ -98,6 +98,8 @@ export default function AdminExpertDetail() {
       toast.success("Expert shortlisted successfully");
       setSelectedProject("");
       setShortlistNotes("");
+      setShowShortlistModal(false);
+      shortlistedProjectsQuery.refetch();
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to shortlist expert");
@@ -209,9 +211,9 @@ export default function AdminExpertDetail() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6">
             {/* Expert Details */}
             <Card className="border-slate-200 shadow-sm">
               <CardHeader>
@@ -288,112 +290,110 @@ export default function AdminExpertDetail() {
               </CardContent>
             </Card>
 
-            {/* Shortlist Section */}
-            <Card className="border-blue-200 bg-blue-50 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-blue-900">Shortlist for Project</CardTitle>
-                <CardDescription className="text-blue-700">Add this expert to a project shortlist</CardDescription>
+            {/* Projects & Shortlisting Section */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <div>
+                  <CardTitle className="text-lg">Projects & Shortlisting</CardTitle>
+                  <CardDescription>
+                    {shortlistedProjectsQuery.data?.length || 0} project{(shortlistedProjectsQuery.data?.length || 0) !== 1 ? "s" : ""}
+                  </CardDescription>
+                </div>
+                <Dialog open={showShortlistModal} onOpenChange={setShowShortlistModal}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="outline">
+                      <Plus size={16} className="mr-1" />
+                      Add to Project
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add Expert to Project</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="project" className="text-sm font-medium">
+                          Select Project *
+                        </Label>
+                        <Select value={selectedProject} onValueChange={setSelectedProject}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a project..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {projectsQuery.data?.map((project) => (
+                              <SelectItem key={project.id} value={project.id.toString()}>
+                                {project.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="notes" className="text-sm font-medium">
+                          Notes (Optional)
+                        </Label>
+                        <Textarea
+                          id="notes"
+                          placeholder="Add any notes about this expert for this project..."
+                          value={shortlistNotes}
+                          onChange={(e) => setShortlistNotes(e.target.value)}
+                          className="resize-none"
+                          rows={3}
+                        />
+                      </div>
+
+                      <Button
+                        onClick={handleShortlist}
+                        disabled={shortlistMutation.isPending || !selectedProject}
+                        className="w-full"
+                      >
+                        {shortlistMutation.isPending ? (
+                          <>
+                            <Loader2 size={16} className="animate-spin mr-2" />
+                            Shortlisting...
+                          </>
+                        ) : (
+                          "Shortlist Expert"
+                        )}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="project" className="text-sm font-medium text-slate-900">
-                    Select Project
-                  </Label>
-                  <Select value={selectedProject} onValueChange={setSelectedProject}>
-                    <SelectTrigger className="border-blue-300 bg-white">
-                      <SelectValue placeholder="Choose a project..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projectsQuery.data?.map((project) => (
-                        <SelectItem key={project.id} value={project.id.toString()}>
-                          {project.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="notes" className="text-sm font-medium text-slate-900">
-                    Notes (Optional)
-                  </Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Add any notes about this expert for this project..."
-                    value={shortlistNotes}
-                    onChange={(e) => setShortlistNotes(e.target.value)}
-                    className="border-blue-300 resize-none"
-                    rows={3}
-                  />
-                </div>
-
-                <Button
-                  onClick={handleShortlist}
-                  disabled={shortlistMutation.isPending || !selectedProject}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  {shortlistMutation.isPending ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin mr-2" />
-                      Shortlisting...
-                    </>
-                  ) : (
-                    "Shortlist Expert"
-                  )}
-                </Button>
+              <CardContent>
+                {!shortlistedProjectsQuery.data || shortlistedProjectsQuery.data.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4">No projects assigned yet</p>
+                ) : (
+                  <div className="space-y-3">
+                    {shortlistedProjectsQuery.data.map((shortlist: any) => {
+                      const project = projectsQuery.data?.find((p: any) => p.id === shortlist.projectId);
+                      const contact = contactsQuery.data?.find((c: any) => c.id === project?.clientContactId);
+                      const client = clientsQuery.data?.find((c: any) => c.id === contact?.clientId);
+                      return (
+                        <div key={shortlist.id} className="p-3 border rounded-lg">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <button
+                                onClick={() => setLocation(`/admin/projects/${project?.id}`)}
+                                className="font-semibold text-sm text-blue-600 hover:underline cursor-pointer"
+                              >
+                                {project?.name}
+                              </button>
+                              <p className="text-xs text-slate-600 mt-1">Client: {client?.name || 'Unknown'}</p>
+                              <p className="text-xs text-slate-500 mt-1">Status: {shortlist.status}</p>
+                              {shortlist.notes && (
+                                <p className="text-xs text-slate-600 mt-2 italic">{shortlist.notes}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
-          </div>
-
-          {/* Sidebar - Project Carousel */}
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Projects</h3>
-            <p className="text-sm text-slate-600 mb-4">Projects this expert is tagged to</p>
-            {!shortlistedProjectsQuery.data || shortlistedProjectsQuery.data.length === 0 ? (
-              <p className="text-slate-600 text-sm py-4">No projects assigned</p>
-            ) : (
-              <div className="flex items-center gap-4">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setCarouselIndex((prev) => (prev - 1 + shortlistedProjectsQuery.data.length) % shortlistedProjectsQuery.data.length)}
-                  disabled={shortlistedProjectsQuery.data.length <= 1}
-                >
-                  <ChevronLeft size={16} />
-                </Button>
-
-                <div className="flex-1">
-                  {shortlistedProjectsQuery.data[carouselIndex] && (() => {
-                    const shortlist = shortlistedProjectsQuery.data[carouselIndex];
-                    const project = projectsQuery.data?.find((p: any) => p.id === shortlist.projectId);
-                    const contact = contactsQuery.data?.find((c: any) => c.id === project?.clientContactId);
-                    const client = clientsQuery.data?.find((c: any) => c.id === contact?.clientId);
-                    return (
-                      <div>
-                        <button
-                          onClick={() => setLocation(`/admin/projects/${project?.id}`)}
-                          className="font-semibold text-sm mb-2 text-blue-600 hover:underline cursor-pointer"
-                        >
-                          {project?.name}
-                        </button>
-                        <p className="text-xs text-slate-600 mb-2">Client: {client?.name || 'Unknown'}</p>
-                        <p className="text-xs text-slate-500 mb-3">Status: {shortlist.status}</p>
-                        <p className="text-xs text-slate-400 text-center mt-4">{carouselIndex + 1} of {shortlistedProjectsQuery.data.length}</p>
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setCarouselIndex((prev) => (prev + 1) % shortlistedProjectsQuery.data.length)}
-                  disabled={shortlistedProjectsQuery.data.length <= 1}
-                >
-                  <ChevronRight size={16} />
-                </Button>
-              </div>
-            )}
           </div>
         </div>
       </div>

@@ -17,6 +17,9 @@ import AdminSettings from "./pages/AdminSettings";
 import AddClient from "./pages/AddClient";
 import AddExpert from "./pages/AddExpert";
 import AddProject from "./pages/AddProject";
+import AdminUsers from "./pages/AdminUsers";
+import AddAdminUser from "./pages/AddAdminUser";
+import EditAdminUser from "./pages/EditAdminUser";
 import ExpertPortal from "./pages/ExpertPortal";
 import ExpertProfileView from "./pages/ExpertProfileView";
 import AdminLogin from "./pages/AdminLogin";
@@ -34,6 +37,9 @@ function Router() {
       <Route path={"/admin/experts/:id"} component={AdminExpertDetail} />
       <Route path={"/admin/clients/:id"} component={AdminClientDetail} />
       <Route path={"/admin/projects/:id"} component={AdminProjectDetail} />      <Route path={"/admin/settings"} component={AdminSettings} />
+      <Route path={"/admin/users"} component={AdminUsers} />
+      <Route path={"/admin/users/new"} component={AddAdminUser} />
+      <Route path={"/admin/users/:id/edit"} component={EditAdminUser} />
       <Route path={"/admin/add-client"} component={AddClient} />
       <Route path={"/admin/add-expert"} component={AddExpert} />
       <Route path={"/admin/add-project"} component={AddProject} />

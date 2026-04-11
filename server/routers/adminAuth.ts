@@ -1,4 +1,4 @@
-import { router, publicProcedure } from "../_core/trpc";
+import { router, publicProcedure, adminProcedure } from "../_core/trpc";
 import { z } from "zod";
 import { verifyAdminPassword, updateAdminLastLogin } from "../db.admin";
 import { TRPCError } from "@trpc/server";
@@ -122,7 +122,7 @@ export const adminAuthRouter = router({
       };
     }),
 
-  updateUser: publicProcedure
+  updateUser: adminProcedure
     .input(
       z.object({
         id: z.number(),
@@ -144,7 +144,7 @@ export const adminAuthRouter = router({
       };
     }),
 
-  deleteUser: publicProcedure
+  deleteUser: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const { deleteAdminUser } = await import("../db.admin");
@@ -152,7 +152,7 @@ export const adminAuthRouter = router({
       return { success: true };
     }),
 
-  listUsers: publicProcedure.query(async () => {
+  listUsers: adminProcedure.query(async () => {
     const { getAllAdminUsers } = await import("../db.admin");
     const users = await getAllAdminUsers();
     return users.map((user: any) => ({
@@ -164,7 +164,7 @@ export const adminAuthRouter = router({
     }));
   }),
 
-  createUser: publicProcedure
+  createUser: adminProcedure
     .input(
       z.object({
         email: z.string().email(),

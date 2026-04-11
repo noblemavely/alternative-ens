@@ -255,3 +255,22 @@ export const adminUsers = mysqlTable("admin_users", {
 
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type NewAdminUser = typeof adminUsers.$inferInsert;
+
+/**
+ * Audit Log table - tracks all changes to entities
+ */
+export const auditLog = mysqlTable("auditLog", {
+  id: int("id").autoincrement().primaryKey(),
+  entityType: mysqlEnum("entityType", ["client", "expert", "project", "admin_user", "contact", "shortlist"]).notNull(),
+  entityId: int("entityId").notNull(),
+  operationType: mysqlEnum("operationType", ["create", "update", "delete"]).notNull(),
+  adminId: int("adminId"), // References adminUsers.id - nullable for system operations
+  fieldChanged: varchar("fieldChanged", { length: 255 }), // Which field was modified
+  oldValue: longtext("oldValue"), // JSON representation
+  newValue: longtext("newValue"), // JSON representation
+  reason: text("reason"), // Optional reason for the change
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export type AuditLog = typeof auditLog.$inferSelect;
+export type InsertAuditLog = typeof auditLog.$inferInsert;

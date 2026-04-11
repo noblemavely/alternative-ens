@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2 } from "lucide-react";
+import { Plus, Trash2, Edit2, Database, Loader2 } from "lucide-react";
 
 const sectorSchema = z.object({
   name: z.string().min(1, "Sector name is required"),
@@ -28,6 +28,8 @@ export default function AdminSettings() {
   const [functionOpen, setFunctionOpen] = useState(false);
   const [editingSectorId, setEditingSectorId] = useState<number | null>(null);
   const [editingFunctionId, setEditingFunctionId] = useState<number | null>(null);
+  const [clearing, setClearing] = useState(false);
+  const [seeding, setSeeding] = useState(false);
 
   // Queries
   const sectorsQuery = trpc.sectors.list.useQuery();
@@ -40,6 +42,8 @@ export default function AdminSettings() {
   const createFunctionMutation = trpc.functions.create.useMutation();
   const updateFunctionMutation = trpc.functions.update.useMutation();
   const deleteFunctionMutation = trpc.functions.delete.useMutation();
+  const clearDbMutation = trpc.system.clearAllData.useMutation();
+  const seedDbMutation = trpc.system.seedDatabase.useMutation();
 
   // Sector Form
   const sectorForm = useForm<SectorFormData>({
@@ -132,6 +136,40 @@ export default function AdminSettings() {
       functionsQuery.refetch();
     } catch (error) {
       toast.error("Failed to delete function");
+    }
+  };
+
+  const handleClearDatabase = async () => {
+    if (!window.confirm("⚠️ Are you sure you want to delete ALL data from the database? This cannot be undone!")) {
+      return;
+    }
+
+    setClearing(true);
+    try {
+      await clearDbMutation.mutateAsync();
+      toast.success("✅ Database cleared successfully!");
+      // Refresh queries
+      sectorsQuery.refetch();
+      functionsQuery.refetch();
+    } catch (error: any) {
+      toast.error(`❌ Failed to clear database: ${error.message}`);
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  const handleSeedDatabase = async () => {
+    setSeeding(true);
+    try {
+      const result = await seedDbMutation.mutateAsync();
+      toast.success(`✅ Database seeded successfully! Added ${result.summary.clients} clients, ${result.summary.experts} experts, and more.`);
+      // Refresh queries
+      sectorsQuery.refetch();
+      functionsQuery.refetch();
+    } catch (error: any) {
+      toast.error(`❌ Failed to seed database: ${error.message}`);
+    } finally {
+      setSeeding(false);
     }
   };
 
@@ -313,6 +351,61 @@ export default function AdminSettings() {
                   ))}
                 </div>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Database Management Section */}
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader>
+            <div>
+              <CardTitle className="text-red-900">Database Management</CardTitle>
+              <CardDescription className="text-red-700">Manage sample data and database operations</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Use these tools to seed your database with sample data or completely clear all data. Handle with care!
+              </p>
+              <div className="flex gap-4">
+                <Button
+                  onClick={handleSeedDatabase}
+                  disabled={seeding}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  {seeding ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Seeding...
+                    </>
+                  ) : (
+                    <>
+                      <Database className="h-4 w-4" />
+                      Seed Sample Data
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={handleClearDatabase}
+                  disabled={clearing}
+                  variant="destructive"
+                  className="gap-2"
+                >
+                  {clearing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Clearing...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4" />
+                      Clear All Data
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
