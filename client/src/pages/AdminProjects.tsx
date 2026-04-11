@@ -108,27 +108,27 @@ export default function AdminProjects() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-2 px-4">Project Name</th>
-                      <th className="text-left py-2 px-4">Client Contact</th>
-                      <th className="text-left py-2 px-4">Type</th>
-                      <th className="text-left py-2 px-4">Rate</th>
-                      <th className="text-left py-2 px-4">Experts</th>
-                      <th className="text-left py-2 px-4">Actions</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Project Name</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Client Contact</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Type</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Rate</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Experts</th>
+                      <th className="text-right py-3 px-4 font-semibold text-foreground">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredProjects.map((project: any) => (
                       <tr
                         key={project.id}
-                        className="border-b hover:bg-gray-50 transition-colors cursor-pointer"
+                        className="border-b hover:bg-muted/50 transition-colors cursor-pointer"
                         onClick={() => navigate(`/admin/projects/${project.id}`)}
                       >
-                        <td className="py-2 px-4 font-medium">{project.name}</td>
-                        <td className="py-2 px-4">{getClientContactName(project.clientContactId)}</td>
-                        <td className="py-2 px-4">{project.projectType}</td>
-                        <td className="py-2 px-4">${project.hourlyRate || "-"}</td>
-                        <td className="py-2 px-4">{getExpertCountForProject(project.id)}</td>
-                        <td className="py-2 px-4 text-right space-x-2">
+                        <td className="py-3 px-4 font-medium">{project.name}</td>
+                        <td className="py-3 px-4 text-muted-foreground">{getClientContactName(project.clientContactId)}</td>
+                        <td className="py-3 px-4 text-muted-foreground">{project.projectType}</td>
+                        <td className="py-3 px-4 text-muted-foreground">${project.hourlyRate || "-"}</td>
+                        <td className="py-3 px-4 text-muted-foreground">{getExpertCountForProject(project.id)}</td>
+                        <td className="py-3 px-4 text-right space-x-2">
                           <Button
                             variant="ghost"
                             size="sm"
