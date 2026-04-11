@@ -38,7 +38,6 @@ export default function Home() {
                 alt="AlterNatives"
                 className="h-8 w-auto object-contain"
               />
-              <span className="text-xs text-muted-foreground">Powered by Native</span>
             </div>
             <Button
               variant="outline"
@@ -86,12 +85,11 @@ export default function Home() {
       <nav className="border-b border-border bg-white/95 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img 
-              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/Alternative_Logo_White_Background-removebg-preview_9d4821e4.png" 
-              alt="AlterNatives" 
+            <img
+              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/Alternative_Logo_White_Background-removebg-preview_9d4821e4.png"
+              alt="AlterNatives"
               className="h-8 w-auto object-contain"
             />
-            <span className="text-xs text-muted-foreground">Powered by Native</span>
           </div>
           {/* Admin Sign In hidden from public page */}
         </div>
