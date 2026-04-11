@@ -5,30 +5,46 @@ import { getLoginUrl } from "@/const";
 import { Users, Target, Zap } from "lucide-react";
 
 export default function Home() {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, loading, isAuthenticated, logout } = useAuth();
   const [, navigate] = useLocation();
 
-  // If authenticated and admin, redirect to dashboard
-  if (isAuthenticated && user?.role === "admin") {
+  // If authenticated and admin (including super_admin), redirect to dashboard
+  if (isAuthenticated && (user?.role === "admin" || user?.role === "super_admin")) {
     navigate("/admin");
     return null;
   }
 
-  // If authenticated but not admin, show expert portal option
-  if (isAuthenticated && user?.role !== "admin") {
+  // If authenticated as expert, show expert portal option
+  if (isAuthenticated && user?.role === "expert") {
+    const handleExpertLogout = () => {
+      // Clear expert session from localStorage
+      localStorage.removeItem("manus-runtime-user-info");
+      // Invalidate auth cache and redirect
+      logout().then(() => {
+        navigate("/");
+      }).catch(() => {
+        // Even if logout fails, clear and navigate
+        navigate("/");
+      });
+    };
+
     return (
       <div className="min-h-screen flex flex-col bg-white">
         <nav className="border-b border-border bg-white/95 backdrop-blur-sm sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img 
-                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/Alternative_Logo_White_Background-removebg-preview_9d4821e4.png" 
-                alt="AlterNatives" 
+              <img
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/Alternative_Logo_White_Background-removebg-preview_9d4821e4.png"
+                alt="AlterNatives"
                 className="h-8 w-auto object-contain"
               />
               <span className="text-xs text-muted-foreground">Powered by Native</span>
             </div>
-            <Button variant="outline" size="sm" onClick={() => window.location.href = getLoginUrl()}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExpertLogout}
+            >
               Logout
             </Button>
           </div>
