@@ -39,20 +39,19 @@ export default function AdminLogin() {
         email: data.email,
         password: data.password,
       });
-      
+
       if (result.success) {
         toast.success("Login successful");
-        // Store token if remember me is checked
-        if (data.rememberMe) {
-          localStorage.setItem("adminToken", result.token);
-        }
-        // Store admin info
+        // Always store token and admin info for authentication
+        localStorage.setItem("adminToken", result.token);
         localStorage.setItem("adminUser", JSON.stringify(result.admin));
+        // Redirect to admin dashboard
         navigate("/admin");
       } else {
         toast.error("Login failed");
       }
     } catch (error: any) {
+      console.error("Login error:", error);
       toast.error(error.message || "Failed to login");
     }
   };
