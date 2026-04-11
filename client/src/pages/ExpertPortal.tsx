@@ -50,6 +50,7 @@ export default function ExpertPortal() {
   const verifyEmailMutation = trpc.expertVerification.verifyEmail.useMutation();
   const parseLinkedinMutation = trpc.linkedin.parseProfile.useMutation();
   const linkedinCallbackMutation = trpc.linkedinOAuth.handleCallback.useMutation();
+  const uploadCVMutation = trpc.upload.uploadCV.useMutation();
   const createExpertMutation = trpc.experts.submitProfile.useMutation({
     onSuccess: () => {
       utils.experts.list.invalidate();
@@ -245,7 +246,7 @@ export default function ExpertPortal() {
           });
 
           // Upload via tRPC endpoint
-          const uploadResult = await trpc.upload.uploadCV.mutateAsync({
+          const uploadResult = await uploadCVMutation.mutateAsync({
             fileName: file.name,
             fileData,
             contentType: file.type || "application/pdf",
