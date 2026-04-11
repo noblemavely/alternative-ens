@@ -17,6 +17,7 @@ import {
   sectors,
   functions,
   adminUsers,
+  projectActivityTimeline,
   type Client,
   type ClientContact,
   type Expert,
@@ -28,6 +29,7 @@ import {
   type Sector,
   type Function,
   type AdminUser,
+  type ProjectActivityTimeline,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -259,6 +261,17 @@ export async function createProject(data: Omit<Project, "id" | "createdAt" | "up
   if (!db) throw new Error("Database not available");
 
   const result = await db.insert(projects).values(data);
+
+  // Create initial activity timeline event
+  if (result.insertId) {
+    await createProjectActivityEvent(
+      Number(result.insertId),
+      "created",
+      "Project Created",
+      `Project was created with initial status: ${data.status || "Active"}`
+    );
+  }
+
   return result;
 }
 
@@ -1189,5 +1202,62 @@ export async function getExpertActivityTimeline(expertId: number): Promise<Activ
   }
 
   // Sort by timestamp descending (most recent first)
+  return events.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+}
+
+/**
+ * Create a project activity timeline event
+ */
+export async function createProjectActivityEvent(
+  projectId: number,
+  type: "created" | "status_changed",
+  title: string,
+  description: string,
+  fromStatus?: string,
+  toStatus?: string,
+  changedBy?: number
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(projectActivityTimeline).values({
+    projectId,
+    type,
+    title,
+    description,
+    fromStatus: fromStatus || null,
+    toStatus: toStatus || null,
+    changedBy: changedBy || null,
+  });
+}
+
+/**
+ * Get project activity timeline
+ */
+export async function getProjectActivityTimeline(projectId: number): Promise<ActivityTimelineEvent[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const project = await db.select().from(projects).where(eq(projects.id, projectId)).limit(1);
+  if (!project || project.length === 0) {
+    return [];
+  }
+
+  const activities = await db
+    .select()
+    .from(projectActivityTimeline)
+    .where(eq(projectActivityTimeline.projectId, projectId));
+
+  const events: ActivityTimelineEvent[] = activities.map((activity) => ({
+    id: `project-activity-${activity.id}`,
+    timestamp: activity.timestamp,
+    type: activity.type === "created" ? "expert_created" : "status_changed",
+    title: activity.title,
+    description: activity.description || "",
+    projectId: activity.projectId,
+    fromStatus: activity.fromStatus || undefined,
+    toStatus: activity.toStatus || undefined,
+  }));
+
   return events.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 }

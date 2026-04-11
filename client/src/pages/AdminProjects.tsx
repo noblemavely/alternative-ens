@@ -71,6 +71,19 @@ export default function AdminProjects() {
     return shortlistsQuery.data?.filter((s: any) => s.projectId === projectId).length || 0;
   };
 
+  const getStatusBadgeStyle = (status: string) => {
+    switch (status) {
+      case "Active":
+        return "bg-green-100 text-green-700";
+      case "On Hold":
+        return "bg-amber-100 text-amber-700";
+      case "Closed":
+        return "bg-red-100 text-red-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -131,6 +144,7 @@ export default function AdminProjects() {
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Project Name</th>
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Client Contact</th>
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Type</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Status</th>
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Rate</th>
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Experts</th>
                       <th className="text-right py-3 px-4 font-semibold text-foreground">Actions</th>
@@ -146,6 +160,11 @@ export default function AdminProjects() {
                         <td className="py-3 px-4 font-medium">{project.name}</td>
                         <td className="py-3 px-4 text-muted-foreground">{getClientContactName(project.clientContactId)}</td>
                         <td className="py-3 px-4 text-muted-foreground">{project.projectType}</td>
+                        <td className="py-3 px-4">
+                          <span className={`text-xs px-2 py-1 rounded font-medium ${getStatusBadgeStyle(project.status || "Active")}`}>
+                            {project.status || "Active"}
+                          </span>
+                        </td>
                         <td className="py-3 px-4 text-muted-foreground">${project.hourlyRate || "-"}</td>
                         <td className="py-3 px-4 text-muted-foreground">{getExpertCountForProject(project.id)}</td>
                         <td className="py-3 px-4 text-right space-x-2">

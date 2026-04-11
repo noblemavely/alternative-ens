@@ -142,6 +142,7 @@ export const projects = mysqlTable("projects", {
   targetCompanies: text("targetCompanies"), // Comma-separated or JSON
   targetPersona: text("targetPersona"),
   hourlyRate: decimal("hourlyRate", { precision: 10, scale: 2 }),
+  status: mysqlEnum("status", ["Active", "On Hold", "Closed"]).default("Active").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -274,3 +275,21 @@ export const auditLog = mysqlTable("auditLog", {
 
 export type AuditLog = typeof auditLog.$inferSelect;
 export type InsertAuditLog = typeof auditLog.$inferInsert;
+
+/**
+ * Project Activity Timeline table - tracks status changes for projects
+ */
+export const projectActivityTimeline = mysqlTable("projectActivityTimeline", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  type: mysqlEnum("type", ["created", "status_changed"]).notNull(),
+  fromStatus: varchar("fromStatus", { length: 50 }),
+  toStatus: varchar("toStatus", { length: 50 }),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: longtext("description"),
+  changedBy: int("changedBy"), // References adminUsers.id
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export type ProjectActivityTimeline = typeof projectActivityTimeline.$inferSelect;
+export type InsertProjectActivityTimeline = typeof projectActivityTimeline.$inferInsert;

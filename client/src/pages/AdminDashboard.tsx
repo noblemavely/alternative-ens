@@ -13,12 +13,6 @@ export default function AdminDashboard() {
 
   const stats = [
     {
-      title: "Total Clients",
-      value: clientsQuery.data?.length || 0,
-      icon: Users,
-      color: "text-blue-600",
-    },
-    {
       title: "Total Experts",
       value: expertsQuery.data?.length || 0,
       icon: Users,
@@ -29,6 +23,12 @@ export default function AdminDashboard() {
       value: projectsQuery.data?.length || 0,
       icon: Briefcase,
       color: "text-purple-600",
+    },
+    {
+      title: "Total Clients",
+      value: clientsQuery.data?.length || 0,
+      icon: Users,
+      color: "text-blue-600",
     },
   ];
 

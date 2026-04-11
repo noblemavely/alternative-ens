@@ -527,13 +527,32 @@ export const appRouter = router({
           type: z.enum(["Call", "Advisory", "ID"]).optional(),
           targetCompanies: z.string().optional(),
           hourlyRate: z.number().optional(),
-          status: z.enum(["pending", "interested", "rejected", "new", "contacted", "attempting_contact", "engaged", "qualified", "proposal_sent", "negotiation", "verbal_agreement", "closed_won", "closed_lost"]).optional(),
+          status: z.enum(["Active", "On Hold", "Closed"]).optional(),
         })
       )
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
+        const { id, status, ...data } = input;
+
+        // Get current project to track status change
+        const currentProject = await getProjectById(id);
+        if (!currentProject) throw new TRPCError({ code: "NOT_FOUND" });
+
+        // If status is being changed, create an activity timeline event
+        if (status && status !== currentProject.status) {
+          const { createProjectActivityEvent } = await import("../db");
+          await createProjectActivityEvent(
+            id,
+            "status_changed",
+            `Status Updated to ${status}`,
+            `Project status changed from ${currentProject.status} to ${status}`,
+            currentProject.status,
+            status
+          );
+        }
+
         const normalizedData = {
           ...data,
+          ...(status && { status }),
           hourlyRate: data.hourlyRate ? data.hourlyRate.toString() : undefined,
           type: data.type ? (data.type as "Call" | "Advisory" | "ID") : undefined,
         };
@@ -546,6 +565,13 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await deleteProject(input.id);
         return { success: true };
+      }),
+
+    getActivityTimeline: adminProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        const { getProjectActivityTimeline } = await import("../db");
+        return getProjectActivityTimeline(input.projectId);
       }),
   }),
 
