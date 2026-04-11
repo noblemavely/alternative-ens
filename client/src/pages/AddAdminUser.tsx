@@ -9,7 +9,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 
-export default function AddAdminUser() {
+function AddAdminUser() {
   const [, setLocation] = useLocation();
   const [formData, setFormData] = useState({
     name: "",
@@ -188,3 +188,5 @@ export default function AddAdminUser() {
     </div>
   );
 }
+
+export default AddAdminUser;

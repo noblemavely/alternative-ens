@@ -245,7 +245,7 @@ export default function ExpertPortal() {
           });
 
           // Upload via tRPC endpoint
-          const uploadResult = await trpc.upload.uploadCV.mutate({
+          const uploadResult = await trpc.upload.uploadCV.mutateAsync({
             fileName: file.name,
             fileData,
             contentType: file.type || "application/pdf",

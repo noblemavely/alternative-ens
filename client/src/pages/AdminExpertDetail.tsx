@@ -10,6 +10,7 @@ import { ArrowLeft, Loader2, Edit2, Save, Trash2, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import ActivityTimeline from "@/components/ActivityTimeline";
 
 export default function AdminExpertDetail() {
   const [, params] = useRoute("/admin/experts/:id");
@@ -22,10 +23,11 @@ export default function AdminExpertDetail() {
   const [showAddMapping, setShowAddMapping] = useState(false);
   const [selectedClient, setSelectedClient] = useState<string>("");
   const [mappingStatus, setMappingStatus] = useState("shortlisted");
-  
+
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [shortlistNotes, setShortlistNotes] = useState("");
   const [showShortlistModal, setShowShortlistModal] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
 
   // Fetch expert details
   const expertQuery = trpc.experts.getById.useQuery(
@@ -47,6 +49,24 @@ export default function AdminExpertDetail() {
 
   // Fetch client contacts
   const contactsQuery = trpc.clientContacts.list.useQuery();
+
+  // Fetch projects for this expert (where expert is shortlisted)
+  const expertProjectsQuery = trpc.experts.getProjectsForExpert.useQuery(
+    { expertId: expertId! },
+    { enabled: !!expertId }
+  );
+
+  // Fetch activity timeline for expert
+  const activityTimelineQuery = trpc.experts.getActivityTimeline.useQuery(
+    { expertId: expertId! },
+    { enabled: !!expertId }
+  );
+
+  // Fetch project-specific activity timeline
+  const projectActivityQuery = trpc.experts.getProjectActivityTimeline.useQuery(
+    { expertId: expertId!, projectId: selectedProjectId || 0 },
+    { enabled: !!expertId && !!selectedProjectId }
+  );
 
   // Fetch expert mappings
   // TODO: Implement expert-client mappings
@@ -120,6 +140,13 @@ export default function AdminExpertDetail() {
       });
     }
   }, [expertQuery.data]);
+
+  // Auto-select first project if available
+  useEffect(() => {
+    if (expertProjectsQuery.data && expertProjectsQuery.data.length > 0 && !selectedProjectId) {
+      setSelectedProjectId(expertProjectsQuery.data[0].id);
+    }
+  }, [expertProjectsQuery.data, selectedProjectId]);
 
   const handleSaveExpert = async () => {
     if (!expertId) return;
@@ -394,6 +421,45 @@ export default function AdminExpertDetail() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Activity Timeline */}
+            {expertProjectsQuery.data && expertProjectsQuery.data.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Select Project for Activity</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Select value={selectedProjectId?.toString() || ""} onValueChange={(value) => setSelectedProjectId(parseInt(value))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a project to view activity" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {expertProjectsQuery.data.map((project: any) => (
+                        <SelectItem key={project.id} value={project.id.toString()}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {selectedProjectId && (
+                    <ActivityTimeline
+                      events={projectActivityQuery.data || []}
+                      projectName={expertProjectsQuery.data.find((p: any) => p.id === selectedProjectId)?.name}
+                      isLoading={projectActivityQuery.isLoading}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Generic Activity Timeline (when no projects) */}
+            {(!expertProjectsQuery.data || expertProjectsQuery.data.length === 0) && (
+              <ActivityTimeline
+                events={activityTimelineQuery.data || []}
+                isLoading={activityTimelineQuery.isLoading}
+              />
+            )}
           </div>
         </div>
       </div>

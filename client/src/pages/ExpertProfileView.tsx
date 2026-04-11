@@ -323,7 +323,6 @@ export default function ExpertProfileView() {
             isLoading={activityTimelineQuery.isLoading}
           />
         )}
-
       </div>
     </div>
   );
