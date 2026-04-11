@@ -101,13 +101,13 @@ export default function Home() {
       <section className="flex-1 flex items-center justify-center px-4 py-20">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-            Expert Network<br />
+            Your Gateway to Expert<br />
             <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-              Made Simple
+              Opportunities
             </span>
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Connect with vetted experts. Build your network. Scale your projects with precision and confidence.
+            Join Alternative – the Expert Network Service platform connecting accomplished professionals with organizations seeking specialized expertise. Build your profile, showcase your skills, and engage with meaningful projects.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
@@ -116,7 +116,7 @@ export default function Home() {
               onClick={() => navigate("/expert/register")}
               className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
             >
-              Register as Expert
+              Create Your Expert Profile
             </Button>
           </div>
 
@@ -126,9 +126,9 @@ export default function Home() {
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Users className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="font-semibold text-foreground mb-2">Expert Network</h3>
+              <h3 className="font-semibold text-foreground mb-2">Build Your Profile</h3>
               <p className="text-muted-foreground text-sm">
-                Access a curated network of vetted professionals across industries and functions.
+                Create a comprehensive professional profile showcasing your expertise, experience, education, and portfolio. Upload your CV and let organizations discover your qualifications.
               </p>
             </div>
 
@@ -136,9 +136,9 @@ export default function Home() {
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Target className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="font-semibold text-foreground mb-2">Smart Matching</h3>
+              <h3 className="font-semibold text-foreground mb-2">Find Perfect Matches</h3>
               <p className="text-muted-foreground text-sm">
-                Find the perfect experts for your projects with advanced search and filtering.
+                Connect with projects and opportunities that align with your expertise. Work with organizations that value your specific skills and industry knowledge.
               </p>
             </div>
 
@@ -146,10 +146,53 @@ export default function Home() {
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Zap className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="font-semibold text-foreground mb-2">Seamless Integration</h3>
+              <h3 className="font-semibold text-foreground mb-2">Grow Your Network</h3>
               <p className="text-muted-foreground text-sm">
-                Streamlined workflows for project management and expert coordination.
+                Expand your professional network by engaging with leading organizations. Track project engagements and build your reputation through successful collaborations.
               </p>
+            </div>
+          </div>
+
+          {/* How It Works Section */}
+          <div className="mt-24 pt-16 border-t border-border">
+            <h2 className="text-3xl font-bold text-foreground mb-12">How It Works</h2>
+            <div className="grid md:grid-cols-4 gap-6">
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg mb-4">
+                  1
+                </div>
+                <h4 className="font-semibold text-foreground mb-2">Register</h4>
+                <p className="text-sm text-muted-foreground">
+                  Sign up and create your expert profile
+                </p>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg mb-4">
+                  2
+                </div>
+                <h4 className="font-semibold text-foreground mb-2">Build Profile</h4>
+                <p className="text-sm text-muted-foreground">
+                  Add your experience, skills, and credentials
+                </p>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg mb-4">
+                  3
+                </div>
+                <h4 className="font-semibold text-foreground mb-2">Get Discovered</h4>
+                <p className="text-sm text-muted-foreground">
+                  Organizations find and engage with you
+                </p>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg mb-4">
+                  4
+                </div>
+                <h4 className="font-semibold text-foreground mb-2">Collaborate</h4>
+                <p className="text-sm text-muted-foreground">
+                  Engage in projects and build relationships
+                </p>
+              </div>
             </div>
           </div>
         </div>
