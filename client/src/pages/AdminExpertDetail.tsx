@@ -15,6 +15,7 @@ export default function AdminExpertDetail() {
   const [, params] = useRoute("/admin/experts/:id");
   const [, navigate] = useLocation();
   const expertId = params?.id ? parseInt(params.id) : null;
+  const [location, setLocation] = useLocation();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<any>({});
@@ -369,7 +370,12 @@ export default function AdminExpertDetail() {
                     const client = clientsQuery.data?.find((c: any) => c.id === contact?.clientId);
                     return (
                       <div>
-                        <h4 className="font-semibold text-sm mb-2">{project?.name}</h4>
+                        <button
+                          onClick={() => setLocation(`/admin/projects/${project?.id}`)}
+                          className="font-semibold text-sm mb-2 text-blue-600 hover:underline cursor-pointer"
+                        >
+                          {project?.name}
+                        </button>
                         <p className="text-xs text-slate-600 mb-2">Client: {client?.name || 'Unknown'}</p>
                         <p className="text-xs text-slate-500 mb-3">Status: {shortlist.status}</p>
                         <p className="text-xs text-slate-400 text-center mt-4">{carouselIndex + 1} of {shortlistedProjectsQuery.data.length}</p>
