@@ -1,13 +1,16 @@
+import { useState } from "react";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Mail, Phone, Briefcase, BookOpen, FileText, Linkedin, Download } from "lucide-react";
+import DocumentViewer from "@/components/DocumentViewer";
+import { Loader2, Mail, Phone, Briefcase, BookOpen, FileText, Linkedin } from "lucide-react";
 import type { ExpertEmployment, ExpertEducation } from "@shared/types";
 
 export default function ExpertProfileView() {
   const [, params] = useRoute("/expert/profile/:id");
   const expertId = params?.id ? parseInt(params.id) : null;
+  const [documentViewerOpen, setDocumentViewerOpen] = useState(false);
 
   const expertQuery = trpc.experts.getById.useQuery(
     { id: expertId || 0 },
@@ -148,33 +151,42 @@ export default function ExpertProfileView() {
 
         {/* CV Section */}
         {expert.cvUrl && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <FileText size={20} />
-                Resume / CV
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <FileText className="text-slate-600" size={32} />
-                  <div>
-                    <p className="font-medium text-slate-900">Resume/CV</p>
-                    <p className="text-sm text-slate-600">PDF Document</p>
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText size={20} />
+                  Resume / CV
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <FileText className="text-slate-600" size={32} />
+                    <div>
+                      <p className="font-medium text-slate-900">Resume/CV</p>
+                      <p className="text-sm text-slate-600">PDF Document</p>
+                    </div>
                   </div>
+                  <Button
+                    onClick={() => setDocumentViewerOpen(true)}
+                    className="gap-2"
+                    variant="default"
+                  >
+                    <FileText size={16} />
+                    View CV
+                  </Button>
                 </div>
-                <Button
-                  onClick={() => expert.cvUrl && window.open(expert.cvUrl, "_blank")}
-                  className="gap-2"
-                  variant="default"
-                >
-                  <Download size={16} />
-                  View CV
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            <DocumentViewer
+              open={documentViewerOpen}
+              onOpenChange={setDocumentViewerOpen}
+              documentUrl={expert.cvUrl}
+              documentTitle={`${expert.firstName} ${expert.lastName} - Resume`}
+            />
+          </>
         )}
 
         {/* Employment History */}
@@ -230,28 +242,6 @@ export default function ExpertProfileView() {
           </Card>
         )}
 
-        {/* CV */}
-        {expert.cvUrl && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <FileText size={20} />
-                CV
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <a
-                href={expert.cvUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800"
-              >
-                <FileText size={16} />
-                Download CV
-              </a>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );
