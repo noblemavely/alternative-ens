@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Loader2, Edit2, Save, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, Loader2, Edit2, Save, Trash2, Plus, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import ActivityTimeline from "@/components/ActivityTimeline";
+import DocumentViewer from "@/components/DocumentViewer";
 
 export default function AdminExpertDetail() {
   const [, params] = useRoute("/admin/experts/:id");
@@ -28,6 +29,10 @@ export default function AdminExpertDetail() {
   const [shortlistNotes, setShortlistNotes] = useState("");
   const [showShortlistModal, setShowShortlistModal] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [documentViewerOpen, setDocumentViewerOpen] = useState(false);
+  const [selectedCVFile, setSelectedCVFile] = useState<File | null>(null);
+  const [editingShortlistId, setEditingShortlistId] = useState<number | null>(null);
+  const [editingStatus, setEditingStatus] = useState<string>("");
 
   // Fetch expert details
   const expertQuery = trpc.experts.getById.useQuery(
@@ -75,11 +80,19 @@ export default function AdminExpertDetail() {
   //   { enabled: !!expertId }
   // );
 
+  // Upload CV mutation
+  const uploadCVMutation = trpc.upload.uploadCV.useMutation({
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to upload CV");
+    },
+  });
+
   // Update expert mutation
   const updateExpertMutation = trpc.experts.update.useMutation({
     onSuccess: () => {
       toast.success("Expert updated successfully");
       setIsEditing(false);
+      setSelectedCVFile(null);
       expertQuery.refetch();
     },
     onError: (error: any) => {
@@ -126,6 +139,20 @@ export default function AdminExpertDetail() {
     },
   });
 
+  // Update shortlist status mutation
+  const updateShortlistMutation = trpc.shortlists.update.useMutation({
+    onSuccess: () => {
+      toast.success("Status updated successfully");
+      setEditingShortlistId(null);
+      setEditingStatus("");
+      shortlistedProjectsQuery.refetch();
+      projectActivityQuery.refetch(); // Refresh activity timeline
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to update status");
+    },
+  });
+
   // Initialize form data when expert data loads
   useEffect(() => {
     if (expertQuery.data) {
@@ -150,10 +177,41 @@ export default function AdminExpertDetail() {
 
   const handleSaveExpert = async () => {
     if (!expertId) return;
-    await updateExpertMutation.mutateAsync({
-      id: expertId,
-      ...formData,
-    });
+
+    let cvUrl = formData.cvUrl;
+
+    // Upload CV if a file was selected
+    if (selectedCVFile) {
+      try {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const base64Data = (e.target?.result as string).split(",")[1];
+          const uploadResult = await uploadCVMutation.mutateAsync({
+            fileName: selectedCVFile.name,
+            fileData: base64Data,
+            contentType: selectedCVFile.type || "application/pdf",
+          });
+          cvUrl = uploadResult.url;
+
+          // Now update the expert with the new CV URL
+          await updateExpertMutation.mutateAsync({
+            id: expertId,
+            ...formData,
+            cvUrl,
+          });
+        };
+        reader.readAsDataURL(selectedCVFile);
+      } catch (error) {
+        console.error("Error uploading CV:", error);
+        return;
+      }
+    } else {
+      // No CV upload, just update expert info
+      await updateExpertMutation.mutateAsync({
+        id: expertId,
+        ...formData,
+      });
+    }
   };
 
   // const handleAddMapping = () => {
@@ -183,6 +241,13 @@ export default function AdminExpertDetail() {
       projectId: parseInt(selectedProject),
       expertId: expertId!,
       notes: shortlistNotes || undefined,
+    });
+  };
+
+  const handleStatusChange = (shortlistId: number, newStatus: string) => {
+    updateShortlistMutation.mutate({
+      id: shortlistId,
+      status: newStatus as any,
     });
   };
 
@@ -314,8 +379,70 @@ export default function AdminExpertDetail() {
                     rows={3}
                   />
                 </div>
+
+                {isEditing && (
+                  <div>
+                    <Label className="text-xs font-semibold text-slate-600">Upload CV/Resume</Label>
+                    <div className="mt-2 flex items-center gap-4">
+                      <Input
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        onChange={(e) => setSelectedCVFile(e.target.files?.[0] || null)}
+                        className="text-slate-900"
+                      />
+                      {selectedCVFile && (
+                        <span className="text-sm text-green-600 font-medium">
+                          ✓ {selectedCVFile.name}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-2">
+                      Supported formats: PDF, DOC, DOCX (Max 10MB)
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
+
+            {/* CV Section */}
+            {expertQuery.data?.cvUrl && (
+              <>
+                <Card className="border-slate-200 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <FileText size={20} />
+                      Resume / CV
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <FileText className="text-slate-600" size={32} />
+                        <div>
+                          <p className="font-medium text-slate-900">Resume/CV</p>
+                          <p className="text-sm text-slate-600">PDF Document</p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => setDocumentViewerOpen(true)}
+                        className="gap-2"
+                        variant="default"
+                      >
+                        <FileText size={16} />
+                        View CV
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <DocumentViewer
+                  open={documentViewerOpen}
+                  onOpenChange={setDocumentViewerOpen}
+                  documentUrl={expertQuery.data.cvUrl}
+                  documentTitle={`${expertQuery.data.firstName} ${expertQuery.data.lastName} - Resume`}
+                />
+              </>
+            )}
 
             {/* Projects & Shortlisting Section */}
             <Card className="border-slate-200 shadow-sm">
@@ -397,10 +524,12 @@ export default function AdminExpertDetail() {
                       const project = projectsQuery.data?.find((p: any) => p.id === shortlist.projectId);
                       const contact = contactsQuery.data?.find((c: any) => c.id === project?.clientContactId);
                       const client = clientsQuery.data?.find((c: any) => c.id === contact?.clientId);
+                      const isEditing = editingShortlistId === shortlist.id;
+
                       return (
-                        <div key={shortlist.id} className="p-3 border rounded-lg">
-                          <div className="flex items-start justify-between">
-                            <div>
+                        <div key={shortlist.id} className="p-4 border rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
                               <button
                                 onClick={() => setLocation(`/admin/projects/${project?.id}`)}
                                 className="font-semibold text-sm text-blue-600 hover:underline cursor-pointer"
@@ -408,9 +537,84 @@ export default function AdminExpertDetail() {
                                 {project?.name}
                               </button>
                               <p className="text-xs text-slate-600 mt-1">Client: {client?.name || 'Unknown'}</p>
-                              <p className="text-xs text-slate-500 mt-1">Status: {shortlist.status}</p>
+
+                              {/* Status with edit capability */}
+                              <div className="mt-2 flex items-center gap-2">
+                                {isEditing ? (
+                                  <Select value={editingStatus} onValueChange={(value) => setEditingStatus(value)}>
+                                    <SelectTrigger className="w-40">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="pending">Pending</SelectItem>
+                                      <SelectItem value="new">New</SelectItem>
+                                      <SelectItem value="contacted">Contacted</SelectItem>
+                                      <SelectItem value="attempting_contact">Attempting Contact</SelectItem>
+                                      <SelectItem value="engaged">Engaged</SelectItem>
+                                      <SelectItem value="qualified">Qualified</SelectItem>
+                                      <SelectItem value="proposal_sent">Proposal Sent</SelectItem>
+                                      <SelectItem value="negotiation">Negotiation</SelectItem>
+                                      <SelectItem value="verbal_agreement">Verbal Agreement</SelectItem>
+                                      <SelectItem value="closed_won">Closed Won</SelectItem>
+                                      <SelectItem value="closed_lost">Closed Lost</SelectItem>
+                                      <SelectItem value="interested">Interested</SelectItem>
+                                      <SelectItem value="rejected">Rejected</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  ) : (
+                                    <span className="text-xs text-slate-600">Status: <span className="font-medium text-slate-900">{shortlist.status}</span></span>
+                                  )}
+                              </div>
+
                               {shortlist.notes && (
-                                <p className="text-xs text-slate-600 mt-2 italic">{shortlist.notes}</p>
+                                <p className="text-xs text-slate-600 mt-2 italic">Notes: {shortlist.notes}</p>
+                              )}
+                            </div>
+
+                            {/* Edit/Save buttons */}
+                            <div className="flex gap-2">
+                              {isEditing ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    onClick={() => handleStatusChange(shortlist.id, editingStatus)}
+                                    disabled={updateShortlistMutation.isPending}
+                                    className="whitespace-nowrap"
+                                  >
+                                    {updateShortlistMutation.isPending ? (
+                                      <>
+                                        <Loader2 size={14} className="animate-spin mr-1" />
+                                        Saving...
+                                      </>
+                                    ) : (
+                                      "Save"
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setEditingShortlistId(null);
+                                      setEditingStatus("");
+                                    }}
+                                    className="whitespace-nowrap"
+                                  >
+                                    Cancel
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingShortlistId(shortlist.id);
+                                    setEditingStatus(shortlist.status);
+                                  }}
+                                  className="whitespace-nowrap"
+                                >
+                                  Edit Status
+                                </Button>
                               )}
                             </div>
                           </div>

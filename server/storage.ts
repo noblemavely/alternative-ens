@@ -1,11 +1,27 @@
 // Preconfigured storage helpers for Manus WebDev templates
-// Uses the Biz-provided storage proxy (Authorization: Bearer <token>)
+// Uses local file system storage in development, S3 in production
 
 import { ENV } from './_core/env';
+import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 
-type StorageConfig = { baseUrl: string; apiKey: string };
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const uploadsDir = path.join(__dirname, '../uploads');
+
+// Ensure uploads directory exists
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+type StorageConfig = { baseUrl?: string; apiKey?: string };
+const isDevelopment = !ENV.isProduction;
 
 function getStorageConfig(): StorageConfig {
+  if (isDevelopment) {
+    return { baseUrl: undefined, apiKey: undefined };
+  }
+
   const baseUrl = ENV.forgeApiUrl;
   const apiKey = ENV.forgeApiKey;
 
@@ -72,13 +88,35 @@ export async function storagePut(
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream"
 ): Promise<{ key: string; url: string }> {
-  const { baseUrl, apiKey } = getStorageConfig();
   const key = normalizeKey(relKey);
-  const uploadUrl = buildUploadUrl(baseUrl, key);
+
+  if (isDevelopment) {
+    // Local file system storage for development
+    const filePath = path.join(uploadsDir, key);
+    const fileDir = path.dirname(filePath);
+
+    // Create directories if they don't exist
+    if (!fs.existsSync(fileDir)) {
+      fs.mkdirSync(fileDir, { recursive: true });
+    }
+
+    // Write file to disk
+    const buffer = typeof data === "string" ? Buffer.from(data, "utf-8") : Buffer.from(data);
+    fs.writeFileSync(filePath, buffer);
+
+    // Return a local URL
+    const url = `/uploads/${key}`;
+    console.log(`[Storage] File saved locally: ${filePath}`);
+    return { key, url };
+  }
+
+  // Production: Use S3-compatible storage
+  const { baseUrl, apiKey } = getStorageConfig();
+  const uploadUrl = buildUploadUrl(baseUrl!, key);
   const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
   const response = await fetch(uploadUrl, {
     method: "POST",
-    headers: buildAuthHeaders(apiKey),
+    headers: buildAuthHeaders(apiKey!),
     body: formData,
   });
 
@@ -93,10 +131,26 @@ export async function storagePut(
 }
 
 export async function storageGet(relKey: string): Promise<{ key: string; url: string; }> {
-  const { baseUrl, apiKey } = getStorageConfig();
   const key = normalizeKey(relKey);
+
+  if (isDevelopment) {
+    // Local file system storage for development
+    const filePath = path.join(uploadsDir, key);
+
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found: ${key}`);
+    }
+
+    // Return a local URL
+    const url = `/uploads/${key}`;
+    console.log(`[Storage] File retrieved locally: ${filePath}`);
+    return { key, url };
+  }
+
+  // Production: Use S3-compatible storage
+  const { baseUrl, apiKey } = getStorageConfig();
   return {
     key,
-    url: await buildDownloadUrl(baseUrl, key, apiKey),
+    url: await buildDownloadUrl(baseUrl!, key, apiKey!),
   };
 }
