@@ -22,6 +22,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       await logoutMutation.mutateAsync();
       // Clear the user data from cache to prevent redirect loops
       utils.auth.me.setData(undefined, null);
+      // Clear admin token and user info from localStorage
+      localStorage.removeItem("adminToken");
+      localStorage.removeItem("adminUser");
       toast.success("Logged out successfully");
       // Navigate to home page
       setLocation("/");
