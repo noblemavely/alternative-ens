@@ -6,11 +6,12 @@ import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { STATUS_LABELS, STATUS_COLORS } from "@shared/statusLabels";
 
 export default function AdminProjectDetail() {
   const [, params] = useRoute("/admin/projects/:id");
+  const [, navigate] = useLocation();
   const projectId = params?.id ? parseInt(params.id) : null;
 
   // Fetch project details
@@ -129,7 +130,12 @@ export default function AdminProjectDetail() {
                     {shortlistedExperts.map((shortlist: any) => (
                       <tr key={shortlist.id} className="border-b border-slate-200 hover:bg-slate-50">
                         <td className="py-3 px-4 font-medium">
-                          {shortlist.expert?.firstName} {shortlist.expert?.lastName}
+                          <button
+                            onClick={() => navigate(`/admin/experts/${shortlist.expertId}`)}
+                            className="text-blue-600 hover:underline"
+                          >
+                            {shortlist.expert?.firstName} {shortlist.expert?.lastName}
+                          </button>
                         </td>
                         <td className="py-3 px-4 text-slate-600">{shortlist.expert?.email}</td>
                         <td className="py-3 px-4 text-slate-600">{shortlist.expert?.sector || "-"}</td>

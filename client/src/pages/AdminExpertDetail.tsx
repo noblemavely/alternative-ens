@@ -35,6 +35,12 @@ export default function AdminExpertDetail() {
   // Fetch projects
   const projectsQuery = trpc.projects.list.useQuery();
 
+  // Fetch shortlisted projects for this expert
+  const shortlistedProjectsQuery = trpc.shortlists.getByExpert.useQuery(
+    { expertId: expertId! },
+    { enabled: !!expertId }
+  );
+
   // Fetch clients
   const clientsQuery = trpc.clients.list.useQuery();
 
@@ -342,40 +348,41 @@ export default function AdminExpertDetail() {
           <div>
             <h3 className="text-lg font-semibold mb-2">Projects</h3>
             <p className="text-sm text-slate-600 mb-4">Projects this expert is tagged to</p>
-            {!projectsQuery.data || projectsQuery.data.length === 0 ? (
-              <p className="text-slate-600 text-sm py-4">No projects available</p>
+            {!shortlistedProjectsQuery.data || shortlistedProjectsQuery.data.length === 0 ? (
+              <p className="text-slate-600 text-sm py-4">No projects assigned</p>
             ) : (
               <div className="flex items-center gap-4">
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setCarouselIndex((prev) => (prev - 1 + projectsQuery.data.length) % projectsQuery.data.length)}
-                  disabled={projectsQuery.data.length <= 1}
+                  onClick={() => setCarouselIndex((prev) => (prev - 1 + shortlistedProjectsQuery.data.length) % shortlistedProjectsQuery.data.length)}
+                  disabled={shortlistedProjectsQuery.data.length <= 1}
                 >
                   <ChevronLeft size={16} />
                 </Button>
-                
+
                 <div className="flex-1">
-                  {projectsQuery.data[carouselIndex] && (() => {
-                    const project = projectsQuery.data[carouselIndex];
-                    const contact = contactsQuery.data?.find((c: any) => c.id === project.clientContactId);
+                  {shortlistedProjectsQuery.data[carouselIndex] && (() => {
+                    const shortlist = shortlistedProjectsQuery.data[carouselIndex];
+                    const project = projectsQuery.data?.find((p: any) => p.id === shortlist.projectId);
+                    const contact = contactsQuery.data?.find((c: any) => c.id === project?.clientContactId);
                     const client = clientsQuery.data?.find((c: any) => c.id === contact?.clientId);
                     return (
                       <div>
-                        <h4 className="font-semibold text-sm mb-2">{project.name}</h4>
+                        <h4 className="font-semibold text-sm mb-2">{project?.name}</h4>
                         <p className="text-xs text-slate-600 mb-2">Client: {client?.name || 'Unknown'}</p>
-                        <p className="text-xs text-slate-500 mb-3">Status: Shortlisted</p>
-                        <p className="text-xs text-slate-400 text-center mt-4">{carouselIndex + 1} of {projectsQuery.data.length}</p>
+                        <p className="text-xs text-slate-500 mb-3">Status: {shortlist.status}</p>
+                        <p className="text-xs text-slate-400 text-center mt-4">{carouselIndex + 1} of {shortlistedProjectsQuery.data.length}</p>
                       </div>
                     );
                   })()}
                 </div>
-                
+
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setCarouselIndex((prev) => (prev + 1) % projectsQuery.data.length)}
-                  disabled={projectsQuery.data.length <= 1}
+                  onClick={() => setCarouselIndex((prev) => (prev + 1) % shortlistedProjectsQuery.data.length)}
+                  disabled={shortlistedProjectsQuery.data.length <= 1}
                 >
                   <ChevronRight size={16} />
                 </Button>

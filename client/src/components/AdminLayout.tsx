@@ -47,7 +47,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { label: "Clients", icon: Users, href: "/admin/clients" },
     { label: "Experts", icon: Users, href: "/admin/experts" },
     { label: "Projects", icon: Briefcase, href: "/admin/projects" },
-    { label: "Settings", icon: Settings, href: "/admin/settings" },
   ];
 
   return (
@@ -100,6 +99,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <p className="text-sm font-medium text-foreground truncate">{user?.name || user?.email}</p>
             </div>
           )}
+          <Button
+            onClick={() => setLocation("/admin/settings")}
+            variant="outline"
+            size="sm"
+            className="w-full justify-start gap-2"
+          >
+            <Settings size={16} />
+            {sidebarOpen && "Settings"}
+          </Button>
           <Button
             onClick={handleLogout}
             variant="outline"
