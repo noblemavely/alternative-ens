@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit2, Trash2, Shield, User } from "lucide-react";
+import { Plus, Edit2, Trash2, Shield, User, ArrowLeft } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -37,17 +38,27 @@ export default function AdminUsers() {
   const admins = usersQuery.data || [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Admin Users</h1>
-          <p className="text-muted-foreground mt-2">Manage administrator accounts and permissions</p>
-        </div>
-        <Button onClick={() => navigate("/admin/users/new")} className="gap-2">
-          <Plus size={16} />
-          Add Admin User
+    <AdminLayout>
+      <div className="space-y-6">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/admin/settings")}
+          className="gap-2 -ml-4"
+        >
+          <ArrowLeft size={16} />
+          Back to Settings
         </Button>
-      </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Admin Users</h1>
+            <p className="text-muted-foreground mt-2">Manage administrator accounts and permissions</p>
+          </div>
+          <Button onClick={() => navigate("/admin/users/new")} className="gap-2">
+            <Plus size={16} />
+            Add Admin User
+          </Button>
+        </div>
 
       <Card>
         <CardHeader>
@@ -123,6 +134,7 @@ export default function AdminUsers() {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

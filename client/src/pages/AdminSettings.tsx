@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2, Database, Loader2 } from "lucide-react";
+import { Plus, Trash2, Edit2, Database, Loader2, Users, ArrowRight } from "lucide-react";
 
 const sectorSchema = z.object({
   name: z.string().min(1, "Sector name is required"),
@@ -24,6 +25,7 @@ type SectorFormData = z.infer<typeof sectorSchema>;
 type FunctionFormData = z.infer<typeof functionSchema>;
 
 export default function AdminSettings() {
+  const [, navigate] = useLocation();
   const [sectorOpen, setSectorOpen] = useState(false);
   const [functionOpen, setFunctionOpen] = useState(false);
   const [editingSectorId, setEditingSectorId] = useState<number | null>(null);
@@ -352,6 +354,31 @@ export default function AdminSettings() {
                 </div>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Admin Users Management Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>Admin Users</CardTitle>
+                <CardDescription>Manage administrator accounts and permissions</CardDescription>
+              </div>
+              <Button
+                onClick={() => navigate("/admin/users")}
+                className="gap-2"
+              >
+                <Users size={18} />
+                Manage Admin Users
+                <ArrowRight size={16} />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Create, edit, and manage administrator accounts with different permission levels.
+            </p>
           </CardContent>
         </Card>
 

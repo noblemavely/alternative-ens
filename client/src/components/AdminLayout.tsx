@@ -51,7 +51,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { label: "Clients", icon: Users, href: "/admin/clients" },
     { label: "Experts", icon: Users, href: "/admin/experts" },
     { label: "Projects", icon: Briefcase, href: "/admin/projects" },
-    { label: "Admin Users", icon: Users, href: "/admin/users" },
   ];
 
   return (
