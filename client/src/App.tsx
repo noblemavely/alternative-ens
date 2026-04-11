@@ -23,6 +23,7 @@ import EditAdminUser from "./pages/EditAdminUser";
 import ExpertPortal from "./pages/ExpertPortal";
 import ExpertProfileView from "./pages/ExpertProfileView";
 import AdminLogin from "./pages/AdminLogin";
+import TestPDF from "./pages/test-pdf";
 
 function Router() {
   return (
@@ -45,6 +46,7 @@ function Router() {
       <Route path={"/admin/add-project"} component={AddProject} />
       <Route path={"/expert/register"} component={ExpertPortal} />
       <Route path={"/expert/profile/:id"} component={ExpertProfileView} />
+      <Route path={"/test-pdf"} component={TestPDF} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

@@ -6,10 +6,16 @@ import { ChevronLeft, ChevronRight, Download, Loader2 } from "lucide-react";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-// Set the PDF.js worker source - use dynamic import for better compatibility
+// Configure PDF.js worker using a workaround for ESM module resolution
+// The worker needs to be loaded from a proper module source
 if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-  // Try to use a reliable CDN source that works with absolute URLs
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+  // Try multiple CDN sources for pdfjs worker - using different formats
+  const workerUrls = [
+    "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+  ];
+
+  pdfjs.GlobalWorkerOptions.workerSrc = workerUrls[0];
 }
 
 interface DocumentViewerProps {
