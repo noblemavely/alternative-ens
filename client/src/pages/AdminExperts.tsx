@@ -13,7 +13,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2, Upload, Loader2, Link2 } from "lucide-react";
+import { Plus, Trash2, Edit2, Upload, Loader2, Link2, Users } from "lucide-react";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
+import { EmptyState } from "@/components/EmptyState";
+import { ButtonWithTooltip } from "@/components/ButtonWithTooltip";
 
 const expertSchema = z.object({
   email: z.string().email("Invalid email"),
@@ -39,7 +42,9 @@ export default function AdminExperts() {
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
   const [sectorFilter, setSectorFilter] = useState<string>(urlParams.get('sector') || "");
   const [functionFilter, setFunctionFilter] = useState<string>(urlParams.get('function') || "");
-  
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [expertToDelete, setExpertToDelete] = useState<{ id: number; name: string } | null>(null);
+
   const updateUrl = (search: string, sector: string, func: string) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
@@ -129,15 +134,21 @@ export default function AdminExperts() {
     setOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm("Are you sure you want to delete this expert?")) {
-      try {
-        await deleteMutation.mutateAsync({ id });
-        toast.success("Expert deleted successfully");
-        expertsQuery.refetch();
-      } catch (error) {
-        toast.error("Failed to delete expert");
-      }
+  const handleDelete = async (id: number, name: string) => {
+    setExpertToDelete({ id, name });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!expertToDelete) return;
+    try {
+      await deleteMutation.mutateAsync({ id: expertToDelete.id });
+      toast.success("Expert deleted successfully");
+      expertsQuery.refetch();
+      setDeleteDialogOpen(false);
+      setExpertToDelete(null);
+    } catch (error) {
+      toast.error("Failed to delete expert");
     }
   };
 
@@ -396,17 +407,18 @@ export default function AdminExperts() {
                         <td className="py-3 px-4 text-muted-foreground">{expert.sector || "-"}</td>
                         <td className="py-3 px-4 text-muted-foreground">{expert.function || "-"}</td>
                         <td className="py-3 px-4 text-right space-x-2 flex justify-end">
-                          <Button variant="ghost" size="sm" onClick={() => handleEdit(expert)} className="gap-1">
+                          <ButtonWithTooltip variant="ghost" size="sm" tooltip="Edit this expert" onClick={() => handleEdit(expert)} className="gap-1">
                             <Edit2 size={16} />
-                          </Button>
-                          <Button
+                          </ButtonWithTooltip>
+                          <ButtonWithTooltip
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDelete(expert.id)}
+                            tooltip="Delete this expert"
+                            onClick={() => handleDelete(expert.id, `${expert.firstName} ${expert.lastName}`)}
                             className="text-destructive hover:text-destructive"
                           >
                             <Trash2 size={16} />
-                          </Button>
+                          </ButtonWithTooltip>
                         </td>
                       </tr>
                     ))}
@@ -414,17 +426,27 @@ export default function AdminExperts() {
                 </table>
               </div>
             ) : (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">No experts yet</p>
-                <Button onClick={() => setOpen(true)} className="gap-2">
-                  <Plus size={18} />
-                  Add First Expert
-                </Button>
-              </div>
+              <EmptyState
+                icon={Users}
+                title="No experts yet"
+                description={searchTerm || sectorFilter || functionFilter ? "No experts match your filters. Try adjusting your search or filters." : "Add your first expert to get started"}
+                actionLabel={!searchTerm && !sectorFilter && !functionFilter ? "Add Expert" : undefined}
+                onAction={!searchTerm && !sectorFilter && !functionFilter ? () => setOpen(true) : undefined}
+              />
             )}
           </CardContent>
         </Card>
       </div>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete expert"
+        description="Are you sure you want to delete this expert?"
+        itemName={expertToDelete?.name || ""}
+        onConfirm={confirmDelete}
+        isLoading={deleteMutation.isPending}
+      />
     </AdminLayout>
   );
 }

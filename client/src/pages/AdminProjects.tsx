@@ -6,8 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2 } from "lucide-react";
+import { Plus, Trash2, Edit2, Briefcase } from "lucide-react";
 import { useLocation } from "wouter";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
+import { EmptyState } from "@/components/EmptyState";
+import { ButtonWithTooltip } from "@/components/ButtonWithTooltip";
 
 export default function AdminProjects() {
   const [location, navigate] = useLocation();
@@ -15,6 +18,8 @@ export default function AdminProjects() {
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
   const [projectTypeFilter, setProjectTypeFilter] = useState<string>(urlParams.get('type') || "");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<{ id: number; name: string } | null>(null);
 
   const updateUrl = (search: string, type: string) => {
     const params = new URLSearchParams();
@@ -37,15 +42,21 @@ export default function AdminProjects() {
 
   const deleteMutation = trpc.projects.delete.useMutation();
 
-  const handleDelete = async (id: number) => {
-    if (confirm("Are you sure you want to delete this project?")) {
-      try {
-        await deleteMutation.mutateAsync({ id });
-        toast.success("Project deleted successfully");
-        projectsQuery.refetch();
-      } catch (error) {
-        toast.error("Failed to delete project");
-      }
+  const handleDelete = async (id: number, name: string) => {
+    setProjectToDelete({ id, name });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!projectToDelete) return;
+    try {
+      await deleteMutation.mutateAsync({ id: projectToDelete.id });
+      toast.success("Project deleted successfully");
+      projectsQuery.refetch();
+      setDeleteDialogOpen(false);
+      setProjectToDelete(null);
+    } catch (error) {
+      toast.error("Failed to delete project");
     }
   };
 
@@ -104,6 +115,15 @@ export default function AdminProjects() {
                 </Select>
               </div>
 
+              {filteredProjects.length === 0 ? (
+                <EmptyState
+                  icon={Briefcase}
+                  title="No projects yet"
+                  description={searchTerm || projectTypeFilter !== "all" ? "No projects match your filters. Try adjusting your search or filters." : "Add your first project to get started"}
+                  actionLabel={!searchTerm && projectTypeFilter === "all" ? "Add Project" : undefined}
+                  onAction={!searchTerm && projectTypeFilter === "all" ? () => navigate("/admin/add-project") : undefined}
+                />
+              ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -129,36 +149,49 @@ export default function AdminProjects() {
                         <td className="py-3 px-4 text-muted-foreground">${project.hourlyRate || "-"}</td>
                         <td className="py-3 px-4 text-muted-foreground">{getExpertCountForProject(project.id)}</td>
                         <td className="py-3 px-4 text-right space-x-2">
-                          <Button
+                          <ButtonWithTooltip
                             variant="ghost"
                             size="sm"
+                            tooltip="Edit this project"
                             onClick={(e) => {
                               e.stopPropagation();
                               navigate(`/admin/projects/${project.id}`);
                             }}
                           >
                             <Edit2 className="w-4 h-4" />
-                          </Button>
-                          <Button
+                          </ButtonWithTooltip>
+                          <ButtonWithTooltip
                             variant="ghost"
                             size="sm"
+                            tooltip="Delete this project"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDelete(project.id);
+                              handleDelete(project.id, project.name);
                             }}
                           >
                             <Trash2 className="w-4 h-4" />
-                          </Button>
+                          </ButtonWithTooltip>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete project"
+        description="Are you sure you want to delete this project?"
+        itemName={projectToDelete?.name || ""}
+        onConfirm={confirmDelete}
+        isLoading={deleteMutation.isPending}
+      />
     </AdminLayout>
   );
 }

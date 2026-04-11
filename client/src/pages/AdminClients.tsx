@@ -12,7 +12,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2 } from "lucide-react";
+import { Plus, Trash2, Edit2, Users } from "lucide-react";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
+import { EmptyState } from "@/components/EmptyState";
+import { ButtonWithTooltip } from "@/components/ButtonWithTooltip";
+import { TableRowSkeleton } from "@/components/TableRowSkeleton";
 
 const clientSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -34,6 +38,8 @@ export default function AdminClients() {
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
   const [sectorFilter, setSectorFilter] = useState<string>(urlParams.get('sector') || "");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<{ id: number; name: string } | null>(null);
   
   const updateUrl = (search: string, sector: string) => {
     const params = new URLSearchParams();
@@ -95,15 +101,21 @@ export default function AdminClients() {
     setOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm("Are you sure you want to delete this client?")) {
-      try {
-        await deleteMutation.mutateAsync({ id });
-        toast.success("Client deleted successfully");
-        clientsQuery.refetch();
-      } catch (error) {
-        toast.error("Failed to delete client");
-      }
+  const handleDelete = async (id: number, name: string) => {
+    setClientToDelete({ id, name });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!clientToDelete) return;
+    try {
+      await deleteMutation.mutateAsync({ id: clientToDelete.id });
+      toast.success("Client deleted successfully");
+      clientsQuery.refetch();
+      setDeleteDialogOpen(false);
+      setClientToDelete(null);
+    } catch (error) {
+      toast.error("Failed to delete client");
     }
   };
 
@@ -161,7 +173,13 @@ export default function AdminClients() {
           </CardHeader>
           <CardContent>
             {filteredClients.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No clients found</p>
+              <EmptyState
+                icon={Users}
+                title="No clients yet"
+                description={searchTerm || sectorFilter ? "No clients match your filters. Try adjusting your search or filters." : "Add your first client to get started"}
+                actionLabel={!searchTerm && !sectorFilter ? "Add Client" : undefined}
+                onAction={!searchTerm && !sectorFilter ? () => setOpen(true) : undefined}
+              />
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -188,26 +206,28 @@ export default function AdminClients() {
                           <td className="py-3 px-4 text-muted-foreground">{client.sector || "-"}</td>
                           <td className="py-3 px-4 text-muted-foreground">{projectCount}</td>
                           <td className="py-3 px-4 text-right space-x-2">
-                            <Button
+                            <ButtonWithTooltip
                               size="sm"
                               variant="ghost"
+                              tooltip="Edit this client"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(`/admin/clients/${client.id}`);
                               }}
                             >
                               <Edit2 size={16} />
-                            </Button>
-                            <Button
+                            </ButtonWithTooltip>
+                            <ButtonWithTooltip
                               size="sm"
                               variant="ghost"
+                              tooltip="Delete this client"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleDelete(client.id);
+                                handleDelete(client.id, client.name);
                               }}
                             >
                               <Trash2 size={16} />
-                            </Button>
+                            </ButtonWithTooltip>
                           </td>
                         </tr>
                       );
@@ -219,6 +239,16 @@ export default function AdminClients() {
           </CardContent>
         </Card>
       </div>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete client"
+        description="Are you sure you want to delete this client?"
+        itemName={clientToDelete?.name || ""}
+        onConfirm={confirmDelete}
+        isLoading={deleteMutation.isPending}
+      />
     </AdminLayout>
   );
 }
