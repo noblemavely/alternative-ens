@@ -2,7 +2,7 @@ import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Mail, Phone, Briefcase, BookOpen, FileText, Linkedin } from "lucide-react";
+import { Loader2, Mail, Phone, Briefcase, BookOpen, FileText, Linkedin, Download } from "lucide-react";
 import type { ExpertEmployment, ExpertEducation } from "@shared/types";
 
 export default function ExpertProfileView() {
@@ -145,6 +145,37 @@ export default function ExpertProfileView() {
             </div>
           </CardContent>
         </Card>
+
+        {/* CV Section */}
+        {expert.cvUrl && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileText size={20} />
+                Resume / CV
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FileText className="text-slate-600" size={32} />
+                  <div>
+                    <p className="font-medium text-slate-900">Resume/CV</p>
+                    <p className="text-sm text-slate-600">PDF Document</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => window.open(expert.cvUrl, "_blank")}
+                  className="gap-2"
+                  variant="default"
+                >
+                  <Download size={16} />
+                  View CV
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Employment History */}
         {employmentQuery.data && employmentQuery.data.length > 0 && (

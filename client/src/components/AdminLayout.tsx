@@ -19,8 +19,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const handleLogout = async () => {
     try {
       await logoutMutation.mutateAsync();
-      setLocation("/");
+      // Clear the user data from cache to prevent redirect loops
+      const utils = trpc.useUtils();
+      utils.auth.me.setData(undefined, null);
       toast.success("Logged out successfully");
+      // Navigate to admin login page
+      setLocation("/admin-login");
     } catch (error) {
       toast.error("Failed to logout");
     }

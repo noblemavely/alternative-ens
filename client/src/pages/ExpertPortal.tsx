@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -44,6 +45,7 @@ export default function ExpertPortal() {
   const [createdExpertData, setCreatedExpertData] = useState<any>(null);
 
   const utils = trpc.useUtils();
+  const sectorsQuery = trpc.sectors.list.useQuery();
   const sendVerificationMutation = trpc.expertVerification.sendVerificationEmail.useMutation();
   const verifyEmailMutation = trpc.expertVerification.verifyEmail.useMutation();
   const parseLinkedinMutation = trpc.linkedin.parseProfile.useMutation();
@@ -499,7 +501,24 @@ export default function ExpertPortal() {
                       <FormItem>
                         <FormLabel className="text-foreground">Sector / Industry</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Technology, Finance, Healthcare" {...field} className="border-border" />
+                          <Select value={field.value || ""} onValueChange={field.onChange}>
+                            <SelectTrigger className="border-border">
+                              <SelectValue placeholder="Select your sector" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {sectorsQuery.isLoading ? (
+                                <SelectItem value="loading" disabled>Loading sectors...</SelectItem>
+                              ) : sectorsQuery.data && sectorsQuery.data.length > 0 ? (
+                                sectorsQuery.data.map((sector: any) => (
+                                  <SelectItem key={sector.id} value={sector.name}>
+                                    {sector.name}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="none" disabled>No sectors available</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
