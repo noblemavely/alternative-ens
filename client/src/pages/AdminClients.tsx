@@ -164,7 +164,7 @@ export default function AdminClients() {
               <p className="text-muted-foreground text-center py-8">No clients found</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Client Name</th>

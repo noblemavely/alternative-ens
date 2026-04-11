@@ -105,7 +105,7 @@ export default function AdminProjects() {
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Project Name</th>
