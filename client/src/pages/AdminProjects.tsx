@@ -341,7 +341,7 @@ export default function AdminProjects() {
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="Call">Call</SelectItem>
                     <SelectItem value="Advisory">Advisory</SelectItem>
                     <SelectItem value="ID">ID</SelectItem>
