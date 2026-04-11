@@ -1,0 +1,156 @@
+name: Issue Management
+
+on:
+  issues:
+    types: [opened, labeled, unlabeled, closed, reopened]
+  pull_request:
+    types: [opened, synchronize, closed]
+  push:
+    branches: [main]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  # Auto-close issues when PR is merged
+  auto-close-on-merge:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Extract issue numbers from PR body
+        id: extract
+        run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+          ISSUES=$(echo "$PR_BODY" | grep -oE '#[0-9]+' | sed 's/#//' | tr '\n' ' ')
+          echo "issues=$ISSUES" >> $GITHUB_OUTPUT
+
+      - name: Close linked issues
+        if: steps.extract.outputs.issues != ''
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issues = '${{ steps.extract.outputs.issues }}'.split(' ').filter(i => i);
+            for (const issue of issues) {
+              if (issue) {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: parseInt(issue),
+                  state: 'closed',
+                  state_reason: 'completed'
+                });
+                console.log(`Closed issue #${issue}`);
+              }
+            }
+
+  # Add labels based on issue content
+  auto-label:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened'
+    steps:
+      - name: Auto-label bug reports
+        if: contains(github.event.issue.body, 'Steps to Reproduce')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['bug']
+            });
+
+      - name: Auto-label feature requests
+        if: contains(github.event.issue.body, 'Proposed Solution')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['enhancement']
+            });
+
+  # Add priority labels based on severity
+  auto-priority:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened' && contains(github.event.issue.body, 'Severity')
+    steps:
+      - name: Set critical priority
+        if: contains(github.event.issue.body, 'Critical')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['critical']
+            });
+
+      - name: Set high priority
+        if: contains(github.event.issue.body, 'High')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['high']
+            });
+
+  # Notify on issue updates
+  notify-on-update:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'labeled' || github.event.action == 'unlabeled'
+    steps:
+      - name: Comment on label change
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const labels = context.payload.issue.labels.map(l => l.name).join(', ');
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `📌 Issue labels updated: ${labels || 'none'}`
+            });
+
+  # Track issue metrics
+  track-metrics:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'closed'
+    steps:
+      - name: Log issue closure
+        run: |
+          echo "Issue #${{ github.event.issue.number }} closed"
+          echo "Title: ${{ github.event.issue.title }}"
+          echo "Labels: ${{ join(github.event.issue.labels.*.name, ', ') }}"
+          echo "Time to close: $(date -d '${{ github.event.issue.created_at }}' +%s) seconds"
+
+  # Validate commit messages reference issues
+  validate-commits:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Validate commit messages
+        run: |
+          COMMITS=$(git log --oneline origin/main..HEAD)
+          if echo "$COMMITS" | grep -qE "^[a-f0-9]+ (feat|fix|docs|style|refactor|test|chore)(\(.+\))?!?: .+"; then
+            echo "✅ Commit messages follow conventional commits"
+          else
+            echo "⚠️ Some commits don't follow conventional commits format"
+          fi
+
+          if echo "$COMMITS" | grep -qE "#[0-9]+"; then
+            echo "✅ Commits reference GitHub issues"
+          else
+            echo "⚠️ Some commits don't reference GitHub issues"
+          fi

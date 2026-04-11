@@ -200,7 +200,7 @@ async function seedDatabase() {
     const expertIds = [];
     for (const expert of experts) {
       const [result] = await connection.execute(
-        'INSERT INTO experts (email, phone, firstName, lastName, sector, function, biography, linkedinUrl, isVerified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO experts (email, phone, firstName, lastName, sector, `function`, biography, linkedinUrl, isVerified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [expert.email, expert.phone, expert.firstName, expert.lastName, expert.sector, expert.function, expert.biography, expert.linkedinUrl, expert.isVerified]
       );
       expertIds.push(result.insertId);
