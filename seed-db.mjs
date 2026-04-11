@@ -198,14 +198,18 @@ async function seedDatabase() {
     ];
     
     const expertIds = [];
-    for (const expert of experts) {
+    for (let i = 0; i < experts.length; i++) {
+      const expert = experts[i];
+      // Add cvUrl for first two experts (sample CV files)
+      const cvUrl = i < 2 ? `/uploads/cv-uploads-${expert.firstName.toLowerCase()}-${expert.lastName.toLowerCase()}-cv.pdf` : null;
+
       const [result] = await connection.execute(
-        'INSERT INTO experts (email, phone, firstName, lastName, sector, `function`, biography, linkedinUrl, isVerified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [expert.email, expert.phone, expert.firstName, expert.lastName, expert.sector, expert.function, expert.biography, expert.linkedinUrl, expert.isVerified]
+        'INSERT INTO experts (email, phone, firstName, lastName, sector, `function`, biography, linkedinUrl, cvUrl, isVerified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [expert.email, expert.phone, expert.firstName, expert.lastName, expert.sector, expert.function, expert.biography, expert.linkedinUrl, cvUrl, expert.isVerified]
       );
       expertIds.push(result.insertId);
     }
-    console.log('✅ Seeded 5 experts');
+    console.log('✅ Seeded 5 experts (2 with sample CVs)');
 
     // Seed Expert Employment History
     console.log('💼 Seeding expert employment history...');
@@ -379,19 +383,41 @@ async function seedDatabase() {
     }
     console.log('✅ Seeded 7 expert-client mappings');
 
+    // Seed Activity/Audit Logs
+    console.log('📝 Seeding activity timeline records...');
+    const auditLogs = [
+      { entityType: 'expert', entityId: expertIds[0], operationType: 'create', adminId: null, reason: 'Expert registration via portal' },
+      { entityType: 'expert', entityId: expertIds[1], operationType: 'create', adminId: null, reason: 'Expert registration via portal' },
+      { entityType: 'expert', entityId: expertIds[2], operationType: 'create', adminId: null, reason: 'Expert registration via portal' },
+      { entityType: 'expert', entityId: expertIds[3], operationType: 'create', adminId: null, reason: 'Expert registration via portal' },
+      { entityType: 'expert', entityId: expertIds[4], operationType: 'create', adminId: null, reason: 'Expert registration via portal' },
+      { entityType: 'shortlist', entityId: 1, operationType: 'create', adminId: null, reason: 'Expert shortlisted for project' },
+      { entityType: 'shortlist', entityId: 2, operationType: 'update', adminId: null, reason: 'Status changed from pending to contacted', oldValue: '{"status":"pending"}', newValue: '{"status":"contacted"}' },
+      { entityType: 'shortlist', entityId: 3, operationType: 'update', adminId: null, reason: 'Status changed from contacted to engaged', oldValue: '{"status":"contacted"}', newValue: '{"status":"engaged"}' },
+    ];
+
+    for (const log of auditLogs) {
+      await connection.execute(
+        'INSERT INTO auditLog (entityType, entityId, operationType, adminId, fieldChanged, oldValue, newValue, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [log.entityType, log.entityId, log.operationType, log.adminId, log.fieldChanged || null, log.oldValue || null, log.newValue || null, log.reason]
+      );
+    }
+    console.log('✅ Seeded 8 activity timeline records');
+
     console.log('\n✅ Database seeding completed successfully!');
     console.log('\n📊 Summary:');
     console.log('  - 5 Sectors');
     console.log('  - 6 Functions');
     console.log('  - 3 Clients');
     console.log('  - 6 Client Contacts');
-    console.log('  - 5 Experts');
+    console.log('  - 5 Experts (2 with sample CVs)');
     console.log('  - 6 Employment Records');
     console.log('  - 6 Education Records');
     console.log('  - 6 Projects');
     console.log('  - 10 Screening Questions');
     console.log('  - 9 Shortlist Records');
     console.log('  - 7 Expert-Client Mappings');
+    console.log('  - 8 Activity Timeline Records');
 
   } catch (error) {
     console.error('❌ Error seeding database:', error);

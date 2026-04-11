@@ -32,8 +32,11 @@ A comprehensive Expert Network Service platform enabling Admins to manage Client
 
 ### Admin Dashboard
 - **Client Management**: Create, edit, delete clients with multi-contact support
-- **Expert Management**: Create, edit, delete experts with sector/function categorization
+- **Expert Management**: Create, edit, delete experts with sector/function categorization, CV uploads
 - **Project Management**: Create projects, manage screening questions, shortlist experts
+- **Expert Engagement**: Inline status editing for expert-project assignments with 13 status stages
+- **Activity Timeline**: Track all expert activities including status changes with timestamps
+- **CV Management**: Upload and view expert CVs directly from admin interface
 - **Advanced Search**: Filter experts by sector, function, skills, and keywords
 - **Master Lists**: Configurable sector and function master lists
 - **Sample Data**: One-click seeding of 60+ sample records for testing
@@ -42,8 +45,9 @@ A comprehensive Expert Network Service platform enabling Admins to manage Client
 ### Expert Portal (Public)
 - **Self-Registration**: Email verification-based registration
 - **Profile Building**: Employment history, education, CV upload, LinkedIn integration
+- **CV Upload**: Direct PDF upload during registration with file validation
 - **LinkedIn Integration**: Simulated LinkedIn profile parsing for quick profile population
-- **Profile Submission**: Complete profile submission workflow
+- **Profile Submission**: Complete profile submission workflow with CV verification
 
 ### Database Features
 - **Multi-Contact Support**: Multiple contacts per client organization
@@ -193,22 +197,72 @@ The database includes the following tables:
 
 ### Seeding Sample Data
 
-The application includes a seed script to populate sample data:
+The application includes a seed script to populate comprehensive sample data:
 
 ```bash
 # Via CLI
 node seed-db.mjs
 
-# Via UI
+# Via UI (when available)
 # Click "Seed Sample Data" button in Admin Dashboard
 ```
 
-This creates:
-- 5 Sectors, 6 Functions
-- 3 Clients with 6 Contacts
-- 5 Experts with employment & education history
-- 6 Projects with 10 screening questions
-- 9 Shortlist records & 7 Expert-Client mappings
+**Sample Data Includes:**
+- **5 Sectors** & **6 Functions** - Master lists for categorization
+- **3 Clients** with **6 Contacts** - Multi-contact client organizations
+- **5 Experts** with:
+  - Employment history (6 records)
+  - Education history (6 records)
+  - CV files (2 sample experts have CV uploads)
+  - LinkedIn URLs and complete profiles
+- **6 Projects** with:
+  - **10 screening questions** across all projects
+  - Status tracking and notes
+- **9 Shortlist records** with:
+  - Various status stages (pending, engaged, qualified, etc.)
+  - Timestamps for activity tracking
+- **7 Expert-Client mappings** for relationship tracking
+- **Activity timeline records** showing expert engagement history
+
+### Clearing All Data
+
+To reset the database and clear all data:
+
+```bash
+# Via CLI
+node clear-db.mjs
+
+# This will delete all data while preserving table structure
+# The script will ask for confirmation before proceeding
+```
+
+**Safety Features:**
+- Confirmation prompt before deletion
+- Preserves database schema
+- Clears all tables in correct dependency order
+- Ready for fresh seeding after clearing
+
+**Warning:** This operation is irreversible and will remove all data from all tables.
+
+### Database Management Workflow
+
+**Full Reset Workflow:**
+```bash
+# Step 1: Clear all existing data
+node clear-db.mjs
+# When prompted, type "yes" to confirm
+
+# Step 2: Seed fresh sample data
+node seed-db.mjs
+
+# Step 3: Verify in admin dashboard
+# Navigate to http://localhost:3000/admin/experts
+```
+
+**Partial Updates:**
+- Update individual experts/projects through the admin interface
+- Use tRPC endpoints for API-based updates
+- Activity timeline automatically tracks all changes
 
 ## Environment Variables
 
@@ -260,6 +314,54 @@ Runs all vitest test suites (63 tests covering all core features).
 pnpm lint
 pnpm type-check
 ```
+
+## Key Features Guide
+
+### CV Management
+
+**Admin Interface:**
+- Upload CV files directly from the expert detail page (Edit mode)
+- Supported formats: PDF, DOC, DOCX
+- Automatic file storage in `/uploads` (development) or S3 (production)
+- View uploaded CVs via DocumentViewer modal with zoom and page navigation
+- CVs are stored alongside expert profile data
+
+**Expert Portal:**
+- Upload CV during profile registration
+- Email verification before profile activation
+- CV visibility in admin dashboard after submission
+
+**Storage:**
+- **Development**: Local filesystem (`/uploads` directory) via Express static middleware
+- **Production**: S3-compatible storage with configured API credentials
+- Automatic URL generation for retrieval
+
+### Expert Status Management
+
+**Inline Status Editing:**
+- Edit expert-project assignment status directly from expert profile
+- **13 Status Options**: Pending, New, Contacted, Attempting Contact, Engaged, Qualified, Proposal Sent, Negotiation, Verbal Agreement, Closed Won, Closed Lost, Interested, Rejected
+- Edit/Save/Cancel workflow for status changes
+- Real-time updates without page reload
+
+**Activity Timeline:**
+- Track all expert activities with timestamps
+- Color-coded status badges for visual clarity
+- Event types: Expert Created, Added to Project, Status Changed
+- Project-specific activity view for detailed engagement tracking
+- Automatic recording of status changes with actor and timestamp
+
+### Database Features for New Capabilities
+
+**CV Storage:**
+- `experts.cvUrl` - Stores the URL path to uploaded CV file
+- `experts.cvKey` - S3 key for production storage
+- File validation and storage abstraction through `storage.ts`
+
+**Activity Tracking:**
+- `auditLog` table records all changes
+- Supports expert creation, updates, and deletion tracking
+- Tracks expert-project engagement history
 
 ## Platform Architecture
 
