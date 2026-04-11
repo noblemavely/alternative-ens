@@ -118,21 +118,45 @@ export default function AdminProjects() {
                   </thead>
                   <tbody>
                     {filteredProjects.map((project: any) => (
-                      <tr key={project.id} className="border-b hover:bg-gray-50">
+                      <tr
+                        key={project.id}
+                        className="border-b hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/admin/projects/${project.id}`)}
+                      >
                         <td className="py-2 px-4 font-medium">{project.name}</td>
                         <td className="py-2 px-4">{getClientContactName(project.clientContactId)}</td>
                         <td className="py-2 px-4">{project.projectType}</td>
                         <td className="py-2 px-4">${project.hourlyRate || "-"}</td>
                         <td className="py-2 px-4">
-                          <button onClick={() => navigate(`/admin/projects/${project.id}`)} className="text-blue-600 hover:underline">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/admin/projects/${project.id}`);
+                            }}
+                            className="text-blue-600 hover:underline"
+                          >
                             {getExpertCountForProject(project.id)}
                           </button>
                         </td>
                         <td className="py-2 px-4 space-x-2">
-                          <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/projects/${project.id}`)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/admin/projects/${project.id}`);
+                            }}
+                          >
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(project.id)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(project.id);
+                            }}
+                          >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </td>
