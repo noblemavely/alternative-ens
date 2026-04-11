@@ -64,6 +64,8 @@ import {
   createFunction,
   updateFunction,
   deleteFunction,
+  getExpertProjectActivityTimeline,
+  getExpertActivityTimeline,
 } from "./db";
 import { storagePut, storageGet } from "./storage";
 import { nanoid } from "nanoid";
@@ -432,6 +434,41 @@ export const appRouter = router({
       )
       .query(async ({ input }) => {
         return searchExperts(input);
+      }),
+
+    getActivityTimeline: adminProcedure
+      .input(z.object({ expertId: z.number() }))
+      .query(async ({ input }) => {
+        return getExpertActivityTimeline(input.expertId);
+      }),
+
+    getProjectActivityTimeline: adminProcedure
+      .input(z.object({ expertId: z.number(), projectId: z.number() }))
+      .query(async ({ input }) => {
+        return getExpertProjectActivityTimeline(input.expertId, input.projectId);
+      }),
+
+    getProjectsForExpert: adminProcedure
+      .input(z.object({ expertId: z.number() }))
+      .query(async ({ input }) => {
+        // Get all projects expert is shortlisted for
+        const allShortlists = await getAllShortlists();
+        const expertShortlists = allShortlists.filter(
+          (s: any) => s.expertId === input.expertId
+        );
+
+        // Get unique projects
+        const projectIds = [...new Set(expertShortlists.map((s: any) => s.projectId))];
+        const projects = [];
+
+        for (const projectId of projectIds) {
+          const project = await getProjectById(projectId);
+          if (project) {
+            projects.push(project);
+          }
+        }
+
+        return projects;
       }),
   }),
 

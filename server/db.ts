@@ -1052,3 +1052,142 @@ export async function seedDatabase() {
     throw error;
   }
 }
+
+// ============ ACTIVITY TIMELINE FUNCTIONS ============
+
+export interface ActivityTimelineEvent {
+  id: string;
+  timestamp: Date;
+  type: "expert_created" | "added_to_project" | "status_changed";
+  title: string;
+  description: string;
+  projectId?: number;
+  projectName?: string;
+  fromStatus?: string;
+  toStatus?: string;
+}
+
+/**
+ * Get activity timeline for an expert on a specific project
+ */
+export async function getExpertProjectActivityTimeline(
+  expertId: number,
+  projectId: number
+): Promise<ActivityTimelineEvent[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const shortlist = await db
+    .select()
+    .from(shortlists)
+    .leftJoin(projects, eq(shortlists.projectId, projects.id))
+    .where(and(eq(shortlists.expertId, expertId), eq(shortlists.projectId, projectId)))
+    .limit(1);
+
+  if (!shortlist || shortlist.length === 0) {
+    return [];
+  }
+
+  const sl = shortlist[0].shortlists;
+  const proj = shortlist[0].projects;
+
+  const events: ActivityTimelineEvent[] = [];
+
+  // Add initial status event (when added to project)
+  if (sl && proj) {
+    events.push({
+      id: `shortlist-${sl.id}`,
+      timestamp: sl.createdAt,
+      type: "added_to_project",
+      title: `Added to ${proj.name}`,
+      description: `Expert was added to this project with initial status: ${sl.status}`,
+      projectId: proj.id,
+      projectName: proj.name,
+      toStatus: sl.status,
+    });
+
+    // If status changed after creation, add status change event
+    if (sl.updatedAt > sl.createdAt && sl.status !== "pending") {
+      events.push({
+        id: `shortlist-update-${sl.id}`,
+        timestamp: sl.updatedAt,
+        type: "status_changed",
+        title: `Status Updated`,
+        description: `Status changed to: ${sl.status}${sl.notes ? ` - ${sl.notes}` : ""}`,
+        projectId: proj.id,
+        projectName: proj.name,
+        toStatus: sl.status,
+      });
+    }
+  }
+
+  return events.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+}
+
+/**
+ * Get generic activity timeline for an expert (across all projects)
+ */
+export async function getExpertActivityTimeline(expertId: number): Promise<ActivityTimelineEvent[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const events: ActivityTimelineEvent[] = [];
+
+  // Get expert creation date
+  const expert = await db.select().from(experts).where(eq(experts.id, expertId)).limit(1);
+
+  if (expert && expert.length > 0) {
+    const exp = expert[0];
+    events.push({
+      id: `expert-created-${exp.id}`,
+      timestamp: exp.createdAt,
+      type: "expert_created",
+      title: "Expert Profile Created",
+      description: `${exp.firstName} ${exp.lastName} was added to the system`,
+    });
+
+    // Get all projects expert is added to
+    const shortlistsData = await db
+      .select()
+      .from(shortlists)
+      .leftJoin(projects, eq(shortlists.projectId, projects.id))
+      .where(eq(shortlists.expertId, expertId))
+      .orderBy(shortlists.createdAt);
+
+    for (const row of shortlistsData) {
+      const sl = row.shortlists;
+      const proj = row.projects;
+
+      if (sl && proj) {
+        // Add project addition event
+        events.push({
+          id: `shortlist-${sl.id}`,
+          timestamp: sl.createdAt,
+          type: "added_to_project",
+          title: `Added to Project: ${proj.name}`,
+          description: `Expert was added to ${proj.name} with status: ${sl.status}`,
+          projectId: proj.id,
+          projectName: proj.name,
+          toStatus: sl.status,
+        });
+
+        // Add status change event if applicable
+        if (sl.updatedAt > sl.createdAt) {
+          events.push({
+            id: `shortlist-update-${sl.id}`,
+            timestamp: sl.updatedAt,
+            type: "status_changed",
+            title: `Status Changed on ${proj.name}`,
+            description: `Status updated to: ${sl.status}${sl.notes ? ` - ${sl.notes}` : ""}`,
+            projectId: proj.id,
+            projectName: proj.name,
+            toStatus: sl.status,
+          });
+        }
+      }
+    }
+  }
+
+  // Sort by timestamp descending (most recent first)
+  return events.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+}

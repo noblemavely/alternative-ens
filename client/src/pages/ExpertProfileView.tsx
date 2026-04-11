@@ -1,16 +1,20 @@
-import { useState } from "react";
-import { useRoute } from "wouter";
+import { useState, useEffect } from "react";
+import { useRoute, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DocumentViewer from "@/components/DocumentViewer";
+import ActivityTimeline from "@/components/ActivityTimeline";
 import { Loader2, Mail, Phone, Briefcase, BookOpen, FileText, Linkedin } from "lucide-react";
 import type { ExpertEmployment, ExpertEducation } from "@shared/types";
 
 export default function ExpertProfileView() {
   const [, params] = useRoute("/expert/profile/:id");
+  const [, setLocation] = useLocation();
   const expertId = params?.id ? parseInt(params.id) : null;
   const [documentViewerOpen, setDocumentViewerOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
 
   const expertQuery = trpc.experts.getById.useQuery(
     { id: expertId || 0 },
@@ -26,6 +30,43 @@ export default function ExpertProfileView() {
     { expertId: expertId || 0 },
     { enabled: !!expertId }
   );
+
+  const projectsQuery = trpc.experts.getProjectsForExpert.useQuery(
+    { expertId: expertId || 0 },
+    { enabled: !!expertId }
+  );
+
+  const activityTimelineQuery = trpc.experts.getActivityTimeline.useQuery(
+    { expertId: expertId || 0 },
+    { enabled: !!expertId }
+  );
+
+  const projectActivityQuery = trpc.experts.getProjectActivityTimeline.useQuery(
+    { expertId: expertId || 0, projectId: selectedProjectId || 0 },
+    { enabled: !!expertId && !!selectedProjectId }
+  );
+
+  // Auto-select first project if not already selected
+  useEffect(() => {
+    if (projectsQuery.data && projectsQuery.data.length > 0 && !selectedProjectId) {
+      const firstProject = projectsQuery.data[0];
+      setSelectedProjectId(firstProject.id);
+      // Update URL with project parameter
+      const url = new URL(window.location.href);
+      url.searchParams.set("project", firstProject.id.toString());
+      window.history.replaceState({}, "", url);
+    }
+  }, [projectsQuery.data, selectedProjectId]);
+
+  // Handle project selection change
+  const handleProjectChange = (projectId: string) => {
+    const newProjectId = parseInt(projectId);
+    setSelectedProjectId(newProjectId);
+    // Update URL with project parameter
+    const url = new URL(window.location.href);
+    url.searchParams.set("project", projectId);
+    window.history.replaceState({}, "", url);
+  };
 
   if (!expertId) {
     return (
@@ -240,6 +281,47 @@ export default function ExpertProfileView() {
               ))}
             </CardContent>
           </Card>
+        )}
+
+        {/* Activity Timeline */}
+        {projectsQuery.data && projectsQuery.data.length > 0 && (
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Select Project</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Select value={selectedProjectId?.toString() || ""} onValueChange={handleProjectChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a project to view activity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projectsQuery.data.map((project: any) => (
+                      <SelectItem key={project.id} value={project.id.toString()}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+
+            {selectedProjectId && (
+              <ActivityTimeline
+                events={projectActivityQuery.data || []}
+                projectName={projectsQuery.data.find((p: any) => p.id === selectedProjectId)?.name}
+                isLoading={projectActivityQuery.isLoading}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Generic Activity Timeline (when no projects) */}
+        {(!projectsQuery.data || projectsQuery.data.length === 0) && (
+          <ActivityTimeline
+            events={activityTimelineQuery.data || []}
+            isLoading={activityTimelineQuery.isLoading}
+          />
         )}
 
       </div>
