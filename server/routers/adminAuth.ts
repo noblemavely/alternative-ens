@@ -8,15 +8,20 @@ const ENV = process.env;
 
 export const adminAuthRouter = router({
   login: publicProcedure
-    .input(
-      z.object({
-        email: z.string().email(),
-        password: z.string().min(6),
-      })
-    )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx }) => {
+      // Extract input from request body
+      const loginInput = ctx.req.body;
+
+      // Validate input
+      if (!loginInput?.email || !loginInput?.password) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Email and password are required",
+        });
+      }
+
       try {
-        const admin = await verifyAdminPassword(input.email, input.password);
+        const admin = await verifyAdminPassword(loginInput.email, loginInput.password);
 
         if (!admin) {
           throw new TRPCError({

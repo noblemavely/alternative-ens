@@ -31,10 +31,10 @@ export async function getAdminByEmail(email: string) {
 export async function verifyAdminPassword(email: string, password: string) {
   const admin = await getAdminByEmail(email);
   if (!admin) return null;
-  
+
   const isValid = await bcrypt.compare(password, admin.password);
   if (!isValid) return null;
-  
+
   return admin;
 }
 
