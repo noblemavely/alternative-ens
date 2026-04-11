@@ -225,36 +225,55 @@ export default function ExpertPortal() {
       let cvUrl = "";
       let cvKey = "";
       const cvInput = document.getElementById("cv-upload") as HTMLInputElement;
+
       if (cvInput?.files?.[0]) {
         const file = cvInput.files[0];
         try {
-          // In production, upload to S3 via backend
-          // For now, create a local blob URL for testing
-          cvUrl = URL.createObjectURL(file);
-          cvKey = `cv-${Date.now()}-${file.name}`;
-          console.log("CV file ready for upload:", { name: file.name, size: file.size, key: cvKey });
-          toast.info("CV file selected: " + file.name);
+          // Show uploading toast
+          toast.loading("Uploading CV file...");
+
+          // Read file as base64
+          const fileData = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const base64 = e.target?.result as string;
+              // Extract just the base64 part (remove data:application/pdf;base64, prefix)
+              resolve(base64.split(",")[1] || base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+
+          // Upload via tRPC endpoint
+          const uploadResult = await trpc.upload.uploadCV.mutate({
+            fileName: file.name,
+            fileData,
+            contentType: file.type || "application/pdf",
+          });
+
+          cvUrl = uploadResult.url;
+          cvKey = uploadResult.key;
+          console.log("CV uploaded successfully:", { url: cvUrl, key: cvKey });
+          toast.dismiss();
+          toast.success("CV uploaded successfully!");
         } catch (error) {
-          console.error("Error preparing CV upload:", error);
-          toast.error("Error preparing CV file");
+          console.error("Error uploading CV:", error);
+          toast.dismiss();
+          toast.error("Failed to upload CV file");
+          throw error;
         }
       }
-      
+
       await createExpertMutation.mutateAsync({
         ...data,
         cvUrl: cvUrl || "",
         cvKey: cvKey || "",
       });
       toast.success("Profile created successfully!");
-      
+
       // Store created expert data and redirect to preview
       setCreatedExpertData(data);
       setStep("preview");
-      
-      // Revoke blob URL if created
-      if (cvUrl) {
-        URL.revokeObjectURL(cvUrl);
-      }
     } catch (error: any) {
       if (error.message?.includes("already exists")) {
         toast.error("An expert with this email already exists");

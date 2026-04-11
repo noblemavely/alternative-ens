@@ -110,6 +110,36 @@ export const appRouter = router({
     }),
   }),
 
+  // ============ UPLOAD ROUTERS ============
+  upload: router({
+    uploadCV: publicProcedure
+      .input(
+        z.object({
+          fileName: z.string(),
+          fileData: z.string(), // base64 encoded file data
+          contentType: z.string().default("application/pdf"),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          const buffer = Buffer.from(input.fileData, "base64");
+          const key = `cv-uploads/${Date.now()}-${input.fileName.replace(/[^a-zA-Z0-9.-]/g, "")}`;
+          const result = await storagePut(key, buffer, input.contentType);
+          return {
+            success: true,
+            url: result.url,
+            key: result.key,
+          };
+        } catch (error) {
+          console.error("Upload error:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to upload file",
+          });
+        }
+      }),
+  }),
+
   adminAuth: adminAuthRouter,
 
   // ============ CLIENT ROUTERS ============
