@@ -165,7 +165,7 @@ export default function ExpertProfileView() {
                   </div>
                 </div>
                 <Button
-                  onClick={() => window.open(expert.cvUrl, "_blank")}
+                  onClick={() => expert.cvUrl && window.open(expert.cvUrl, "_blank")}
                   className="gap-2"
                   variant="default"
                 >
