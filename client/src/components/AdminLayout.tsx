@@ -27,7 +27,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   // Verify admin access
-  if (user?.role !== "admin") {
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+  if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">

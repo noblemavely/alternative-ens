@@ -49,6 +49,9 @@ const trpcClient = trpc.createClient({
         const adminToken = localStorage.getItem("adminToken");
         if (adminToken) {
           headers.Authorization = `Bearer ${adminToken}`;
+          console.log("[tRPC] Sending request with admin token");
+        } else {
+          console.log("[tRPC] No admin token found");
         }
 
         return globalThis.fetch(input, {

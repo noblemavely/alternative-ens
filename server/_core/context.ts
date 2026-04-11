@@ -32,9 +32,12 @@ export async function createContext(
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
       adminUser = decoded;
+      console.log("[Context] Admin user verified:", decoded.email);
     } catch (error) {
-      // Token verification failed, ignore
+      console.log("[Context] Token verification failed:", (error as Error).message);
     }
+  } else if (authHeader) {
+    console.log("[Context] Invalid auth header format:", authHeader.slice(0, 50));
   }
 
   return {
