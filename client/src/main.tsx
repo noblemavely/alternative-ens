@@ -18,7 +18,13 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
-  window.location.href = getLoginUrl();
+  // Check if user has admin token - redirect to admin login instead of OAuth
+  const adminToken = localStorage.getItem("adminToken");
+  if (adminToken) {
+    window.location.href = "/admin-login";
+  } else {
+    window.location.href = getLoginUrl();
+  }
 };
 
 queryClient.getQueryCache().subscribe(event => {

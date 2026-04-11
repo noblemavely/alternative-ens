@@ -71,7 +71,13 @@ import { parseLinkedInProfile, isValidLinkedInUrl } from "./linkedinParser";
 import { getLinkedInAuthUrl, exchangeCodeForToken, fetchLinkedInProfile } from "./linkedinOAuth";
 
 const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  if (ctx.user?.role !== "admin") {
+  // Check if user is admin via JWT or OAuth
+  const isAdmin =
+    ctx.adminUser?.role === "super_admin" ||
+    ctx.adminUser?.role === "admin" ||
+    ctx.user?.role === "admin";
+
+  if (!isAdmin) {
     throw new TRPCError({ code: "FORBIDDEN" });
   }
   return next({ ctx });
