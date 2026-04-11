@@ -178,37 +178,33 @@ export default function AdminClients() {
                     {filteredClients.map((client: any) => {
                       const projectCount = projectsQuery.data?.filter((p: any) => p.clientId === client.id).length || 0;
                       return (
-                        <tr key={client.id} className="border-b hover:bg-muted/50">
-                          <td className="py-3 px-4">
-                            <button
-                              onClick={() => navigate(`/admin/clients/${client.id}`)}
-                              className="text-primary hover:underline font-medium"
-                            >
-                              {client.name}
-                            </button>
-                          </td>
+                        <tr
+                          key={client.id}
+                          className="border-b hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => navigate(`/admin/clients/${client.id}`)}
+                        >
+                          <td className="py-3 px-4 font-medium">{client.name}</td>
                           <td className="py-3 px-4 text-muted-foreground">{client.email}</td>
                           <td className="py-3 px-4 text-muted-foreground">{client.sector || "-"}</td>
-                          <td className="py-3 px-4">
-                            <button
-                              onClick={() => navigate(`/admin/projects?client=${client.id}`)}
-                              className="text-primary hover:underline font-medium"
-                            >
-                              {projectCount}
-                            </button>
-                          </td>
-                          <td className="py-3 px-4 text-right">
+                          <td className="py-3 px-4 text-muted-foreground">{projectCount}</td>
+                          <td className="py-3 px-4 text-right space-x-2">
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => navigate(`/admin/clients/${client.id}`)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/admin/clients/${client.id}`);
+                              }}
                             >
                               <Edit2 size={16} />
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleDelete(client.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(client.id);
+                              }}
                             >
                               <Trash2 size={16} />
                             </Button>

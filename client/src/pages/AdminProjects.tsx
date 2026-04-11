@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Trash2, Eye } from "lucide-react";
+import { Plus, Trash2, Edit2 } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function AdminProjects() {
@@ -127,18 +127,8 @@ export default function AdminProjects() {
                         <td className="py-2 px-4">{getClientContactName(project.clientContactId)}</td>
                         <td className="py-2 px-4">{project.projectType}</td>
                         <td className="py-2 px-4">${project.hourlyRate || "-"}</td>
-                        <td className="py-2 px-4">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/admin/projects/${project.id}`);
-                            }}
-                            className="text-blue-600 hover:underline"
-                          >
-                            {getExpertCountForProject(project.id)}
-                          </button>
-                        </td>
-                        <td className="py-2 px-4 space-x-2">
+                        <td className="py-2 px-4">{getExpertCountForProject(project.id)}</td>
+                        <td className="py-2 px-4 text-right space-x-2">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -147,7 +137,7 @@ export default function AdminProjects() {
                               navigate(`/admin/projects/${project.id}`);
                             }}
                           >
-                            <Eye className="w-4 h-4" />
+                            <Edit2 className="w-4 h-4" />
                           </Button>
                           <Button
                             variant="ghost"
