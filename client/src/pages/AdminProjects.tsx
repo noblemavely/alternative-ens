@@ -11,6 +11,7 @@ import { useLocation } from "wouter";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { ButtonWithTooltip } from "@/components/ButtonWithTooltip";
+import { formatCurrency } from "@/shared/currencies";
 
 export default function AdminProjects() {
   const [location, navigate] = useLocation();
@@ -165,7 +166,9 @@ export default function AdminProjects() {
                             {project.status || "Active"}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-muted-foreground">${project.hourlyRate || "-"}</td>
+                        <td className="py-3 px-4 text-muted-foreground">
+                          {project.rate ? formatCurrency(project.rate, project.currency || "USD") : "$-"}
+                        </td>
                         <td className="py-3 px-4 text-muted-foreground">{getExpertCountForProject(project.id)}</td>
                         <td className="py-3 px-4 text-right space-x-2">
                           <ButtonWithTooltip
