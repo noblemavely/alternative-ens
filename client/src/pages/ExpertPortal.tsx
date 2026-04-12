@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
@@ -10,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Mail, CheckCircle, Loader2, Link2, Copy, Linkedin } from "lucide-react";
+import { Mail, CheckCircle, Loader2, Link2, Copy } from "lucide-react";
 import { EmploymentHistoryForm } from "@/components/EmploymentHistoryForm";
 import { EducationHistoryForm } from "@/components/EducationHistoryForm";
 import FormProgressIndicator from "@/components/FormProgressIndicator";
@@ -27,20 +26,20 @@ const profileSchema = z.object({
   phone: z.string().optional(),
   sector: z.string().optional(),
   function: z.string().optional(),
-  biography: z.string().optional(),
-  linkedinUrl: z.string().optional(),
+  linkedinUrl: z.string().min(1, "LinkedIn Profile URL is required"),
 });
 
 type EmailVerificationData = z.infer<typeof emailVerificationSchema>;
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function ExpertPortal() {
-  const [step, setStep] = useState<"email" | "verification" | "profile" | "preview">("email");
+  const [step, setStep] = useState<"email" | "verification" | "resume" | "profile" | "preview">("email");
   const [verificationEmail, setVerificationEmail] = useState("");
   const [verificationToken, setVerificationToken] = useState("");
   const [displayCode, setDisplayCode] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [parsingLinkedin, setParsingLinkedin] = useState(false);
+  const [resumeParsed, setResumeParsed] = useState(false);
   const [employmentHistory, setEmploymentHistory] = useState<any[]>([]);
   const [educationHistory, setEducationHistory] = useState<any[]>([]);
   const [createdExpertId, setCreatedExpertId] = useState<number | null>(null);
@@ -48,17 +47,17 @@ export default function ExpertPortal() {
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [formSteps, setFormSteps] = useState([
     { id: "email", label: "Email", completed: false },
+    { id: "resume", label: "Resume", completed: false },
     { id: "personal", label: "Personal Info", completed: false },
-    { id: "professional", label: "Professional Info", completed: false },
     { id: "experience", label: "Experience", completed: false },
   ]);
-  const [currentFormStep, setCurrentFormStep] = useState("personal");
+  const [currentFormStep, setCurrentFormStep] = useState("resume");
 
   const utils = trpc.useUtils();
   const sectorsQuery = trpc.sectors.list.useQuery();
   const sendVerificationMutation = trpc.expertVerification.sendVerificationEmail.useMutation();
   const verifyEmailMutation = trpc.expertVerification.verifyEmail.useMutation();
-  const parseLinkedinMutation = trpc.linkedin.parseProfile.useMutation();
+  const enrichLinkedinMutation = trpc.upload.enrichLinkedInProfile.useMutation();
   const linkedinCallbackMutation = trpc.linkedinOAuth.handleCallback.useMutation();
   const uploadCVMutation = trpc.upload.uploadCV.useMutation();
   const createExpertMutation = trpc.experts.submitProfile.useMutation({
@@ -81,7 +80,6 @@ export default function ExpertPortal() {
       phone: "",
       sector: "",
       function: "",
-      biography: "",
       linkedinUrl: "",
     },
   });
@@ -103,44 +101,16 @@ export default function ExpertPortal() {
     if (linkedinProfile) {
       try {
         const profile = JSON.parse(decodeURIComponent(linkedinProfile));
-        
+
         // Auto-populate form fields with LinkedIn data
         profileForm.setValue("firstName", profile.firstName || "");
         profileForm.setValue("lastName", profile.lastName || "");
         if (profile.email) profileForm.setValue("email", profile.email);
         if (profile.headline) profileForm.setValue("sector", profile.headline);
-        if (profile.skills && profile.skills.length > 0) {
-          profileForm.setValue("function", profile.skills[0]);
-        }
-        
-        // Store employment and education history
-        if (profile.employmentHistory) {
-          setEmploymentHistory(
-            profile.employmentHistory.map((emp: any) => ({
-              companyName: emp.company || "",
-              position: emp.position || "",
-              startDate: emp.startDate || "",
-              endDate: emp.endDate || "",
-              isCurrent: emp.current || false,
-              description: emp.description || "",
-            }))
-          );
-        }
-        
-        if (profile.educationHistory) {
-          setEducationHistory(
-            profile.educationHistory.map((edu: any) => ({
-              schoolName: edu.school || "",
-              degree: edu.degree || "",
-              fieldOfStudy: edu.fieldOfStudy || "",
-              startDate: edu.startDate || "",
-              endDate: edu.endDate || "",
-            }))
-          );
-        }
-        
+        if (profile.profileUrl) profileForm.setValue("linkedinUrl", profile.profileUrl);
+
         toast.success("LinkedIn profile loaded successfully!");
-        
+
         // Clean up URL
         window.history.replaceState({}, document.title, "/expert/register");
       } catch (error) {
@@ -171,8 +141,8 @@ export default function ExpertPortal() {
     try {
       await verifyEmailMutation.mutateAsync({ token: verificationToken });
       profileForm.setValue("email", verificationEmail);
-      setStep("profile");
-      toast.success("Email verified! Now complete your profile.");
+      setStep("resume");
+      toast.success("Email verified! Now upload your resume.");
     } catch (error) {
       toast.error("Invalid verification code");
     }
@@ -185,7 +155,7 @@ export default function ExpertPortal() {
   const watchedPhone = profileForm.watch("phone");
   const watchedSector = profileForm.watch("sector");
   const watchedFunction = profileForm.watch("function");
-  const watchedBiography = profileForm.watch("biography");
+  const watchedLinkedinUrl = profileForm.watch("linkedinUrl");
 
   // Calculate form completion percentage
   useEffect(() => {
@@ -193,7 +163,7 @@ export default function ExpertPortal() {
 
     const formData = profileForm.getValues();
     let completedFields = 0;
-    const totalFields = 8;
+    const totalFields = 7;
 
     if (formData.firstName?.trim()) completedFields++;
     if (formData.lastName?.trim()) completedFields++;
@@ -201,8 +171,7 @@ export default function ExpertPortal() {
     if (formData.phone?.trim()) completedFields++;
     if (formData.sector?.trim()) completedFields++;
     if (formData.function?.trim()) completedFields++;
-    if (formData.biography?.trim()) completedFields++;
-    if (employmentHistory.length > 0 || educationHistory.length > 0) completedFields++;
+    if (formData.linkedinUrl?.trim()) completedFields++;
 
     const percentage = Math.round((completedFields / totalFields) * 100);
     setCompletionPercentage(percentage);
@@ -210,9 +179,9 @@ export default function ExpertPortal() {
     // Update step completion
     const newSteps = [...formSteps];
     if (formData.firstName?.trim() && formData.lastName?.trim() && formData.email?.trim()) {
-      newSteps[1].completed = true;
+      newSteps[2].completed = true;
     }
-    if (formData.sector?.trim() || formData.function?.trim()) {
+    if (formData.linkedinUrl?.trim()) {
       newSteps[2].completed = true;
     }
     if (employmentHistory.length > 0 || educationHistory.length > 0) {
@@ -226,7 +195,7 @@ export default function ExpertPortal() {
     watchedPhone,
     watchedSector,
     watchedFunction,
-    watchedBiography,
+    watchedLinkedinUrl,
     employmentHistory,
     educationHistory,
     step,
@@ -235,6 +204,24 @@ export default function ExpertPortal() {
   // Handle parsed resume data
   const handleResumeParsed = (parsedData: any) => {
     if (!parsedData) return;
+
+    setResumeParsed(true);
+
+    // Auto-populate personal info from resume
+    if (parsedData.firstName) {
+      profileForm.setValue("firstName", parsedData.firstName);
+      toast.success(`Name: ${parsedData.firstName}${parsedData.lastName ? ' ' + parsedData.lastName : ''}`);
+    }
+    if (parsedData.lastName) {
+      profileForm.setValue("lastName", parsedData.lastName);
+    }
+    if (parsedData.phone) {
+      profileForm.setValue("phone", parsedData.phone);
+    }
+    if (parsedData.linkedinUrl) {
+      profileForm.setValue("linkedinUrl", parsedData.linkedinUrl);
+      setLinkedinUrl(parsedData.linkedinUrl);
+    }
 
     // Populate employment history from resume
     if (parsedData.employment && parsedData.employment.length > 0) {
@@ -257,7 +244,7 @@ export default function ExpertPortal() {
         id: `edu-${Date.now()}-${Math.random()}`,
         school: edu.schoolName || "",
         degree: edu.degree || "",
-        fieldOfStudy: edu.fieldOfStudy || "",
+        field: edu.fieldOfStudy || "",
         startDate: edu.startDate || "",
         endDate: edu.endDate || "",
       }));
@@ -271,6 +258,12 @@ export default function ExpertPortal() {
     ) {
       toast.info("No employment or education data found in resume. You can add them manually.");
     }
+
+    // Auto-navigate to profile after brief delay (2 seconds)
+    setTimeout(() => {
+      setStep("profile");
+      setCurrentFormStep("personal");
+    }, 2000);
   };
 
   const handleParseLinkedin = async () => {
@@ -280,18 +273,31 @@ export default function ExpertPortal() {
     }
     setParsingLinkedin(true);
     try {
-      const profile = await parseLinkedinMutation.mutateAsync({ url: linkedinUrl });
-      profileForm.setValue("firstName", profile.firstName || "");
-      profileForm.setValue("lastName", profile.lastName || "");
-      profileForm.setValue("sector", profile.sector || "");
-      profileForm.setValue("function", profile.headline || "");
-      profileForm.setValue("biography", profile.biography || "");
+      // Use Apollo.io enrichment endpoint for LinkedIn profiles
+      const result = await enrichLinkedinMutation.mutateAsync({ linkedinUrl });
+
+      if (!result.success) {
+        toast.error(result.message || "Failed to enrich LinkedIn profile");
+        setParsingLinkedin(false);
+        return;
+      }
+
+      // Populate form fields from enriched data
+      if (result.firstName) profileForm.setValue("firstName", result.firstName);
+      if (result.lastName) profileForm.setValue("lastName", result.lastName);
+      if (result.headline) profileForm.setValue("sector", result.headline);
+      if (result.email) profileForm.setValue("email", result.email);
       profileForm.setValue("linkedinUrl", linkedinUrl);
-      
-      // Populate employment history from simulated parser
-      if (profile.employment && profile.employment.length > 0) {
+
+      // Auto-populate Function/Role from headline if available
+      if (result.headline) {
+        profileForm.setValue("function", result.headline);
+      }
+
+      // Populate employment history
+      if (result.employment && result.employment.length > 0) {
         setEmploymentHistory(
-          profile.employment.map((emp: any) => ({
+          result.employment.map((emp: any) => ({
             id: `emp-${Date.now()}-${Math.random()}`,
             company: emp.companyName || "",
             position: emp.position || "",
@@ -301,25 +307,30 @@ export default function ExpertPortal() {
             description: emp.description || "",
           }))
         );
+        toast.success(`Added ${result.employment.length} employment entries from LinkedIn`);
       }
-      
-      // Populate education history from simulated parser
-      if (profile.education && profile.education.length > 0) {
+
+      // Populate education history
+      if (result.education && result.education.length > 0) {
         setEducationHistory(
-          profile.education.map((edu: any) => ({
+          result.education.map((edu: any) => ({
             id: `edu-${Date.now()}-${Math.random()}`,
             school: edu.schoolName || "",
             degree: edu.degree || "",
-            fieldOfStudy: edu.fieldOfStudy || "",
+            field: edu.fieldOfStudy || "",
             startDate: edu.startDate || "",
             endDate: edu.endDate || "",
           }))
         );
+        toast.success(`Added ${result.education.length} education entries from LinkedIn`);
       }
-      
-      toast.success("LinkedIn profile parsed successfully with employment and education history!");
+
+      if (!result.employment && !result.education) {
+        toast.info("Profile enriched but no employment or education data found");
+      }
     } catch (error) {
-      toast.error("Failed to parse LinkedIn profile");
+      console.error("LinkedIn enrichment error:", error);
+      toast.error("Failed to enrich LinkedIn profile. Make sure Apollo.io API key is configured.");
     } finally {
       setParsingLinkedin(false);
     }
@@ -396,19 +407,6 @@ export default function ExpertPortal() {
   const copyToClipboard = () => {
     navigator.clipboard.writeText(displayCode);
     toast.success("Code copied to clipboard!");
-  };
-
-  const handleLinkedInConnect = async () => {
-    try {
-      // Get the auth URL from backend (which has correct scopes)
-      const redirectUri = `${window.location.origin}/api/linkedin/callback`;
-      const result = await utils.linkedinOAuth.getAuthUrl.fetch({ redirectUri });
-      if (result.authUrl) {
-        window.location.href = result.authUrl;
-      }
-    } catch (error) {
-      toast.error("Failed to connect with LinkedIn");
-    }
   };
 
   return (
@@ -517,13 +515,25 @@ export default function ExpertPortal() {
                   placeholder="Enter the code"
                   value={verificationToken}
                   onChange={(e) => setVerificationToken(e.target.value)}
+                  onInput={(e) => setVerificationToken((e.target as HTMLInputElement).value)}
+                  onPaste={(e) => {
+                    const pastedText = e.clipboardData?.getData('text') || '';
+                    setVerificationToken(pastedText);
+                    e.preventDefault();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleVerifyEmail();
+                    }
+                  }}
+                  autoFocus
                   className="mt-2 border-border"
                 />
               </div>
-              <Button 
+              <Button
                 onClick={handleVerifyEmail}
                 className="w-full bg-primary hover:bg-primary/90"
-                disabled={verifyEmailMutation.isPending}
+                disabled={verifyEmailMutation.isPending || !verificationToken.trim()}
               >
                 {verifyEmailMutation.isPending ? (
                   <>
@@ -534,6 +544,47 @@ export default function ExpertPortal() {
                   "Verify Email"
                 )}
               </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 2.5: Resume Upload */}
+        {step === "resume" && (
+          <Card className="border-border shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                📄 Upload Your Resume
+              </CardTitle>
+              <CardDescription>Help us auto-populate your profile information</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Upload your resume (PDF) to automatically extract your personal information, employment history, and education details.
+              </p>
+              <ResumeParserForm onParsed={handleResumeParsed} />
+              <div className="flex gap-2">
+                {resumeParsed && (
+                  <Button
+                    onClick={() => {
+                      setStep("profile");
+                      setCurrentFormStep("personal");
+                    }}
+                    className="flex-1 bg-primary hover:bg-primary/90"
+                  >
+                    Continue to Profile
+                  </Button>
+                )}
+                <Button
+                  onClick={() => {
+                    setStep("profile");
+                    setCurrentFormStep("personal");
+                  }}
+                  variant="outline"
+                  className={resumeParsed ? "flex-1" : "w-full"}
+                >
+                  {resumeParsed ? "Skip" : "Skip Resume Upload"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -554,22 +605,6 @@ export default function ExpertPortal() {
                 <CardDescription>Add your professional information</CardDescription>
               </CardHeader>
               <CardContent>
-              {/* LinkedIn Connect Button */}
-              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg space-y-3 mb-6">
-                <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <Linkedin size={16} className="text-blue-600" />
-                  Connect with LinkedIn (Optional)
-                </label>
-                <Button
-                  onClick={handleLinkedInConnect}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2"
-                >
-                  <Linkedin size={16} />
-                  Connect with LinkedIn
-                </Button>
-                <p className="text-xs text-muted-foreground">Auto-populate your profile with LinkedIn data</p>
-              </div>
-
               {/* Profile Form */}
               <Form {...profileForm}>
                 <form onSubmit={profileForm.handleSubmit(handleCompleteProfile)} className="space-y-4">
@@ -677,71 +712,54 @@ export default function ExpertPortal() {
 
                   <FormField
                     control={profileForm.control}
-                    name="biography"
+                    name="linkedinUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground">Biography</FormLabel>
+                        <FormLabel className="text-foreground">LinkedIn Profile URL *</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Tell us about yourself..." {...field} className="border-border min-h-24" />
+                          <Input
+                            type="url"
+                            placeholder="https://linkedin.com/in/yourprofile"
+                            {...field}
+                            className="border-border"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
 
-                  {/* Manual LinkedIn URL Parsing */}
-                  <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg space-y-3">
+                  {/* Connect to LinkedIn API Section */}
+                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg space-y-3">
                     <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                      <Link2 size={16} className="text-amber-600" />
-                      Parse LinkedIn Profile (Optional)
+                      <span>🔗</span>
+                      Connect to LinkedIn Profile (Optional)
                     </label>
-                    <p className="text-xs text-muted-foreground">Enter your LinkedIn URL to auto-populate employment and education history</p>
+                    <p className="text-xs text-muted-foreground">Use Apollo.io to auto-populate Sector/Industry and Function/Role from your LinkedIn profile</p>
                     <div className="flex gap-2">
                       <Input
                         type="url"
                         placeholder="https://linkedin.com/in/yourprofile"
                         value={linkedinUrl}
                         onChange={(e) => setLinkedinUrl(e.target.value)}
-                        className="border-amber-300 flex-1"
+                        className="border-blue-300 flex-1"
                       />
                       <Button
                         onClick={handleParseLinkedin}
-                        disabled={parsingLinkedin}
-                        className="bg-amber-600 hover:bg-amber-700 text-white"
+                        disabled={enrichLinkedinMutation.isPending}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        type="button"
                       >
-                        {parsingLinkedin ? (
+                        {enrichLinkedinMutation.isPending ? (
                           <>
                             <Loader2 className="mr-2 animate-spin" size={16} />
-                            Parsing...
+                            Enriching...
                           </>
                         ) : (
-                          "Parse"
+                          "Connect"
                         )}
                       </Button>
                     </div>
-                  </div>
-
-                  <FormField
-                    control={profileForm.control}
-                    name="linkedinUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground">LinkedIn URL (Auto-filled)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://linkedin.com/in/yourprofile" {...field} className="border-border" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Resume Parser */}
-                  <div className="border-t border-border pt-4">
-                    <h3 className="text-sm font-semibold text-foreground mb-4">Extract from Resume</h3>
-                    <p className="text-xs text-muted-foreground mb-4">
-                      Upload a PDF resume to automatically extract employment and education history
-                    </p>
-                    <ResumeParserForm onParsed={handleResumeParsed} />
                   </div>
 
                   {/* Employment History */}
@@ -764,19 +782,7 @@ export default function ExpertPortal() {
                     />
                   </div>
 
-                  {/* CV Upload */}
-                  <div className="border-t border-border pt-4">
-                    <label className="text-sm font-medium text-foreground block mb-2">Upload CV (Optional)</label>
-                    <input
-                      id="cv-upload"
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-secondary file:text-foreground hover:file:bg-secondary/80"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">PDF, DOC, or DOCX (max 10MB)</p>
-                  </div>
-
-                  <Button 
+                  <Button
                     type="submit" 
                     className="w-full bg-primary hover:bg-primary/90"
                     disabled={createExpertMutation.isPending}

@@ -3,8 +3,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const DATABASE_URL = process.env.DATABASE_URL;
-
 async function seedDatabase() {
   let connection;
   try {
@@ -78,39 +76,33 @@ async function seedDatabase() {
     console.log('👥 Seeding clients...');
     const clients = [
       {
-        name: 'John Smith',
-        email: 'john.smith@techcorp.com',
+        name: 'TechCorp Inc',
         phone: '+1-555-0101',
-        companyName: 'TechCorp Inc',
         companyWebsite: 'https://techcorp.com',
         contactPerson: 'John Smith',
         sector: 'Technology',
       },
       {
-        name: 'Sarah Johnson',
-        email: 'sarah.johnson@financeplus.com',
+        name: 'FinancePlus LLC',
         phone: '+1-555-0102',
-        companyName: 'FinancePlus LLC',
         companyWebsite: 'https://financeplus.com',
         contactPerson: 'Sarah Johnson',
         sector: 'Finance',
       },
       {
-        name: 'Michael Chen',
-        email: 'michael.chen@healthcare.com',
+        name: 'HealthCare Solutions',
         phone: '+1-555-0103',
-        companyName: 'HealthCare Solutions',
         companyWebsite: 'https://healthcaresolutions.com',
         contactPerson: 'Michael Chen',
         sector: 'Healthcare',
       },
     ];
-    
+
     const clientIds = [];
     for (const client of clients) {
       const [result] = await connection.execute(
-        'INSERT INTO clients (name, email, phone, companyName, companyWebsite, contactPerson, sector) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [client.name, client.email, client.phone, client.companyName, client.companyWebsite, client.contactPerson, client.sector]
+        'INSERT INTO clients (name, phone, companyWebsite, contactPerson, sector) VALUES (?, ?, ?, ?, ?)',
+        [client.name, client.phone, client.companyWebsite, client.contactPerson, client.sector]
       );
       clientIds.push(result.insertId);
     }
@@ -197,11 +189,39 @@ async function seedDatabase() {
       },
     ];
     
+    // Define employment records for each expert (before insertion so we can generate PDFs with this data)
+    const employmentRecords = [
+      { expertIdx: 0, companyName: 'Google', position: 'Senior Infrastructure Engineer', startDate: '2018-01', endDate: null, isCurrent: true, description: 'Led cloud infrastructure team' },
+      { expertIdx: 0, companyName: 'Amazon', position: 'Cloud Architect', startDate: '2015-06', endDate: '2017-12', isCurrent: false, description: 'Designed AWS solutions for enterprise clients' },
+      { expertIdx: 1, companyName: 'Goldman Sachs', position: 'Managing Director', startDate: '2019-03', endDate: null, isCurrent: true, description: 'Head of Financial Strategy' },
+      { expertIdx: 1, companyName: 'JP Morgan', position: 'Vice President', startDate: '2014-09', endDate: '2019-02', isCurrent: false, description: 'Investment banking division' },
+      { expertIdx: 2, companyName: 'Pfizer', position: 'VP Operations', startDate: '2017-05', endDate: null, isCurrent: true, description: 'Digital transformation initiatives' },
+      { expertIdx: 2, companyName: 'Merck', position: 'Senior Manager', startDate: '2012-01', endDate: '2017-04', isCurrent: false, description: 'Operations and supply chain' },
+    ];
+
+    // Define education records for each expert
+    const educationRecords = [
+      { expertIdx: 0, schoolName: 'Stanford University', degree: 'Master of Science', fieldOfStudy: 'Computer Science', startDate: '2014-09', endDate: '2016-05', description: 'Specialized in distributed systems' },
+      { expertIdx: 0, schoolName: 'UC Berkeley', degree: 'Bachelor of Science', fieldOfStudy: 'Electrical Engineering', startDate: '2010-09', endDate: '2014-05', description: 'GPA: 3.8' },
+      { expertIdx: 1, schoolName: 'Harvard Business School', degree: 'MBA', fieldOfStudy: 'Business Administration', startDate: '2012-09', endDate: '2014-05', description: 'Baker Scholar' },
+      { expertIdx: 1, schoolName: 'Yale University', degree: 'Bachelor of Science', fieldOfStudy: 'Economics', startDate: '2008-09', endDate: '2012-05', description: 'Cum Laude' },
+      { expertIdx: 2, schoolName: 'Johns Hopkins University', degree: 'Master of Health Administration', fieldOfStudy: 'Healthcare Management', startDate: '2015-09', endDate: '2017-05', description: 'Focus on operations' },
+      { expertIdx: 2, schoolName: 'University of Michigan', degree: 'Bachelor of Science', fieldOfStudy: 'Biology', startDate: '2010-09', endDate: '2014-05', description: 'Pre-med track' },
+    ];
+
+    // Map each expert to their static resume file
+    const resumeFiles = {
+      0: '/uploads/cv-uploads/robert-thompson-resume.pdf',
+      1: '/uploads/cv-uploads/jennifer-martinez-resume.pdf',
+      2: '/uploads/cv-uploads/christopher-lee-resume.pdf',
+      3: '/uploads/cv-uploads/amanda-white-resume.pdf',
+      4: '/uploads/cv-uploads/daniel-garcia-resume.pdf',
+    };
+
     const expertIds = [];
     for (let i = 0; i < experts.length; i++) {
       const expert = experts[i];
-      // Add cvUrl for first two experts (sample CV files)
-      const cvUrl = i < 2 ? `/uploads/cv-uploads-${expert.firstName.toLowerCase()}-${expert.lastName.toLowerCase()}-cv.pdf` : null;
+      const cvUrl = resumeFiles[i] || null;
 
       const [result] = await connection.execute(
         'INSERT INTO experts (email, phone, firstName, lastName, sector, `function`, biography, linkedinUrl, cvUrl, isVerified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -209,20 +229,16 @@ async function seedDatabase() {
       );
       expertIds.push(result.insertId);
     }
-    console.log('✅ Seeded 5 experts (2 with sample CVs)');
+    console.log('✅ Seeded 5 experts with resume PDFs');
 
     // Seed Expert Employment History
     console.log('💼 Seeding expert employment history...');
-    const employmentRecords = [
-      { expertId: expertIds[0], companyName: 'Google', position: 'Senior Infrastructure Engineer', startDate: '2018-01', endDate: null, isCurrent: true, description: 'Led cloud infrastructure team' },
-      { expertId: expertIds[0], companyName: 'Amazon', position: 'Cloud Architect', startDate: '2015-06', endDate: '2017-12', isCurrent: false, description: 'Designed AWS solutions for enterprise clients' },
-      { expertId: expertIds[1], companyName: 'Goldman Sachs', position: 'Managing Director', startDate: '2019-03', endDate: null, isCurrent: true, description: 'Head of Financial Strategy' },
-      { expertId: expertIds[1], companyName: 'JP Morgan', position: 'Vice President', startDate: '2014-09', endDate: '2019-02', isCurrent: false, description: 'Investment banking division' },
-      { expertId: expertIds[2], companyName: 'Pfizer', position: 'VP Operations', startDate: '2017-05', endDate: null, isCurrent: true, description: 'Digital transformation initiatives' },
-      { expertId: expertIds[2], companyName: 'Merck', position: 'Senior Manager', startDate: '2012-01', endDate: '2017-04', isCurrent: false, description: 'Operations and supply chain' },
-    ];
+    const employmentRecordsWithIds = employmentRecords.map(emp => ({
+      ...emp,
+      expertId: expertIds[emp.expertIdx]
+    }));
     
-    for (const record of employmentRecords) {
+    for (const record of employmentRecordsWithIds) {
       await connection.execute(
         'INSERT INTO expertEmployment (expertId, companyName, position, startDate, endDate, isCurrent, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [record.expertId, record.companyName, record.position, record.startDate, record.endDate, record.isCurrent, record.description]
@@ -232,16 +248,12 @@ async function seedDatabase() {
 
     // Seed Expert Education History
     console.log('🎓 Seeding expert education history...');
-    const educationRecords = [
-      { expertId: expertIds[0], schoolName: 'Stanford University', degree: 'Master of Science', fieldOfStudy: 'Computer Science', startDate: '2014-09', endDate: '2016-05', description: 'Specialized in distributed systems' },
-      { expertId: expertIds[0], schoolName: 'UC Berkeley', degree: 'Bachelor of Science', fieldOfStudy: 'Electrical Engineering', startDate: '2010-09', endDate: '2014-05', description: 'GPA: 3.8' },
-      { expertId: expertIds[1], schoolName: 'Harvard Business School', degree: 'MBA', fieldOfStudy: 'Business Administration', startDate: '2012-09', endDate: '2014-05', description: 'Baker Scholar' },
-      { expertId: expertIds[1], schoolName: 'Yale University', degree: 'Bachelor of Science', fieldOfStudy: 'Economics', startDate: '2008-09', endDate: '2012-05', description: 'Cum Laude' },
-      { expertId: expertIds[2], schoolName: 'Johns Hopkins University', degree: 'Master of Health Administration', fieldOfStudy: 'Healthcare Management', startDate: '2015-09', endDate: '2017-05', description: 'Focus on operations' },
-      { expertId: expertIds[2], schoolName: 'University of Michigan', degree: 'Bachelor of Science', fieldOfStudy: 'Biology', startDate: '2010-09', endDate: '2014-05', description: 'Pre-med track' },
-    ];
-    
-    for (const record of educationRecords) {
+    const educationRecordsWithIds = educationRecords.map(edu => ({
+      ...edu,
+      expertId: expertIds[edu.expertIdx]
+    }));
+
+    for (const record of educationRecordsWithIds) {
       await connection.execute(
         'INSERT INTO expertEducation (expertId, schoolName, degree, fieldOfStudy, startDate, endDate, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [record.expertId, record.schoolName, record.degree, record.fieldOfStudy, record.startDate, record.endDate, record.description]

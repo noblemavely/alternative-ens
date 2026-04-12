@@ -10,26 +10,7 @@ export interface LinkedInProfile {
   headline?: string;
   profilePicture?: string;
   email?: string;
-  employmentHistory: LinkedInEmployment[];
-  educationHistory: LinkedInEducation[];
-  skills?: string[];
-}
-
-export interface LinkedInEmployment {
-  company: string;
-  position: string;
-  startDate?: string;
-  endDate?: string;
-  description?: string;
-  current?: boolean;
-}
-
-export interface LinkedInEducation {
-  school: string;
-  degree?: string;
-  fieldOfStudy?: string;
-  startDate?: string;
-  endDate?: string;
+  profileUrl?: string;
 }
 
 /**
@@ -83,9 +64,9 @@ export async function exchangeCodeForToken(
 }
 
 /**
- * Fetch LinkedIn profile data using access token
- * Note: With current scopes (openid profile email), only basic profile data is available.
- * Employment, education, and skills require LinkedIn API Partner Program approval.
+ * Fetch basic LinkedIn profile data using access token
+ * Only fetches basic profile info (name, email, picture, profile URL)
+ * Employment, education, and skills require LinkedIn API Partner Program approval
  */
 export async function fetchLinkedInProfile(
   accessToken: string
@@ -128,80 +109,10 @@ export async function fetchLinkedInProfile(
       console.warn("[LinkedIn] Failed to fetch email:", error);
     }
 
-    // Fetch employment history (may fail with 403 if scopes not approved)
-    let employmentHistory: LinkedInEmployment[] = [];
-    try {
-      const employmentResponse = await fetch(
-        `${LINKEDIN_API_BASE}/me/positions?q=orderBy&orderBy.sort=DESC`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "LinkedIn-Version": "202401",
-          },
-        }
-      );
-
-      if (employmentResponse.ok) {
-        const employmentData = await employmentResponse.json() as any;
-        employmentHistory = (employmentData.elements || []).map((emp: any) => ({
-          company: emp.company?.localizedName || "",
-          position: emp.title?.localizedString || emp.title || "",
-          startDate: emp.startDate ? formatDate(emp.startDate) : undefined,
-          endDate: emp.endDate ? formatDate(emp.endDate) : undefined,
-          description: emp.description || undefined,
-          current: !emp.endDate,
-        }));
-      }
-    } catch (error) {
-      console.warn("[LinkedIn] Failed to fetch employment history (requires Partner Program approval):", error);
-    }
-
-    // Fetch education history (may fail with 403 if scopes not approved)
-    let educationHistory: LinkedInEducation[] = [];
-    try {
-      const educationResponse = await fetch(
-        `${LINKEDIN_API_BASE}/me/educations`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "LinkedIn-Version": "202401",
-          },
-        }
-      );
-
-      if (educationResponse.ok) {
-        const educationData = await educationResponse.json() as any;
-        educationHistory = (educationData.elements || []).map((edu: any) => ({
-          school: edu.schoolName || "",
-          degree: edu.degreeName || undefined,
-          fieldOfStudy: edu.fieldOfStudy || undefined,
-          startDate: edu.startDate ? formatDate(edu.startDate) : undefined,
-          endDate: edu.endDate ? formatDate(edu.endDate) : undefined,
-        }));
-      }
-    } catch (error) {
-      console.warn("[LinkedIn] Failed to fetch education history (requires Partner Program approval):", error);
-    }
-
-    // Fetch skills (may fail with 403 if scopes not approved)
-    let skills: string[] = [];
-    try {
-      const skillsResponse = await fetch(
-        `${LINKEDIN_API_BASE}/me/skills`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "LinkedIn-Version": "202401",
-          },
-        }
-      );
-
-      if (skillsResponse.ok) {
-        const skillsData = await skillsResponse.json() as any;
-        skills = (skillsData.elements || []).map((skill: any) => skill.name || "");
-      }
-    } catch (error) {
-      console.warn("[LinkedIn] Failed to fetch skills (requires Partner Program approval):", error);
+    // Build LinkedIn profile URL from ID
+    let profileUrl = undefined;
+    if (profileData.id) {
+      profileUrl = `https://www.linkedin.com/in/${profileData.id}`;
     }
 
     return {
@@ -210,23 +121,10 @@ export async function fetchLinkedInProfile(
       headline: profileData.headline?.localizedString || profileData.headline || undefined,
       profilePicture: profileData.profilePicture?.displayImage || undefined,
       email,
-      employmentHistory,
-      educationHistory,
-      skills: skills.length > 0 ? skills : undefined,
+      profileUrl,
     };
   } catch (error) {
     console.error("[LinkedIn] Profile fetch failed:", error);
     throw error;
   }
-}
-
-/**
- * Format LinkedIn date object to YYYY-MM-DD string
- */
-function formatDate(dateObj: { year?: number; month?: number; day?: number }): string {
-  if (!dateObj) return "";
-  const year = dateObj.year || new Date().getFullYear();
-  const month = String(dateObj.month || 1).padStart(2, "0");
-  const day = String(dateObj.day || 1).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }

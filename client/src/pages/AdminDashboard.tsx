@@ -85,7 +85,7 @@ export default function AdminDashboard() {
                     <div key={client.id} className="flex items-center justify-between p-2 rounded hover:bg-muted transition-colors">
                       <div>
                         <p className="font-medium text-sm">{client.name}</p>
-                        <p className="text-xs text-muted-foreground">{client.email}</p>
+                        <p className="text-xs text-muted-foreground">{client.sector || client.companyName || "No sector"}</p>
                       </div>
                     </div>
                   ))}

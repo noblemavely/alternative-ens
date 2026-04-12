@@ -151,11 +151,25 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         try {
-          const { parseResume } = await import("../resume-parser");
+          const { parseResume } = await import("./resume-parser");
           const buffer = Buffer.from(input.fileData, "base64");
           const parsed = await parseResume(buffer);
+          console.log("[parseResume Router] Received parsed data:", {
+            firstName: parsed.firstName,
+            lastName: parsed.lastName,
+            phone: parsed.phone,
+            linkedinUrl: parsed.linkedinUrl,
+            employment_count: parsed.employment.length,
+            education_count: parsed.education.length,
+            employment_sample: parsed.employment[0],
+            education_sample: parsed.education[0],
+          });
           return {
             success: true,
+            firstName: parsed.firstName,
+            lastName: parsed.lastName,
+            phone: parsed.phone,
+            linkedinUrl: parsed.linkedinUrl,
             employment: parsed.employment,
             education: parsed.education,
           };
@@ -164,6 +178,26 @@ export const appRouter = router({
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "Failed to parse resume",
+          });
+        }
+      }),
+
+    enrichLinkedInProfile: publicProcedure
+      .input(
+        z.object({
+          linkedinUrl: z.string().url(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          const { enrichLinkedInProfile } = await import("./linkedin-enrichment");
+          const result = await enrichLinkedInProfile(input.linkedinUrl);
+          return result;
+        } catch (error) {
+          console.error("LinkedIn enrichment error:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to enrich LinkedIn profile",
           });
         }
       }),
@@ -177,7 +211,6 @@ export const appRouter = router({
       .input(
         z.object({
           name: z.string(),
-          email: z.string().email(),
           phone: z.string().optional(),
           companyName: z.string().optional(),
           companyWebsite: z.string().optional(),
@@ -188,7 +221,6 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const clientData = {
           name: input.name,
-          email: input.email,
           phone: input.phone ?? null,
           companyName: input.companyName ?? null,
           companyWebsite: input.companyWebsite ?? null,
@@ -216,11 +248,11 @@ export const appRouter = router({
         z.object({
           id: z.number(),
           name: z.string().optional(),
-          email: z.string().email().optional(),
           phone: z.string().optional(),
           companyName: z.string().optional(),
           companyWebsite: z.string().optional(),
           contactPerson: z.string().optional(),
+          sector: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {

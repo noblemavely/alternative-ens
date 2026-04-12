@@ -1,8 +1,42 @@
-import "dotenv/config";
+// MUST be first: load environment variables before anything else
+import { fileURLToPath } from "url";
+import path from "path";
+import fs from "fs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, "../../");
+
+// Manually load .env.local and .env files into process.env
+const envLocalPath = path.join(projectRoot, ".env.local");
+const envPath = path.join(projectRoot, ".env");
+
+if (fs.existsSync(envLocalPath)) {
+  const envLocal = fs.readFileSync(envLocalPath, "utf-8");
+  envLocal.split("\n").forEach((line) => {
+    const [key, ...valueParts] = line.split("=");
+    if (key && !key.startsWith("#")) {
+      process.env[key.trim()] = valueParts.join("=").trim();
+    }
+  });
+}
+
+if (fs.existsSync(envPath)) {
+  const env = fs.readFileSync(envPath, "utf-8");
+  env.split("\n").forEach((line) => {
+    const [key, ...valueParts] = line.split("=");
+    if (key && !key.startsWith("#") && !process.env[key.trim()]) {
+      process.env[key.trim()] = valueParts.join("=").trim();
+    }
+  });
+}
+
+console.log("[ENV] CLAUDE_API_KEY loaded:", process.env.CLAUDE_API_KEY ? "YES - " + process.env.CLAUDE_API_KEY.substring(0, 20) + "..." : "NO");
+console.log("[ENV] APOLLO_API_KEY loaded:", process.env.APOLLO_API_KEY ? "YES" : "NO");
+
 import express from "express";
 import { createServer } from "http";
 import net from "net";
-import path from "path";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerLinkedInOAuthRoutes } from "./linkedinOAuthCallback";

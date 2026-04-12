@@ -20,7 +20,6 @@ import { TableRowSkeleton } from "@/components/TableRowSkeleton";
 
 const clientSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email"),
   phone: z.string().optional(),
   companyName: z.string().optional(),
   companyWebsite: z.string().optional(),
@@ -54,9 +53,8 @@ export default function AdminClients() {
   const projectsQuery = trpc.projects.list.useQuery();
   const createMutation = trpc.clients.create.useMutation();
   
-  const filteredClients = clientsQuery.data?.filter(client => 
+  const filteredClients = clientsQuery.data?.filter(client =>
     (client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.companyName?.toLowerCase().includes(searchTerm.toLowerCase())) &&
     (!sectorFilter || sectorFilter === "all" || client.sector === sectorFilter)
   ) || [];
@@ -68,7 +66,6 @@ export default function AdminClients() {
     resolver: zodResolver(clientSchema),
     defaultValues: {
       name: "",
-      email: "",
       phone: "",
       companyName: "",
       companyWebsite: "",
@@ -134,7 +131,7 @@ export default function AdminClients() {
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex gap-2 flex-1 min-w-0">
             <Input
-              placeholder="Search by name, email, or company..."
+              placeholder="Search by name or company..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -186,7 +183,6 @@ export default function AdminClients() {
                   <thead>
                     <tr className="border-b">
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Client Name</th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Email</th>
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Sector</th>
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Projects</th>
                       <th className="text-right py-3 px-4 font-semibold text-foreground">Actions</th>
@@ -202,7 +198,6 @@ export default function AdminClients() {
                           onClick={() => navigate(`/admin/clients/${client.id}`)}
                         >
                           <td className="py-3 px-4 font-medium">{client.name}</td>
-                          <td className="py-3 px-4 text-muted-foreground">{client.email}</td>
                           <td className="py-3 px-4 text-muted-foreground">{client.sector || "-"}</td>
                           <td className="py-3 px-4 text-muted-foreground">{projectCount}</td>
                           <td className="py-3 px-4 text-right space-x-2">

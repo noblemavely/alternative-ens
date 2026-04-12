@@ -1,4 +1,6 @@
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
+import Anthropic from '@anthropic-ai/sdk';
+import { ENV } from './_core/env';
 
 export interface ParsedEmployment {
   companyName: string;
@@ -19,6 +21,10 @@ export interface ParsedEducation {
 }
 
 export interface ParsedResumeData {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  linkedinUrl?: string;
   employment: ParsedEmployment[];
   education: ParsedEducation[];
   rawText: string;
@@ -53,233 +59,169 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
 }
 
 /**
- * Parse employment history from resume text
- */
-function parseEmploymentHistory(text: string): ParsedEmployment[] {
-  const employment: ParsedEmployment[] = [];
-  const seen = new Set<string>();
-
-  // Find PROFESSIONAL EXPERIENCE or WORK EXPERIENCE section
-  let experienceStart = -1;
-  const lines = text.split('\n');
-
-  for (let i = 0; i < lines.length; i++) {
-    if (/PROFESSIONAL\s+EXPERIENCE|WORK\s+EXPERIENCE|CAREER\s+HISTORY/i.test(lines[i])) {
-      experienceStart = i + 1;
-      break;
-    }
-  }
-
-  if (experienceStart === -1) return employment;
-
-  // Extract entries until next major section
-  let currentCompany = '';
-  let currentPosition = '';
-  let currentStartDate = '';
-  let currentEndDate = '';
-  let currentIsCurrent = false;
-  let currentDescription = '';
-
-  for (let i = experienceStart; i < lines.length; i++) {
-    const line = lines[i].trim();
-
-    // Stop at next major section (all caps and minimum length)
-    if (/^[A-Z\s]{4,}$/.test(line) && !line.includes('●') && line !== 'PROFESSIONAL EXPERIENCE' && line !== 'WORK EXPERIENCE') {
-      // Save current entry if exists
-      if (currentCompany && currentPosition) {
-        const key = `${currentCompany}|${currentPosition}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          employment.push({
-            companyName: currentCompany,
-            position: currentPosition,
-            startDate: currentStartDate,
-            endDate: currentEndDate,
-            isCurrent: currentIsCurrent,
-            description: currentDescription.trim(),
-          });
-        }
-      }
-      break;
-    }
-
-    // Company line: "Company Name, City (Description)"
-    if (!line.includes('●') && line.includes(',') && !currentCompany && /^[A-Z].*[,(]/.test(line) && !/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/.test(line)) {
-      currentCompany = line.split(/[,(]/)[0].trim();
-      currentPosition = '';
-      currentStartDate = '';
-      currentEndDate = '';
-      currentDescription = '';
-    }
-
-    // Job title line: "Title, Location   Date - Date"
-    if (currentCompany && !currentPosition && line.includes('-') && /\d{4}|\w+\s+\d{4}/.test(line)) {
-      const parts = line.split(/\s{2,}|\t/);
-      currentPosition = parts[0].trim().replace(/^-\s*/, '');
-
-      // Extract dates
-      const dateMatch = /(\w+\s+\d{4}|\d{4})\s*[-–]\s*(\w+\s+\d{4}|Present|Current|\d{4})?/.exec(parts[parts.length - 1]);
-      if (dateMatch) {
-        currentStartDate = dateMatch[1] || '';
-        currentEndDate = dateMatch[2] || '';
-        currentIsCurrent = !dateMatch[2] || /Present|Current/i.test(dateMatch[2]);
-      }
-    }
-
-    // Bullet points are description
-    if (currentCompany && currentPosition && line.startsWith('●')) {
-      currentDescription += line.substring(1).trim() + ' ';
-    }
-
-    // Empty line or next entry signals end of current job
-    if (currentCompany && currentPosition && !line && !line.startsWith('●')) {
-      const key = `${currentCompany}|${currentPosition}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        employment.push({
-          companyName: currentCompany,
-          position: currentPosition,
-          startDate: currentStartDate,
-          endDate: currentEndDate,
-          isCurrent: currentIsCurrent,
-          description: currentDescription.trim().substring(0, 500),
-        });
-      }
-      currentCompany = '';
-      currentPosition = '';
-    }
-  }
-
-  return employment;
-}
-
-/**
- * Parse education history from resume text
- */
-function parseEducationHistory(text: string): ParsedEducation[] {
-  const education: ParsedEducation[] = [];
-  const seen = new Set<string>();
-
-  // Find EDUCATION section
-  let educationStart = -1;
-  const lines = text.split('\n');
-
-  for (let i = 0; i < lines.length; i++) {
-    if (/^EDUCATION/i.test(lines[i])) {
-      educationStart = i + 1;
-      break;
-    }
-  }
-
-  if (educationStart === -1) return education;
-
-  // Parse entries
-  let currentDegree = '';
-  let currentSchool = '';
-  let currentStartYear = '';
-  let currentEndYear = '';
-
-  for (let i = educationStart; i < lines.length; i++) {
-    const line = lines[i].trim();
-
-    // Stop at next section
-    if (/^[A-Z\s]{4,}$/.test(line) && !line.includes('●') && line !== 'EDUCATION') {
-      // Save current entry
-      if (currentDegree && currentSchool) {
-        const key = `${currentSchool}|${currentDegree}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          education.push({
-            schoolName: currentSchool,
-            degree: currentDegree,
-            fieldOfStudy: extractFieldOfStudy(currentDegree),
-            startDate: currentStartYear,
-            endDate: currentEndYear,
-            description: '',
-          });
-        }
-      }
-      break;
-    }
-
-    if (!line) continue;
-
-    // Degree line with years: "Degree (Subjects)   Year - Year" or "Degree   Year - Year"
-    const degreePattern = /([A-Za-z\s&,\.]+?(?:Degree|Certificate|Diploma|BS|BA|MA|MS|MBA|PhD|BTech|BCA|HSC|SSC)(?:\s+[A-Za-z\s&,\.()]*)?)\s*(?:\(([A-Za-z\s,\.&-]*?)\))?\s*(\d{4})\s*[-–]\s*(\d{4})?/i;
-    const degreeMatch = degreePattern.exec(line);
-
-    if (degreeMatch) {
-      currentDegree = degreeMatch[1]?.trim() || '';
-      currentStartYear = degreeMatch[3] || '';
-      currentEndYear = degreeMatch[4] || '';
-      // School name should be on next line
-      if (i + 1 < lines.length) {
-        const nextLine = lines[i + 1]?.trim();
-        if (nextLine && !degreePattern.test(nextLine)) {
-          currentSchool = nextLine;
-          i++; // Skip school line
-
-          // Save entry
-          if (currentDegree && currentSchool) {
-            const key = `${currentSchool}|${currentDegree}`;
-            if (!seen.has(key)) {
-              seen.add(key);
-              education.push({
-                schoolName: currentSchool,
-                degree: currentDegree,
-                fieldOfStudy: extractFieldOfStudy(currentDegree),
-                startDate: currentStartYear,
-                endDate: currentEndYear,
-                description: '',
-              });
-            }
-          }
-          currentDegree = '';
-          currentSchool = '';
-          currentStartYear = '';
-          currentEndYear = '';
-        }
-      }
-    }
-  }
-
-  return education;
-}
-
-/**
- * Extract field of study from degree text
- */
-function extractFieldOfStudy(degreeText: string): string {
-  // Look for "in X" or "of X" pattern
-  const match = /(?:in|of)\s+([A-Za-z\s&,\.]+?)(?:\s*[-,]|$)/i.exec(degreeText);
-  if (match) {
-    return match[1].trim();
-  }
-  // Look for content in parentheses
-  const parenMatch = /\(([A-Za-z\s,&\.]+)\)/.exec(degreeText);
-  if (parenMatch) {
-    return parenMatch[1].trim();
-  }
-  return 'General Studies';
-}
-
-/**
- * Parse resume data from PDF buffer
+ * Parse resume using Claude API
+ * This provides intelligent extraction that works with any resume format
  */
 export async function parseResume(buffer: Buffer): Promise<ParsedResumeData> {
-  try {
-    const text = await extractTextFromPDF(buffer);
+  let text = '';
 
-    const employment = parseEmploymentHistory(text);
-    const education = parseEducationHistory(text);
+  try {
+    // Extract text from PDF
+    text = await extractTextFromPDF(buffer);
+
+    if (!ENV.claudeApiKey) {
+      console.warn('[Resume Parser] Claude API key not configured, returning empty result');
+      return {
+        employment: [],
+        education: [],
+        rawText: text,
+      };
+    }
+
+    // Use Claude API to intelligently extract data
+    const client = new Anthropic({
+      apiKey: ENV.claudeApiKey,
+    });
+
+    const prompt = `Extract personal, employment and education information from this resume text.
+
+Return a JSON object with this exact structure:
+{
+  "firstName": "string (first name if found)",
+  "lastName": "string (last name if found)",
+  "phone": "string (phone number if found)",
+  "linkedinUrl": "string (LinkedIn profile URL if found, should start with https://)",
+  "employment": [
+    {
+      "companyName": "string",
+      "position": "string",
+      "startDate": "string (YYYY-MM or similar)",
+      "endDate": "string (YYYY-MM or similar, or 'Present')",
+      "isCurrent": boolean,
+      "description": "string (key responsibilities/achievements)"
+    }
+  ],
+  "education": [
+    {
+      "schoolName": "string",
+      "degree": "string",
+      "fieldOfStudy": "string",
+      "startDate": "string (YYYY or YYYY-MM)",
+      "endDate": "string (YYYY or YYYY-MM)",
+      "description": "string (optional, e.g., GPA, honors)"
+    }
+  ]
+}
+
+Resume text:
+${text}
+
+Extract personal information (firstName, lastName, phone, LinkedIn URL), all employment positions, and education entries found in the resume. Be thorough and extract every position and degree mentioned. Return ONLY valid JSON, no additional text.`;
+
+    // Use Sonnet-4 (cheaper than Opus, more capable than Haiku)
+    // Your API key has access to: claude-sonnet-4-20250514
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    });
+
+    console.log(`[Resume Parser] Using model: claude-sonnet-4-20250514 (cost-optimized)`);
+
+    // Extract the text content from the response
+    const responseText = message.content
+      .filter((block) => block.type === 'text')
+      .map((block) => (block as any).text)
+      .join('');
+
+    console.log('[Resume Parser] Claude response (first 200 chars):', responseText.substring(0, 200));
+
+    // Parse the JSON response (handle markdown code blocks)
+    let jsonString = responseText;
+
+    // Remove markdown code blocks if present
+    const codeBlockMatch = responseText.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
+    if (codeBlockMatch) {
+      jsonString = codeBlockMatch[1];
+    }
+
+    // Extract JSON object
+    const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.warn('[Resume Parser] No JSON found in Claude response');
+      return {
+        employment: [],
+        education: [],
+        rawText: text,
+      };
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    console.log('[Resume Parser] Successfully parsed - employment:', parsed.employment?.length, 'education:', parsed.education?.length);
+    console.log('[Resume Parser] Raw employment sample:', JSON.stringify(parsed.employment?.[0]));
+    console.log('[Resume Parser] Raw education sample:', JSON.stringify(parsed.education?.[0]));
+
+    // Validate and clean the response
+    const employment = (parsed.employment || []).filter((emp: any) => {
+      const valid = emp.companyName && emp.position;
+      if (!valid) {
+        console.warn('[Resume Parser] Filtered out employment:', emp);
+      }
+      return valid;
+    });
+    const education = (parsed.education || []).filter((edu: any) => {
+      const valid = edu.schoolName && edu.degree;
+      if (!valid) {
+        console.warn('[Resume Parser] Filtered out education:', edu);
+      }
+      return valid;
+    });
+    console.log('[Resume Parser] After filtering - employment:', employment.length, 'education:', education.length);
 
     return {
-      employment,
-      education,
+      firstName: parsed.firstName || undefined,
+      lastName: parsed.lastName || undefined,
+      phone: parsed.phone || undefined,
+      linkedinUrl: parsed.linkedinUrl || undefined,
+      employment: employment.map((emp: any) => ({
+        companyName: emp.companyName || '',
+        position: emp.position || '',
+        startDate: emp.startDate || '',
+        endDate: emp.endDate || '',
+        isCurrent: emp.isCurrent || emp.endDate?.toLowerCase() === 'present' || false,
+        description: emp.description || '',
+      })),
+      education: education.map((edu: any) => ({
+        schoolName: edu.schoolName || '',
+        degree: edu.degree || '',
+        fieldOfStudy: edu.fieldOfStudy || '',
+        startDate: edu.startDate || '',
+        endDate: edu.endDate || '',
+        description: edu.description || '',
+      })),
       rawText: text,
     };
   } catch (error) {
-    console.error('Error parsing resume:', error);
-    throw new Error('Failed to parse resume');
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('[Resume Parser] Error parsing resume:', errorMessage);
+
+    // Check if this is an API availability error (model not found, quota exceeded, etc.)
+    if (errorMessage.includes('404') || errorMessage.includes('not_found') || errorMessage.includes('quota') || errorMessage.includes('unavailable')) {
+      console.warn('[Resume Parser] Claude API is not available (model not found or quota exceeded)');
+      console.warn('[Resume Parser] Returning empty result - user can fill in data manually');
+      return {
+        employment: [],
+        education: [],
+        rawText: text,
+      };
+    }
+
+    console.error('[Resume Parser] Unexpected error:', errorMessage);
+    throw new Error(`Failed to parse resume: ${errorMessage}`);
   }
 }

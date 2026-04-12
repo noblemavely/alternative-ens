@@ -76,7 +76,6 @@ export default function AdminClientDetail() {
     if (clientQuery.data) {
       setFormData({
         name: clientQuery.data.name || "",
-        email: clientQuery.data.email || "",
         phone: clientQuery.data.phone || "",
         companyName: clientQuery.data.companyName || "",
         companyWebsite: clientQuery.data.companyWebsite || "",
