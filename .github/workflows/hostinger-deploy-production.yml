@@ -25,8 +25,8 @@ env:
   HOSTINGER_SSH_PORT: 65002
   HOSTINGER_SSH_USER: "u263459454"
   HOSTINGER_DB_HOST: "82.112.229.19"
-  HOSTINGER_DB_NAME: "u263459454_alternative"
-  HOSTINGER_DB_USER: "u263459454_alternative"
+  HOSTINGER_DB_NAME: "u263459454_alternatives"
+  HOSTINGER_DB_USER: "u263459454_alternatives"
 
 jobs:
   build-and-deploy:

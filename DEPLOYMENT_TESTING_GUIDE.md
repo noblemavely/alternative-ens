@@ -152,7 +152,7 @@ Verify that the database is accessible and migrations are applied.
 2. **Test Database Connection:**
    ```bash
    # Connect to MySQL
-   mysql -h 82.112.229.19 -u u263459454_alternative -p u263459454_alternative -e "SELECT VERSION();"
+   mysql -h 82.112.229.19 -u u263459454_alternatives -p u263459454_alternatives -e "SELECT VERSION();"
    
    # When prompted, enter your database password
    ```
@@ -160,7 +160,7 @@ Verify that the database is accessible and migrations are applied.
 3. **Verify Database Structure:**
    ```bash
    # List tables
-   mysql -h 82.112.229.19 -u u263459454_alternative -p u263459454_alternative -e "SHOW TABLES;"
+   mysql -h 82.112.229.19 -u u263459454_alternatives -p u263459454_alternatives -e "SHOW TABLES;"
    
    # Expected tables:
    # - clients
@@ -174,10 +174,10 @@ Verify that the database is accessible and migrations are applied.
 4. **Verify Data Was Seeded:**
    ```bash
    # Check project count
-   mysql -h 82.112.229.19 -u u263459454_alternative -p u263459454_alternative -e "SELECT COUNT(*) as 'Projects' FROM projects;"
+   mysql -h 82.112.229.19 -u u263459454_alternatives -p u263459454_alternatives -e "SELECT COUNT(*) as 'Projects' FROM projects;"
    
    # Check expert count
-   mysql -h 82.112.229.19 -u u263459454_alternative -p u263459454_alternative -e "SELECT COUNT(*) as 'Experts' FROM experts;"
+   mysql -h 82.112.229.19 -u u263459454_alternatives -p u263459454_alternatives -e "SELECT COUNT(*) as 'Experts' FROM experts;"
    
    # Expected:
    # Projects: 6+
@@ -187,7 +187,7 @@ Verify that the database is accessible and migrations are applied.
 5. **Check Database User Permissions:**
    ```bash
    # Verify user can perform basic operations
-   mysql -h 82.112.229.19 -u u263459454_alternative -p u263459454_alternative -e "SELECT USER();"
+   mysql -h 82.112.229.19 -u u263459454_alternatives -p u263459454_alternatives -e "SELECT USER();"
    ```
 
 ### Success Criteria
@@ -204,7 +204,7 @@ Verify that the database is accessible and migrations are applied.
 echo $DATABASE_URL
 
 # 2. Verify credentials
-mysql -h 82.112.229.19 -u u263459454_alternative -p
+mysql -h 82.112.229.19 -u u263459454_alternatives -p
 
 # 3. Check if MySQL service is running on Hostinger
 # (This is usually Hostinger managed, so contact support if down)
@@ -464,17 +464,17 @@ Verify that database backups are created before deployments.
 4. **Test Backup Restoration (Optional):**
    ```bash
    # Create a test database
-   mysql -h 82.112.229.19 -u u263459454_alternative -p -e "CREATE DATABASE test_restore;"
+   mysql -h 82.112.229.19 -u u263459454_alternatives -p -e "CREATE DATABASE test_restore;"
    
    # Restore from backup
    LATEST_BACKUP=$(ls -t ~/alternative-ens/backups/backup_*.sql | head -1)
-   mysql -h 82.112.229.19 -u u263459454_alternative -p test_restore < $LATEST_BACKUP
+   mysql -h 82.112.229.19 -u u263459454_alternatives -p test_restore < $LATEST_BACKUP
    
    # Verify restore
-   mysql -h 82.112.229.19 -u u263459454_alternative -p -e "SELECT COUNT(*) FROM test_restore.projects;"
+   mysql -h 82.112.229.19 -u u263459454_alternatives -p -e "SELECT COUNT(*) FROM test_restore.projects;"
    
    # Clean up
-   mysql -h 82.112.229.19 -u u263459454_alternative -p -e "DROP DATABASE test_restore;"
+   mysql -h 82.112.229.19 -u u263459454_alternatives -p -e "DROP DATABASE test_restore;"
    ```
 
 ### Success Criteria

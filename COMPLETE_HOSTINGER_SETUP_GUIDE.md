@@ -3,7 +3,7 @@
 **Domain:** alternatives.nativeworld.com  
 **Hosting:** Hostinger Business Plan  
 **Server IP:** 82.112.229.19  
-**Database:** u263459454_alternative  
+**Database:** u263459454_alternatives  
 
 ---
 
@@ -228,11 +228,11 @@ ls -la node_modules | head -5
 ```bash
 # Create .env file with production values
 cat > ~/.env << 'EOF'
-DATABASE_URL=mysql://u263459454_alternative:YOUR_DB_PASSWORD@82.112.229.19:3306/u263459454_alternative
+DATABASE_URL=mysql://u263459454_alternatives:YOUR_DB_PASSWORD@82.112.229.19:3306/u263459454_alternatives
 DB_HOST=82.112.229.19
-DB_USER=u263459454_alternative
+DB_USER=u263459454_alternatives
 DB_PASSWORD=YOUR_DB_PASSWORD
-DB_NAME=u263459454_alternative
+DB_NAME=u263459454_alternatives
 NODE_ENV=production
 VITE_APP_ID=alternative-ens
 JWT_SECRET=generate-a-random-32-character-hex-string-here-min-32-chars
@@ -269,7 +269,7 @@ cd ~/alternative-ens
 node seed-db.mjs
 
 # Verify data
-mysql -h 82.112.229.19 -u u263459454_alternative -p u263459454_alternative -e "SELECT COUNT(*) as 'Total Projects' FROM projects;"
+mysql -h 82.112.229.19 -u u263459454_alternatives -p u263459454_alternatives -e "SELECT COUNT(*) as 'Total Projects' FROM projects;"
 ```
 
 ### Step 8: Install PM2 Process Manager
@@ -425,7 +425,7 @@ pm2 logs alternative-ens
 pm2 restart alternative-ens
 
 # Check database connection
-mysql -h 82.112.229.19 -u u263459454_alternative -p -e "SELECT 1"
+mysql -h 82.112.229.19 -u u263459454_alternatives -p -e "SELECT 1"
 ```
 
 **Issue: FTP upload failed**
@@ -437,7 +437,7 @@ mysql -h 82.112.229.19 -u u263459454_alternative -p -e "SELECT 1"
 - Verify `DATABASE_URL` format
 - Check database credentials
 - Ensure database user has correct permissions
-- Test connection: `mysql -h 82.112.229.19 -u u263459454_alternative -p u263459454_alternative`
+- Test connection: `mysql -h 82.112.229.19 -u u263459454_alternatives -p u263459454_alternatives`
 
 ---
 
@@ -471,8 +471,8 @@ SSH Username: u263459454
 SSH Port: 65002
 
 Database Host: 82.112.229.19
-Database Name: u263459454_alternative
-Database Username: u263459454_alternative
+Database Name: u263459454_alternatives
+Database Username: u263459454_alternatives
 
 Production URL: https://alternatives.nativeworld.com
 ```
