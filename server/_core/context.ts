@@ -1,6 +1,5 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { User } from "../../drizzle/schema";
-import { sdk } from "./sdk";
 import jwt from "jsonwebtoken";
 
 export type TrpcContext = {
@@ -16,13 +15,9 @@ export async function createContext(
   let user: User | null = null;
   let adminUser: any = undefined;
 
-  // Try OAuth/session authentication first
-  try {
-    user = await sdk.authenticateRequest(opts.req);
-  } catch (error) {
-    // Authentication is optional for public procedures.
-    user = null;
-  }
+  // OAuth has been removed - authentication is optional for now
+  // TODO: Implement email/password authentication or other auth method
+  user = null;
 
   // Check for admin JWT token in Authorization header or cookies
   const authHeader = opts.req.headers.authorization || "";

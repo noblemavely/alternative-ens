@@ -38,8 +38,6 @@ import express from "express";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
-import { registerLinkedInOAuthRoutes } from "./linkedinOAuthCallback";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -74,10 +72,9 @@ async function startServer() {
   const uploadsDir = path.join(process.cwd(), "uploads");
   app.use("/uploads", express.static(uploadsDir));
 
-  // OAuth callback under /api/oauth/callback
-  registerOAuthRoutes(app);
-  // LinkedIn OAuth callback under /api/linkedin/callback
-  registerLinkedInOAuthRoutes(app);
+  // OAuth authentication has been removed
+  // TODO: Implement email/password or other authentication method
+
   // tRPC API
   app.use(
     "/api/trpc",
