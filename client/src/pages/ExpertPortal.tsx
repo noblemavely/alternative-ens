@@ -13,8 +13,8 @@ import { toast } from "sonner";
 import { Mail, CheckCircle, Loader2, Link2, Copy, Linkedin } from "lucide-react";
 import { EmploymentHistoryForm } from "@/components/EmploymentHistoryForm";
 import { EducationHistoryForm } from "@/components/EducationHistoryForm";
-import { FormProgressIndicator } from "@/components/FormProgressIndicator";
-import { ResumeParserForm } from "@/components/ResumeParserForm";
+import FormProgressIndicator from "@/components/FormProgressIndicator";
+import ResumeParserForm from "@/components/ResumeParserForm";
 
 const emailVerificationSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -402,7 +402,6 @@ export default function ExpertPortal() {
     try {
       // Get the auth URL from backend (which has correct scopes)
       const redirectUri = `${window.location.origin}/api/linkedin/callback`;
-      const utils = trpc.useUtils();
       const result = await utils.linkedinOAuth.getAuthUrl.fetch({ redirectUri });
       if (result.authUrl) {
         window.location.href = result.authUrl;
