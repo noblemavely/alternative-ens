@@ -66,6 +66,8 @@ import {
   deleteFunction,
   getExpertProjectActivityTimeline,
   getExpertActivityTimeline,
+  createProjectActivityEvent,
+  getProjectActivityTimeline,
 } from "./db";
 import { storagePut, storageGet } from "./storage";
 import { nanoid } from "nanoid";
@@ -539,7 +541,6 @@ export const appRouter = router({
 
         // If status is being changed, create an activity timeline event
         if (status && status !== currentProject.status) {
-          const { createProjectActivityEvent } = await import("../db");
           await createProjectActivityEvent(
             id,
             "status_changed",
@@ -570,7 +571,6 @@ export const appRouter = router({
     getActivityTimeline: adminProcedure
       .input(z.object({ projectId: z.number() }))
       .query(async ({ input }) => {
-        const { getProjectActivityTimeline } = await import("../db");
         return getProjectActivityTimeline(input.projectId);
       }),
   }),
