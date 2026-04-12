@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { Mail, CheckCircle, Loader2, Link2, Copy, Linkedin } from "lucide-react";
 import { EmploymentHistoryForm } from "@/components/EmploymentHistoryForm";
 import { EducationHistoryForm } from "@/components/EducationHistoryForm";
+import { FormProgressIndicator } from "@/components/FormProgressIndicator";
+import { ResumeParserForm } from "@/components/ResumeParserForm";
 
 const emailVerificationSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -43,6 +45,14 @@ export default function ExpertPortal() {
   const [educationHistory, setEducationHistory] = useState<any[]>([]);
   const [createdExpertId, setCreatedExpertId] = useState<number | null>(null);
   const [createdExpertData, setCreatedExpertData] = useState<any>(null);
+  const [completionPercentage, setCompletionPercentage] = useState(0);
+  const [formSteps, setFormSteps] = useState([
+    { id: "email", label: "Email", completed: false },
+    { id: "personal", label: "Personal Info", completed: false },
+    { id: "professional", label: "Professional Info", completed: false },
+    { id: "experience", label: "Experience", completed: false },
+  ]);
+  const [currentFormStep, setCurrentFormStep] = useState("personal");
 
   const utils = trpc.useUtils();
   const sectorsQuery = trpc.sectors.list.useQuery();
@@ -165,6 +175,92 @@ export default function ExpertPortal() {
       toast.success("Email verified! Now complete your profile.");
     } catch (error) {
       toast.error("Invalid verification code");
+    }
+  };
+
+  // Calculate form completion percentage
+  useEffect(() => {
+    if (step !== "profile") return;
+
+    const formData = profileForm.getValues();
+    let completedFields = 0;
+    const totalFields = 8;
+
+    if (formData.firstName?.trim()) completedFields++;
+    if (formData.lastName?.trim()) completedFields++;
+    if (formData.email?.trim()) completedFields++;
+    if (formData.phone?.trim()) completedFields++;
+    if (formData.sector?.trim()) completedFields++;
+    if (formData.function?.trim()) completedFields++;
+    if (formData.biography?.trim()) completedFields++;
+    if (employmentHistory.length > 0 || educationHistory.length > 0) completedFields++;
+
+    const percentage = Math.round((completedFields / totalFields) * 100);
+    setCompletionPercentage(percentage);
+
+    // Update step completion
+    const newSteps = [...formSteps];
+    if (formData.firstName?.trim() && formData.lastName?.trim() && formData.email?.trim()) {
+      newSteps[1].completed = true;
+    }
+    if (formData.sector?.trim() || formData.function?.trim()) {
+      newSteps[2].completed = true;
+    }
+    if (employmentHistory.length > 0 || educationHistory.length > 0) {
+      newSteps[3].completed = true;
+    }
+    setFormSteps(newSteps);
+  }, [
+    profileForm.watch("firstName"),
+    profileForm.watch("lastName"),
+    profileForm.watch("email"),
+    profileForm.watch("phone"),
+    profileForm.watch("sector"),
+    profileForm.watch("function"),
+    profileForm.watch("biography"),
+    employmentHistory,
+    educationHistory,
+    step,
+  ]);
+
+  // Handle parsed resume data
+  const handleResumeParsed = (parsedData: any) => {
+    if (!parsedData) return;
+
+    // Populate employment history from resume
+    if (parsedData.employment && parsedData.employment.length > 0) {
+      const newEmployment = parsedData.employment.map((emp: any) => ({
+        id: `emp-${Date.now()}-${Math.random()}`,
+        company: emp.companyName || "",
+        position: emp.position || "",
+        startDate: emp.startDate || "",
+        endDate: emp.endDate || "",
+        currentlyWorking: emp.isCurrent || false,
+        description: emp.description || "",
+      }));
+      setEmploymentHistory((prev) => [...prev, ...newEmployment]);
+      toast.success(`Added ${newEmployment.length} employment entries from resume`);
+    }
+
+    // Populate education history from resume
+    if (parsedData.education && parsedData.education.length > 0) {
+      const newEducation = parsedData.education.map((edu: any) => ({
+        id: `edu-${Date.now()}-${Math.random()}`,
+        school: edu.schoolName || "",
+        degree: edu.degree || "",
+        fieldOfStudy: edu.fieldOfStudy || "",
+        startDate: edu.startDate || "",
+        endDate: edu.endDate || "",
+      }));
+      setEducationHistory((prev) => [...prev, ...newEducation]);
+      toast.success(`Added ${newEducation.length} education entries from resume`);
+    }
+
+    if (
+      (!parsedData.employment || parsedData.employment.length === 0) &&
+      (!parsedData.education || parsedData.education.length === 0)
+    ) {
+      toast.info("No employment or education data found in resume. You can add them manually.");
     }
   };
 
@@ -436,12 +532,20 @@ export default function ExpertPortal() {
 
         {/* Step 3: Complete Profile */}
         {step === "profile" && (
-          <Card className="border-border shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-foreground">Complete Your Profile</CardTitle>
-              <CardDescription>Add your professional information</CardDescription>
-            </CardHeader>
-            <CardContent>
+          <div className="space-y-6">
+            {/* Progress Indicator */}
+            <FormProgressIndicator
+              steps={formSteps}
+              currentStep={currentFormStep}
+              completionPercentage={completionPercentage}
+            />
+
+            <Card className="border-border shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-foreground">Complete Your Profile</CardTitle>
+                <CardDescription>Add your professional information</CardDescription>
+              </CardHeader>
+              <CardContent>
               {/* LinkedIn Connect Button */}
               <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg space-y-3 mb-6">
                 <label className="text-sm font-medium text-foreground flex items-center gap-2">
@@ -623,6 +727,15 @@ export default function ExpertPortal() {
                     )}
                   />
 
+                  {/* Resume Parser */}
+                  <div className="border-t border-border pt-4">
+                    <h3 className="text-sm font-semibold text-foreground mb-4">Extract from Resume</h3>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      Upload a PDF resume to automatically extract employment and education history
+                    </p>
+                    <ResumeParserForm onParsed={handleResumeParsed} />
+                  </div>
+
                   {/* Employment History */}
                   <div className="border-t border-border pt-4">
                     <EmploymentHistoryForm 
@@ -673,6 +786,7 @@ export default function ExpertPortal() {
               </Form>
             </CardContent>
           </Card>
+            </div>
         )}
 
         {/* Preview Step */}

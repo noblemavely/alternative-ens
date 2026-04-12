@@ -142,6 +142,31 @@ export const appRouter = router({
           });
         }
       }),
+
+    parseResume: publicProcedure
+      .input(
+        z.object({
+          fileData: z.string(), // base64 encoded file data
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          const { parseResume } = await import("../resume-parser");
+          const buffer = Buffer.from(input.fileData, "base64");
+          const parsed = await parseResume(buffer);
+          return {
+            success: true,
+            employment: parsed.employment,
+            education: parsed.education,
+          };
+        } catch (error) {
+          console.error("Resume parsing error:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to parse resume",
+          });
+        }
+      }),
   }),
 
   adminAuth: adminAuthRouter,
