@@ -1,10 +1,4 @@
-import * as pdfjsLib from 'pdfjs-dist';
-
-// Set up the worker
-if (typeof window === 'undefined') {
-  // For Node.js/server-side
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-}
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
 
 export interface ParsedEmployment {
   companyName: string;
@@ -35,16 +29,20 @@ export interface ParsedResumeData {
  */
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
-    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
     let fullText = '';
 
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
       const pageText = textContent.items
-        .map((item: any) => item.str)
+        .map((item: any) => (item.str || ''))
         .join(' ');
       fullText += pageText + '\n';
+    }
+
+    if (!fullText || fullText.trim().length === 0) {
+      throw new Error('No text extracted from PDF');
     }
 
     return fullText;
@@ -59,68 +57,96 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
  */
 function parseEmploymentHistory(text: string): ParsedEmployment[] {
   const employment: ParsedEmployment[] = [];
-
-  // More flexible patterns to match employment entries with various date formats
-  const patterns = [
-    // Pattern: "Company - Position | MM/YYYY - MM/YYYY"
-    /([A-Z][A-Za-z\s&,\.()]*?)\s*[-–|]\s*([A-Z][A-Za-z\s,\.()]*?)\s*\|?\s*(?:from\s+)?(\d{1,2}\/\d{4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})\s*(?:to\s+|-|–)?\s*(?:(\d{1,2}\/\d{4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})|Present|Current|Today|Ongoing)/gi,
-    // Pattern: "Position at Company" with dates
-    /([A-Z][A-Za-z\s]*?)\s+at\s+([A-Z][A-Za-z\s&,\.()]*?)\s*[-–|]\s*(?:from\s+)?(\d{1,2}\/\d{4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})\s*(?:to\s+|-|–)?\s*(?:(\d{1,2}\/\d{4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})|Present|Current|Today|Ongoing)/gi,
-    // Pattern: "Position, Company - Date range"
-    /([A-Z][A-Za-z\s]*?),?\s+([A-Z][A-Za-z\s&,\.()]*?)\s*[-–]\s*(?:from\s+)?(\d{1,2}\/\d{4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})\s*(?:to\s+|-|–)?\s*(?:(\d{1,2}\/\d{4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})|Present|Current|Today|Ongoing)/gi,
-  ];
-
-  const lines = text.split('\n');
   const seen = new Set<string>();
 
+  // Find PROFESSIONAL EXPERIENCE or WORK EXPERIENCE section
+  let experienceStart = -1;
+  const lines = text.split('\n');
+
   for (let i = 0; i < lines.length; i++) {
+    if (/PROFESSIONAL\s+EXPERIENCE|WORK\s+EXPERIENCE|CAREER\s+HISTORY/i.test(lines[i])) {
+      experienceStart = i + 1;
+      break;
+    }
+  }
+
+  if (experienceStart === -1) return employment;
+
+  // Extract entries until next major section
+  let currentCompany = '';
+  let currentPosition = '';
+  let currentStartDate = '';
+  let currentEndDate = '';
+  let currentIsCurrent = false;
+  let currentDescription = '';
+
+  for (let i = experienceStart; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (!line || line.length < 5) continue;
 
-    for (const pattern of patterns) {
-      pattern.lastIndex = 0;
-      const match = pattern.exec(line);
-
-      if (match) {
-        const companyName = match[2]?.trim() || '';
-        const position = match[1]?.trim() || '';
-        const startDate = match[3]?.trim() || '';
-        const endDate = match[4]?.trim() || '';
-
-        // Skip if we've already added this combination
-        const key = `${companyName}|${position}`;
-        if (seen.has(key) || !companyName || !position) continue;
-        seen.add(key);
-
-        const isCurrent = line.toLowerCase().includes('current') ||
-                         line.toLowerCase().includes('present') ||
-                         line.toLowerCase().includes('ongoing') ||
-                         line.toLowerCase().includes('today') ||
-                         !endDate;
-
-        employment.push({
-          companyName,
-          position,
-          startDate,
-          endDate: endDate || '',
-          isCurrent,
-          description: '',
-        });
-
-        // Try to get description from following lines
-        let desc = '';
-        for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
-          const nextLine = lines[j].trim();
-          if (nextLine && nextLine.length > 3 && !nextLine.match(/^[A-Z][a-z]*\s+\d{4}|^[A-Z][a-z]+,?\s+[A-Z]|^\d{1,2}\/\d{4}/)) {
-            desc += nextLine + ' ';
-          } else if (nextLine && nextLine.match(/^[A-Z][a-z]+\s+[A-Z]/)) {
-            break;
-          }
-        }
-        if (employment[employment.length - 1]) {
-          employment[employment.length - 1].description = desc.trim();
+    // Stop at next major section (all caps and minimum length)
+    if (/^[A-Z\s]{4,}$/.test(line) && !line.includes('●') && line !== 'PROFESSIONAL EXPERIENCE' && line !== 'WORK EXPERIENCE') {
+      // Save current entry if exists
+      if (currentCompany && currentPosition) {
+        const key = `${currentCompany}|${currentPosition}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          employment.push({
+            companyName: currentCompany,
+            position: currentPosition,
+            startDate: currentStartDate,
+            endDate: currentEndDate,
+            isCurrent: currentIsCurrent,
+            description: currentDescription.trim(),
+          });
         }
       }
+      break;
+    }
+
+    // Company line: "Company Name, City (Description)"
+    if (!line.includes('●') && line.includes(',') && !currentCompany && /^[A-Z].*[,(]/.test(line) && !/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/.test(line)) {
+      currentCompany = line.split(/[,(]/)[0].trim();
+      currentPosition = '';
+      currentStartDate = '';
+      currentEndDate = '';
+      currentDescription = '';
+    }
+
+    // Job title line: "Title, Location   Date - Date"
+    if (currentCompany && !currentPosition && line.includes('-') && /\d{4}|\w+\s+\d{4}/.test(line)) {
+      const parts = line.split(/\s{2,}|\t/);
+      currentPosition = parts[0].trim().replace(/^-\s*/, '');
+
+      // Extract dates
+      const dateMatch = /(\w+\s+\d{4}|\d{4})\s*[-–]\s*(\w+\s+\d{4}|Present|Current|\d{4})?/.exec(parts[parts.length - 1]);
+      if (dateMatch) {
+        currentStartDate = dateMatch[1] || '';
+        currentEndDate = dateMatch[2] || '';
+        currentIsCurrent = !dateMatch[2] || /Present|Current/i.test(dateMatch[2]);
+      }
+    }
+
+    // Bullet points are description
+    if (currentCompany && currentPosition && line.startsWith('●')) {
+      currentDescription += line.substring(1).trim() + ' ';
+    }
+
+    // Empty line or next entry signals end of current job
+    if (currentCompany && currentPosition && !line && !line.startsWith('●')) {
+      const key = `${currentCompany}|${currentPosition}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        employment.push({
+          companyName: currentCompany,
+          position: currentPosition,
+          startDate: currentStartDate,
+          endDate: currentEndDate,
+          isCurrent: currentIsCurrent,
+          description: currentDescription.trim().substring(0, 500),
+        });
+      }
+      currentCompany = '';
+      currentPosition = '';
     }
   }
 
@@ -132,49 +158,109 @@ function parseEmploymentHistory(text: string): ParsedEmployment[] {
  */
 function parseEducationHistory(text: string): ParsedEducation[] {
   const education: ParsedEducation[] = [];
-
-  // More flexible patterns for education entries
-  const patterns = [
-    // Pattern: "Degree in Field of Study - School/University, Location (Year-Year)"
-    /([A-Za-z\s,\.()&-]+?)\s+(?:in|of)\s+([A-Za-z\s,\.()&-]*?)\s*[-–]?\s*([A-Z][A-Za-z\s&,\.()]*?(?:University|School|College|Institute|Academy))\s*(?:,\s*[A-Za-z\s,]+?)?\s*(?:\((\d{4})[-–]?(\d{4})?\))?/gi,
-    // Pattern: "School/University - Degree, Field (Year)"
-    /([A-Z][A-Za-z\s&,\.()]*?(?:University|School|College|Institute|Academy))\s*(?:,\s*[A-Za-z\s,]+?)?\s*[-–]\s*([A-Za-z\s,\.()&-]+?)\s*(?:in|of|,)?\s*([A-Za-z\s,\.()&-]*?)\s*(?:\((\d{4})[-–]?(\d{4})?\))?/gi,
-    // Pattern: "School - Degree" or "School\nDegree"
-    /([A-Z][A-Za-z\s&,\.()]*?(?:University|School|College|Institute|Academy))\s*(?:[-–]\s*)?(?:\(([A-Za-z\s,\.()&-]+?)\))?\s*(?:\((\d{4})[-–]?(\d{4})?\))?/gi,
-  ];
-
   const seen = new Set<string>();
 
-  for (const pattern of patterns) {
-    pattern.lastIndex = 0;
-    let match;
+  // Find EDUCATION section
+  let educationStart = -1;
+  const lines = text.split('\n');
 
-    while ((match = pattern.exec(text)) !== null) {
-      const schoolName = (match[1] || match[3])?.trim() || '';
-      const degree = (match[2] || match[4])?.trim() || '';
-      const fieldOfStudy = (match[3] || match[2])?.trim() || 'General Studies';
-      const startDate = match[4] || match[5] || '';
-      const endDate = match[5] || match[6] || '';
+  for (let i = 0; i < lines.length; i++) {
+    if (/^EDUCATION/i.test(lines[i])) {
+      educationStart = i + 1;
+      break;
+    }
+  }
 
-      // Skip if school name is too short or already added
-      if (schoolName.length < 3) continue;
+  if (educationStart === -1) return education;
 
-      const key = `${schoolName}|${degree}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
+  // Parse entries
+  let currentDegree = '';
+  let currentSchool = '';
+  let currentStartYear = '';
+  let currentEndYear = '';
 
-      education.push({
-        schoolName,
-        degree: degree || 'Degree',
-        fieldOfStudy: fieldOfStudy || 'General Studies',
-        startDate: startDate?.toString() || '',
-        endDate: endDate?.toString() || '',
-        description: '',
-      });
+  for (let i = educationStart; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // Stop at next section
+    if (/^[A-Z\s]{4,}$/.test(line) && !line.includes('●') && line !== 'EDUCATION') {
+      // Save current entry
+      if (currentDegree && currentSchool) {
+        const key = `${currentSchool}|${currentDegree}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          education.push({
+            schoolName: currentSchool,
+            degree: currentDegree,
+            fieldOfStudy: extractFieldOfStudy(currentDegree),
+            startDate: currentStartYear,
+            endDate: currentEndYear,
+            description: '',
+          });
+        }
+      }
+      break;
+    }
+
+    if (!line) continue;
+
+    // Degree line with years: "Degree (Subjects)   Year - Year" or "Degree   Year - Year"
+    const degreePattern = /([A-Za-z\s&,\.]+?(?:Degree|Certificate|Diploma|BS|BA|MA|MS|MBA|PhD|BTech|BCA|HSC|SSC)(?:\s+[A-Za-z\s&,\.()]*)?)\s*(?:\(([A-Za-z\s,\.&-]*?)\))?\s*(\d{4})\s*[-–]\s*(\d{4})?/i;
+    const degreeMatch = degreePattern.exec(line);
+
+    if (degreeMatch) {
+      currentDegree = degreeMatch[1]?.trim() || '';
+      currentStartYear = degreeMatch[3] || '';
+      currentEndYear = degreeMatch[4] || '';
+      // School name should be on next line
+      if (i + 1 < lines.length) {
+        const nextLine = lines[i + 1]?.trim();
+        if (nextLine && !degreePattern.test(nextLine)) {
+          currentSchool = nextLine;
+          i++; // Skip school line
+
+          // Save entry
+          if (currentDegree && currentSchool) {
+            const key = `${currentSchool}|${currentDegree}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              education.push({
+                schoolName: currentSchool,
+                degree: currentDegree,
+                fieldOfStudy: extractFieldOfStudy(currentDegree),
+                startDate: currentStartYear,
+                endDate: currentEndYear,
+                description: '',
+              });
+            }
+          }
+          currentDegree = '';
+          currentSchool = '';
+          currentStartYear = '';
+          currentEndYear = '';
+        }
+      }
     }
   }
 
   return education;
+}
+
+/**
+ * Extract field of study from degree text
+ */
+function extractFieldOfStudy(degreeText: string): string {
+  // Look for "in X" or "of X" pattern
+  const match = /(?:in|of)\s+([A-Za-z\s&,\.]+?)(?:\s*[-,]|$)/i.exec(degreeText);
+  if (match) {
+    return match[1].trim();
+  }
+  // Look for content in parentheses
+  const parenMatch = /\(([A-Za-z\s,&\.]+)\)/.exec(degreeText);
+  if (parenMatch) {
+    return parenMatch[1].trim();
+  }
+  return 'General Studies';
 }
 
 /**
