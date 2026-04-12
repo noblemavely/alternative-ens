@@ -2,6 +2,55 @@
 
 All notable changes to the Alternative ENS platform are documented in this file.
 
+## [1.0.3] - 2026-04-12
+
+### ✅ Completed
+
+#### Multi-Currency Support for Projects
+- **Currency field added to projects**: Replaced single `hourlyRate` with separate `rate` and `currency` fields
+  - Updated `drizzle/schema.ts` projects table schema
+  - Created `shared/currencies.ts` with top 10 popular currencies (USD, EUR, GBP, JPY, INR, AUD, CAD, CHF, CNY, SEK)
+  - Added currency utility functions: `getCurrencySymbol()`, `getCurrencyName()`, `formatCurrency()`
+  - Default currency: USD with ISO 4217 code storage
+
+#### Project Form Enhancements
+- **Conditional rate labels**: Labels change based on project type
+  - Call projects: "Rate for 60-min Call"
+  - Advisory/ID projects: "Payout for Project"
+  - Default: "Rate"
+- **AddProject component**: Added currency selector dropdown with all popular currencies
+- **AdminProjectDetail component**: Added edit mode for rate/currency with same conditional label logic
+- **Server routers**: Updated create and update mutations to handle rate and currency separately
+- **Database schema**: Recreated projects table with correct columns (rate decimal(10,2), currency varchar(3))
+
+#### Seed Data
+- Updated all 6 seeded projects with realistic rates based on project type
+  - Call projects: $500-600
+  - Advisory projects: $5000-5500
+  - ID (Due Diligence) projects: $6500-7000
+- Multiple currencies in seed data: USD, EUR, GBP for testing
+
+### 🔄 In Progress
+
+### 📋 Pending
+
+- Resume parsing from uploaded PDFs (Claude API integration)
+- LinkedIn API enrichment for expert profiles
+- Admin dashboard performance optimization
+- Export functionality for expert profiles and projects
+
+### 🐛 Known Issues
+
+- None currently tracked
+
+### 📊 Statistics
+
+- **Total Commits**: 1 (since v1.0.2)
+- **Files Modified**: 6 (code implementation)
+- **New Files**: 1 (shared/currencies.ts)
+
+---
+
 ## [1.0.2] - 2026-04-12
 
 ### ✅ Completed

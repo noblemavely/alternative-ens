@@ -29,6 +29,20 @@
    - Description: Updated documentation for v1.0.2 release
    - Date Completed: April 12, 2026
 
+4. **Currency Support for Project Rates** (100%)
+   - Status: COMPLETED
+   - Commits: [4f56fec](https://github.com/noblemavely/alternative-ens/commit/4f56fec)
+   - Files Modified: drizzle/schema.ts, server/db.ts, server/routers.ts, client/src/pages/AddProject.tsx, client/src/pages/AdminProjectDetail.tsx, shared/currencies.ts
+   - Description: Implemented multi-currency support for project rates with conditional labels
+   - Features:
+     - Replaced `hourlyRate` with separate `rate` and `currency` fields
+     - Top 10 popular currencies (USD, EUR, GBP, JPY, INR, AUD, CAD, CHF, CNY, SEK)
+     - Conditional label rendering: "Rate for 60-min Call" (Call type), "Payout for Project" (Advisory/ID), "Rate" (default)
+     - Full CRUD support in both AddProject and AdminProjectDetail components
+     - Currency formatting utilities with symbols
+     - All 6 seed projects populated with realistic rates and mixed currencies
+   - Date Completed: April 12, 2026
+
 ### 🔄 In Progress
 
 None currently - awaiting new requirements/issues
