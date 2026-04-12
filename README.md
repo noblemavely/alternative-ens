@@ -209,11 +209,11 @@ node seed-db.mjs
 
 **Sample Data Includes:**
 - **5 Sectors** & **6 Functions** - Master lists for categorization
-- **3 Clients** with **6 Contacts** - Multi-contact client organizations
+- **3 Clients** with **6 Contacts** - Multi-contact client organizations (email removed from clients table, stored in clientContacts)
 - **5 Experts** with:
+  - Static resume PDF files (all 5 experts have CV attachments)
   - Employment history (6 records)
   - Education history (6 records)
-  - CV files (2 sample experts have CV uploads)
   - LinkedIn URLs and complete profiles
 - **6 Projects** with:
   - **10 screening questions** across all projects
@@ -561,8 +561,10 @@ Experts (Many) ──→ (Many) ExpertClientMapping ──→ Clients
 trpc.clients.create.useMutation({
   name: string,
   sector: string,
-  email: string,
-  phone: string
+  phone?: string,
+  companyName?: string,
+  companyWebsite?: string,
+  contactPerson?: string
 })
 
 // List clients with filters
@@ -577,14 +579,52 @@ trpc.clients.getById.useQuery(clientId)
 // Update client
 trpc.clients.update.useMutation({
   id: number,
-  name: string,
-  sector: string,
-  email: string,
-  phone: string
+  name?: string,
+  sector?: string,
+  phone?: string,
+  companyName?: string,
+  companyWebsite?: string,
+  contactPerson?: string
 })
 
 // Delete client
 trpc.clients.delete.useMutation(clientId)
+
+// Note: Email information is now stored in clientContacts table
+// See Client Contact Operations below
+```
+
+### Client Contact Operations
+
+```typescript
+// Create client contact
+trpc.clientContacts.create.useMutation({
+  clientId: number,
+  contactName: string,
+  email: string,
+  phone?: string,
+  role?: string,
+  workType?: string
+})
+
+// List contacts for a specific client
+trpc.clientContacts.listByClient.useQuery(clientId)
+
+// Get contact details
+trpc.clientContacts.getById.useQuery(contactId)
+
+// Update contact
+trpc.clientContacts.update.useMutation({
+  id: number,
+  contactName?: string,
+  email?: string,
+  phone?: string,
+  role?: string,
+  workType?: string
+})
+
+// Delete contact
+trpc.clientContacts.delete.useMutation(contactId)
 ```
 
 ### Expert Operations
@@ -899,7 +939,11 @@ For issues, questions, or feature requests:
 
 ---
 
-**Last Updated**: April 11, 2026 (PDF Viewer Implementation)
-**Version**: 1.0.1 (PDF Viewer Fix)
+**Last Updated**: April 12, 2026 (Client Data Architecture & Expert Resume PDFs)
+**Version**: 1.0.2 (Data Architecture Improvements)
 **Status**: Production Ready ✅
-**PDF Viewer**: ✅ Iframe-based Implementation (Browser Native)
+**Latest Features**: 
+- ✅ Email data moved from clients to clientContacts table
+- ✅ All 5 experts have static resume PDF files
+- ✅ Improved Admin Dashboard UI for clients
+- ✅ PDF Viewer: Iframe-based Implementation (Browser Native)

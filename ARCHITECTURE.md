@@ -1,9 +1,12 @@
 # Alternative ENS Platform - Architecture Documentation
 
-**Last Updated**: April 11, 2026 (PDF Viewer Implementation)  
-**Version**: 1.0.1 (PDF Viewer Architecture)  
+**Last Updated**: April 12, 2026 (Client Data Architecture & Expert Resume PDFs)  
+**Version**: 1.0.2 (Data Architecture Improvements)  
 **Status**: Production Ready ✅  
-**PDF Viewer**: ✅ Implemented with iframe-based browser native viewer
+**Latest Updates**:
+- ✅ Email data moved from clients to clientContacts table
+- ✅ All 5 experts have static resume PDF files
+- ✅ PDF Viewer: Implemented with iframe-based browser native viewer
 
 ## Table of Contents
 
