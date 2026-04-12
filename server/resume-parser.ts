@@ -60,44 +60,60 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
 function parseEmploymentHistory(text: string): ParsedEmployment[] {
   const employment: ParsedEmployment[] = [];
 
-  // Patterns to match employment entries
+  // More flexible patterns to match employment entries with various date formats
   const patterns = [
-    // Pattern: "Company Name - Position (MM/YYYY - MM/YYYY)"
-    /([A-Z][A-Za-z\s&,]*?)\s*[-–]\s*([A-Z][A-Za-z\s,]*?)\s*\((\d{1,2}\/\d{4})\s*[-–]\s*(?:(\d{1,2}\/\d{4})|Present|Current)\)/gi,
-    // Pattern: "Position at Company"
-    /([A-Z][A-Za-z\s]*?)\s+at\s+([A-Z][A-Za-z\s&,]*?)\s*\((\d{1,2}\/\d{4})\s*[-–]\s*(?:(\d{1,2}\/\d{4})|Present|Current)\)/gi,
+    // Pattern: "Company - Position | MM/YYYY - MM/YYYY"
+    /([A-Z][A-Za-z\s&,\.()]*?)\s*[-–|]\s*([A-Z][A-Za-z\s,\.()]*?)\s*\|?\s*(?:from\s+)?(\d{1,2}\/\d{4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})\s*(?:to\s+|-|–)?\s*(?:(\d{1,2}\/\d{4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})|Present|Current|Today|Ongoing)/gi,
+    // Pattern: "Position at Company" with dates
+    /([A-Z][A-Za-z\s]*?)\s+at\s+([A-Z][A-Za-z\s&,\.()]*?)\s*[-–|]\s*(?:from\s+)?(\d{1,2}\/\d{4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})\s*(?:to\s+|-|–)?\s*(?:(\d{1,2}\/\d{4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})|Present|Current|Today|Ongoing)/gi,
+    // Pattern: "Position, Company - Date range"
+    /([A-Z][A-Za-z\s]*?),?\s+([A-Z][A-Za-z\s&,\.()]*?)\s*[-–]\s*(?:from\s+)?(\d{1,2}\/\d{4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})\s*(?:to\s+|-|–)?\s*(?:(\d{1,2}\/\d{4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})|Present|Current|Today|Ongoing)/gi,
   ];
 
   const lines = text.split('\n');
+  const seen = new Set<string>();
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
+    if (!line || line.length < 5) continue;
 
     for (const pattern of patterns) {
       pattern.lastIndex = 0;
       const match = pattern.exec(line);
 
       if (match) {
+        const companyName = match[2]?.trim() || '';
+        const position = match[1]?.trim() || '';
+        const startDate = match[3]?.trim() || '';
+        const endDate = match[4]?.trim() || '';
+
+        // Skip if we've already added this combination
+        const key = `${companyName}|${position}`;
+        if (seen.has(key) || !companyName || !position) continue;
+        seen.add(key);
+
         const isCurrent = line.toLowerCase().includes('current') ||
                          line.toLowerCase().includes('present') ||
-                         !match[4];
+                         line.toLowerCase().includes('ongoing') ||
+                         line.toLowerCase().includes('today') ||
+                         !endDate;
 
         employment.push({
-          companyName: match[2].trim(),
-          position: match[1].trim(),
-          startDate: match[3],
-          endDate: match[4] || '',
+          companyName,
+          position,
+          startDate,
+          endDate: endDate || '',
           isCurrent,
-          description: '', // Description from next lines
+          description: '',
         });
 
         // Try to get description from following lines
         let desc = '';
-        for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+        for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
           const nextLine = lines[j].trim();
-          if (nextLine && !nextLine.match(/^[A-Z]/)) {
+          if (nextLine && nextLine.length > 3 && !nextLine.match(/^[A-Z][a-z]*\s+\d{4}|^[A-Z][a-z]+,?\s+[A-Z]|^\d{1,2}\/\d{4}/)) {
             desc += nextLine + ' ';
-          } else {
+          } else if (nextLine && nextLine.match(/^[A-Z][a-z]+\s+[A-Z]/)) {
             break;
           }
         }
@@ -117,34 +133,44 @@ function parseEmploymentHistory(text: string): ParsedEmployment[] {
 function parseEducationHistory(text: string): ParsedEducation[] {
   const education: ParsedEducation[] = [];
 
-  // Patterns to match education entries
+  // More flexible patterns for education entries
   const patterns = [
-    // Pattern: "Degree in Field of Study - School/University (Year)"
-    /([A-Za-z\s,\.]+?)\s+(?:in|of)\s+([A-Za-z\s,]*?)\s*[-–]?\s*([A-Z][A-Za-z\s&,]*?(?:University|School|College|Institute))\s*(?:\((\d{4})[-–]?(\d{4})?\))?/gi,
-    // Pattern: "School/University - Degree (Year)"
-    /([A-Z][A-Za-z\s&,]*?(?:University|School|College|Institute))\s*[-–]\s*([A-Za-z\s,\.]+?)\s*(?:\((\d{4})[-–]?(\d{4})?\))?/gi,
+    // Pattern: "Degree in Field of Study - School/University, Location (Year-Year)"
+    /([A-Za-z\s,\.()&-]+?)\s+(?:in|of)\s+([A-Za-z\s,\.()&-]*?)\s*[-–]?\s*([A-Z][A-Za-z\s&,\.()]*?(?:University|School|College|Institute|Academy))\s*(?:,\s*[A-Za-z\s,]+?)?\s*(?:\((\d{4})[-–]?(\d{4})?\))?/gi,
+    // Pattern: "School/University - Degree, Field (Year)"
+    /([A-Z][A-Za-z\s&,\.()]*?(?:University|School|College|Institute|Academy))\s*(?:,\s*[A-Za-z\s,]+?)?\s*[-–]\s*([A-Za-z\s,\.()&-]+?)\s*(?:in|of|,)?\s*([A-Za-z\s,\.()&-]*?)\s*(?:\((\d{4})[-–]?(\d{4})?\))?/gi,
+    // Pattern: "School - Degree" or "School\nDegree"
+    /([A-Z][A-Za-z\s&,\.()]*?(?:University|School|College|Institute|Academy))\s*(?:[-–]\s*)?(?:\(([A-Za-z\s,\.()&-]+?)\))?\s*(?:\((\d{4})[-–]?(\d{4})?\))?/gi,
   ];
+
+  const seen = new Set<string>();
 
   for (const pattern of patterns) {
     pattern.lastIndex = 0;
     let match;
 
     while ((match = pattern.exec(text)) !== null) {
-      // Avoid duplicates
-      const isDuplicate = education.some(
-        e => e.schoolName === match[3] && e.degree === match[1]
-      );
+      const schoolName = (match[1] || match[3])?.trim() || '';
+      const degree = (match[2] || match[4])?.trim() || '';
+      const fieldOfStudy = (match[3] || match[2])?.trim() || 'General Studies';
+      const startDate = match[4] || match[5] || '';
+      const endDate = match[5] || match[6] || '';
 
-      if (!isDuplicate) {
-        education.push({
-          schoolName: (match[3] || match[1]).trim(),
-          degree: (match[1] || match[2]).trim(),
-          fieldOfStudy: (match[2] || match[1]).trim(),
-          startDate: match[3] || match[4] || '',
-          endDate: match[4] || match[5] || '',
-          description: '',
-        });
-      }
+      // Skip if school name is too short or already added
+      if (schoolName.length < 3) continue;
+
+      const key = `${schoolName}|${degree}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      education.push({
+        schoolName,
+        degree: degree || 'Degree',
+        fieldOfStudy: fieldOfStudy || 'General Studies',
+        startDate: startDate?.toString() || '',
+        endDate: endDate?.toString() || '',
+        description: '',
+      });
     }
   }
 
