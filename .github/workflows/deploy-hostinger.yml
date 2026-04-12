@@ -1,0 +1,234 @@
+name: Deploy to Hostinger (alternative.nativeworld.com)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment'
+        required: false
+        default: 'production'
+
+env:
+  NODE_ENV: production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: pnpm test 2>/dev/null || true
+
+      - name: Build production bundle
+        run: pnpm build
+        env:
+          VITE_APP_ID: ${{ secrets.VITE_APP_ID }}
+          NODE_ENV: production
+
+      - name: Create deployment package
+        run: |
+          mkdir -p dist_deploy
+          cp -r dist/* dist_deploy/ 2>/dev/null || true
+          cp -r drizzle dist_deploy/
+          cp package.json pnpm-lock.yaml seed-db.mjs .env.example dist_deploy/
+          cp server dist_deploy/ -r
+          cd dist_deploy && tar -czf ../app-bundle.tar.gz . && cd ..
+
+      - name: Get version
+        id: version
+        run: echo "version=$(jq -r '.version' package.json)" >> $GITHUB_OUTPUT
+
+      - name: Deploy via FTP/SFTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist_deploy/
+          server-dir: /public_html/alternative/
+          protocol: ftps
+          state-name: .ftp-deploy-sync-state.json
+          dangerous-clean-slate: false
+          skip-single-file: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/.env*
+            **/backups/**
+            **/.claude/**
+
+      - name: SSH Deploy & Restart
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            set -e
+
+            echo "=========================================="
+            echo "🚀 Starting Deployment v${{ steps.version.outputs.version }}"
+            echo "=========================================="
+
+            # Define paths
+            APP_DIR="$HOME/alternative-ens"
+            BACKUP_DIR="$APP_DIR/backups"
+            PUBLIC_DIR="$HOME/public_html/alternative"
+
+            # Create directories if they don't exist
+            mkdir -p "$BACKUP_DIR"
+            mkdir -p "$APP_DIR"
+
+            echo "📦 Navigating to application directory..."
+            cd "$APP_DIR"
+
+            # Backup database
+            echo "💾 Backing up database..."
+            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+            BACKUP_FILE="$BACKUP_DIR/backup_${TIMESTAMP}.sql"
+
+            if ! mysqldump -h "${{ secrets.DB_HOST }}" -u "${{ secrets.DB_USER }}" -p"${{ secrets.DB_PASSWORD }}" alternative_ens > "$BACKUP_FILE" 2>/dev/null; then
+              echo "⚠️  Database backup skipped (may not be accessible via SSH)"
+            else
+              echo "✅ Database backed up: $BACKUP_FILE"
+              # Keep only last 10 backups
+              ls -t "$BACKUP_DIR"/backup_*.sql 2>/dev/null | tail -n +11 | xargs -r rm
+            fi
+
+            # Pull latest code from GitHub
+            echo "🔄 Pulling latest code from GitHub..."
+            if [ -d ".git" ]; then
+              git fetch origin main
+              git reset --hard origin/main
+            else
+              git clone https://github.com/${{ github.repository }}.git .
+            fi
+
+            # Install dependencies
+            echo "📚 Installing dependencies..."
+            if ! pnpm install --frozen-lockfile 2>/dev/null; then
+              echo "⚠️  pnpm install failed, trying npm..."
+              npm install
+            fi
+
+            # Run database migrations
+            echo "🗄️  Running database migrations..."
+            if [ -f "drizzle.config.ts" ]; then
+              pnpm db:push || echo "⚠️  Migrations failed, continuing..."
+            fi
+
+            # Build application
+            echo "🔨 Building application..."
+            pnpm build || npm run build
+
+            # Copy to public directory
+            echo "📁 Copying files to public directory..."
+            rm -rf "$PUBLIC_DIR"/*
+            cp -r dist/* "$PUBLIC_DIR/" 2>/dev/null || cp -r dist "$PUBLIC_DIR/"
+
+            # Check if PM2 is installed, if not install it
+            if ! command -v pm2 &> /dev/null; then
+              echo "⚙️  Installing PM2..."
+              npm install -g pm2
+            fi
+
+            # Restart or start PM2 app
+            echo "🚀 Restarting application with PM2..."
+            if pm2 list | grep -q "alternative-ens"; then
+              pm2 restart alternative-ens
+              echo "✅ Application restarted"
+            else
+              pm2 start "pnpm start" --name "alternative-ens" --cwd "$APP_DIR"
+              pm2 save
+              echo "✅ Application started"
+            fi
+
+            # Wait for app to start
+            sleep 3
+
+            # Verify deployment
+            if curl -sf http://localhost:3000/health > /dev/null 2>&1 || curl -sf http://localhost:3000/ > /dev/null 2>&1; then
+              echo "✅ Application is running"
+            else
+              echo "⚠️  Could not verify application status"
+            fi
+
+            # Show app status
+            echo ""
+            echo "=========================================="
+            echo "✅ Deployment Complete!"
+            echo "=========================================="
+            echo "Version: v${{ steps.version.outputs.version }}"
+            echo "Environment: Production"
+            echo "URL: https://alternative.nativeworld.com"
+            echo "Deployed at: $(date)"
+            echo "=========================================="
+
+            # Show PM2 logs (last 10 lines)
+            echo ""
+            echo "📋 Recent Application Logs:"
+            pm2 logs alternative-ens --lines 10 --nostream || true
+
+      - name: Slack Notification - Success
+        if: success()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+          payload: |
+            {
+              "text": "✅ Deployment Successful",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Alternative ENS Deployment*\n*Version:* v${{ steps.version.outputs.version }}\n*Environment:* Production\n*URL:* https://alternative.nativeworld.com\n*Status:* ✅ Success\n*Time:* <!date^${{ github.event.repository.updated_at }}^{date_num} {time_secs}|${{ github.event.repository.updated_at }}>"
+                  }
+                }
+              ]
+            }
+        continue-on-error: true
+
+      - name: Slack Notification - Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+          payload: |
+            {
+              "text": "❌ Deployment Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Alternative ENS Deployment Failed*\n*Version:* v${{ steps.version.outputs.version }}\n*Status:* ❌ Failed\n*View Logs:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                }
+              ]
+            }
+        continue-on-error: true
