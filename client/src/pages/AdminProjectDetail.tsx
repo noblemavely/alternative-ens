@@ -1,18 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Loader2, Trash2, Calendar, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, Calendar, CheckCircle, AlertCircle, Edit2, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRoute, useLocation } from "wouter";
 import { STATUS_LABELS, STATUS_COLORS } from "@shared/statusLabels";
+import { POPULAR_CURRENCIES } from "@/shared/currencies";
+import { formatCurrency } from "@/shared/currencies";
 
 export default function AdminProjectDetail() {
   const [, params] = useRoute("/admin/projects/:id");
   const [, navigate] = useLocation();
   const projectId = params?.id ? parseInt(params.id) : null;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState<any>(null);
 
   // Fetch project details
   const projectQuery = trpc.projects.getById.useQuery(
@@ -31,6 +36,19 @@ export default function AdminProjectDetail() {
     { projectId: projectId! },
     { enabled: !!projectId }
   );
+
+  // Update project mutation
+  const updateProjectMutation = trpc.projects.update.useMutation({
+    onSuccess: () => {
+      toast.success("Project updated");
+      setIsEditing(false);
+      projectQuery.refetch();
+      activityTimelineQuery.refetch();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to update project");
+    },
+  });
 
   // Update project status mutation
   const updateProjectStatusMutation = trpc.projects.update.useMutation({
@@ -118,32 +136,129 @@ export default function AdminProjectDetail() {
 
         {/* Project Details */}
         <Card className="border-slate-200 shadow-sm">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg">Project Information</CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsEditing(!isEditing);
+                if (!isEditing) {
+                  setEditData({
+                    rate: project.rate || "",
+                    currency: project.currency || "USD",
+                    description: project.description || "",
+                  });
+                }
+              }}
+            >
+              {isEditing ? <X size={16} className="mr-2" /> : <Edit2 size={16} className="mr-2" />}
+              {isEditing ? "Cancel" : "Edit"}
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-semibold text-slate-600">Type</label>
-                <p className="text-slate-900">{project.projectType}</p>
+            {isEditing ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600">Type</label>
+                    <p className="text-slate-900">{project.projectType}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 block mb-2">
+                      {project.projectType === "Call"
+                        ? "Rate for 60-min Call"
+                        : project.projectType === "Advisory" || project.projectType === "ID"
+                        ? "Payout for Project"
+                        : "Rate"}
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="Enter rate"
+                      value={editData?.rate || ""}
+                      onChange={(e) => setEditData({ ...editData, rate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 block mb-2">Currency</label>
+                    <Select
+                      value={editData?.currency || "USD"}
+                      onValueChange={(value) => setEditData({ ...editData, currency: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {POPULAR_CURRENCIES.map((currency) => (
+                          <SelectItem key={currency.code} value={currency.code}>
+                            {currency.code} - {currency.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 block mb-2">Description</label>
+                  <textarea
+                    placeholder="Project description..."
+                    className="w-full p-2 border border-slate-300 rounded-md"
+                    rows={4}
+                    value={editData?.description || ""}
+                    onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      updateProjectMutation.mutate({
+                        id: project.id,
+                        rate: editData.rate ? parseFloat(editData.rate) : undefined,
+                        currency: editData.currency || "USD",
+                        description: editData.description || undefined,
+                      });
+                    }}
+                    disabled={updateProjectMutation.isPending}
+                  >
+                    {updateProjectMutation.isPending ? "Saving..." : "Save Changes"}
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsEditing(false)}>
+                    Cancel
+                  </Button>
+                </div>
               </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-600">Hourly Rate</label>
-                <p className="text-slate-900">${project.hourlyRate}</p>
-              </div>
-              <div className="md:col-span-2">
-                <label className="text-xs font-semibold text-slate-600">Target Companies</label>
-                <p className="text-slate-900">{project.targetCompanies || "N/A"}</p>
-              </div>
-              <div className="md:col-span-2">
-                <label className="text-xs font-semibold text-slate-600">Target Persona</label>
-                <p className="text-slate-900">{project.targetPersona || "N/A"}</p>
-              </div>
-            </div>
-            {project.description && (
-              <div>
-                <label className="text-xs font-semibold text-slate-600">Description</label>
-                <p className="text-slate-700 text-sm whitespace-pre-wrap">{project.description}</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Type</label>
+                  <p className="text-slate-900">{project.projectType}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">
+                    {project.projectType === "Call"
+                      ? "Rate for 60-min Call"
+                      : project.projectType === "Advisory" || project.projectType === "ID"
+                      ? "Payout for Project"
+                      : "Rate"}
+                  </label>
+                  <p className="text-slate-900">
+                    {project.rate ? formatCurrency(project.rate, project.currency || "USD") : "N/A"}
+                  </p>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-xs font-semibold text-slate-600">Target Companies</label>
+                  <p className="text-slate-900">{project.targetCompanies || "N/A"}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-xs font-semibold text-slate-600">Target Persona</label>
+                  <p className="text-slate-900">{project.targetPersona || "N/A"}</p>
+                </div>
+                {project.description && (
+                  <div className="md:col-span-2">
+                    <label className="text-xs font-semibold text-slate-600">Description</label>
+                    <p className="text-slate-700 text-sm whitespace-pre-wrap">{project.description}</p>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
+import { POPULAR_CURRENCIES } from "@/shared/currencies";
 
 const projectSchema = z.object({
   name: z.string().min(1, "Project name is required"),

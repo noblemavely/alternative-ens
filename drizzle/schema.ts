@@ -140,7 +140,8 @@ export const projects = mysqlTable("projects", {
   projectType: mysqlEnum("projectType", ["Call", "Advisory", "ID"]).notNull(),
   targetCompanies: text("targetCompanies"), // Comma-separated or JSON
   targetPersona: text("targetPersona"),
-  hourlyRate: decimal("hourlyRate", { precision: 10, scale: 2 }),
+  rate: decimal("rate", { precision: 10, scale: 2 }),
+  currency: varchar("currency", { length: 3 }).default("USD").notNull(), // ISO 4217 currency code
   status: mysqlEnum("status", ["Active", "On Hold", "Closed"]).default("Active").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

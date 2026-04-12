@@ -543,7 +543,8 @@ export const appRouter = router({
           projectType: z.enum(["Call", "Advisory", "ID"]),
           targetCompanies: z.string().optional(),
           targetPersona: z.string().optional(),
-          hourlyRate: z.number().optional(),
+          rate: z.number().optional(),
+          currency: z.string().default("USD"),
         })
       )
       .mutation(async ({ input }) => {
@@ -552,7 +553,8 @@ export const appRouter = router({
           description: input.description ?? null,
           targetCompanies: input.targetCompanies ?? null,
           targetPersona: input.targetPersona ?? null,
-          hourlyRate: input.hourlyRate ? input.hourlyRate.toString() : null,
+          rate: input.rate ? input.rate.toString() : null,
+          currency: input.currency || "USD",
         };
         const project = await createProject(projectData);
         return project;
@@ -585,7 +587,8 @@ export const appRouter = router({
           scope: z.string().optional(),
           type: z.enum(["Call", "Advisory", "ID"]).optional(),
           targetCompanies: z.string().optional(),
-          hourlyRate: z.number().optional(),
+          rate: z.number().optional(),
+          currency: z.string().optional(),
           status: z.enum(["Active", "On Hold", "Closed"]).optional(),
         })
       )
@@ -611,7 +614,8 @@ export const appRouter = router({
         const normalizedData = {
           ...data,
           ...(status && { status }),
-          hourlyRate: data.hourlyRate ? data.hourlyRate.toString() : undefined,
+          rate: data.rate ? data.rate.toString() : undefined,
+          currency: data.currency || undefined,
           type: data.type ? (data.type as "Call" | "Advisory" | "ID") : undefined,
         };
         await updateProject(id, normalizedData);
