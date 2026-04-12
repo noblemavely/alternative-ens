@@ -303,7 +303,7 @@ Verify that the website is accessible at the production domain.
 1. **Check Domain Accessibility:**
    ```bash
    # From your local machine
-   curl -I https://alternative.nativeworld.com/
+   curl -I https://alternatives.nativeworld.com/
    
    # Should show HTTP/2 200 or 301
    ```
@@ -311,20 +311,20 @@ Verify that the website is accessible at the production domain.
 2. **Check SSL Certificate:**
    ```bash
    # Verify SSL is valid
-   curl -v https://alternative.nativeworld.com/ 2>&1 | grep "SSL\|certificate"
+   curl -v https://alternatives.nativeworld.com/ 2>&1 | grep "SSL\|certificate"
    
    # Should show: "SSL certificate verify ok"
    ```
 
 3. **Load Website in Browser:**
-   - Open: https://alternative.nativeworld.com/
+   - Open: https://alternatives.nativeworld.com/
    - Should see: Alternative ENS homepage
    - Check: No SSL warnings
 
 4. **Test API Endpoints:**
    ```bash
    # Test from local machine
-   curl -s https://alternative.nativeworld.com/api/trpc/auth.me | jq .
+   curl -s https://alternatives.nativeworld.com/api/trpc/auth.me | jq .
    
    # Should return JSON response
    ```
@@ -332,7 +332,7 @@ Verify that the website is accessible at the production domain.
 5. **Check DNS Resolution:**
    ```bash
    # Verify DNS points to Hostinger
-   nslookup alternative.nativeworld.com
+   nslookup alternatives.nativeworld.com
    
    # Should show: 82.112.229.19 (Hostinger IP)
    ```
@@ -349,7 +349,7 @@ Verify that the website is accessible at the production domain.
 # If website is not accessible:
 
 # 1. Check if DNS has propagated
-nslookup alternative.nativeworld.com
+nslookup alternatives.nativeworld.com
 # Wait 5-60 minutes for DNS propagation
 
 # 2. Check Hostinger subdomain configuration
@@ -415,7 +415,7 @@ Verify that pushing code automatically deploys the latest version.
 5. **Verify Changes are Live:**
    ```bash
    # Fetch the updated page
-   curl https://alternative.nativeworld.com/ | grep "new-content-you-added"
+   curl https://alternatives.nativeworld.com/ | grep "new-content-you-added"
    ```
 
 ### Success Criteria
@@ -548,7 +548,7 @@ Once all tests pass, your deployment pipeline is fully functional and ready for 
    bash .claude/deploy-to-hostinger.sh "feature" "Description" "patch"
    ```
 4. **Monitor GitHub Actions**
-5. **Verify on production** at https://alternative.nativeworld.com
+5. **Verify on production** at https://alternatives.nativeworld.com
 
 ---
 

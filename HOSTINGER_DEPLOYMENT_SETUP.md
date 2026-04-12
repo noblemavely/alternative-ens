@@ -1,6 +1,6 @@
 # Hostinger Deployment Setup Guide
 
-**Subdomain:** `alternative.nativeworld.com`  
+**Subdomain:** `alternatives.nativeworld.com`  
 **Platform:** Hostinger Shared/VPS Hosting  
 **CI/CD:** GitHub Actions → Hostinger SSH/FTP
 
@@ -37,7 +37,7 @@
 
 4. **Node.js Application:**
    - Go to: **Hosting** → **Node.js Applications**
-   - Check if already created for `alternative.nativeworld.com`
+   - Check if already created for `alternatives.nativeworld.com`
    - If not, create one:
      - **Application Name:** `alternative-ens`
      - **Node.js Version:** 20 LTS
@@ -242,7 +242,7 @@ curl http://localhost:3000/health || curl http://localhost:3000/
 
 4. **Verify:**
    ```bash
-   nslookup alternative.nativeworld.com
+   nslookup alternatives.nativeworld.com
    ```
 
 ---
@@ -252,13 +252,13 @@ curl http://localhost:3000/health || curl http://localhost:3000/
 ### In Hostinger Panel:
 
 1. **Go to:** Domains → Your Domain → SSL/TLS
-2. **Install Free SSL Certificate** for `alternative.nativeworld.com`
+2. **Install Free SSL Certificate** for `alternatives.nativeworld.com`
 3. Hostinger auto-configures HTTPS
 
 ### Verify SSL:
 
 ```bash
-curl -I https://alternative.nativeworld.com
+curl -I https://alternatives.nativeworld.com
 # Should show: HTTP/2 200
 ```
 
@@ -285,10 +285,10 @@ git push origin main
 
 ```bash
 # Should load your app
-curl https://alternative.nativeworld.com
+curl https://alternatives.nativeworld.com
 
 # Check API
-curl https://alternative.nativeworld.com/api/trpc/auth.me
+curl https://alternatives.nativeworld.com/api/trpc/auth.me
 ```
 
 ---

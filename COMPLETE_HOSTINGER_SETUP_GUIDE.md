@@ -1,6 +1,6 @@
 # Complete Hostinger Deployment Setup Guide
 
-**Domain:** alternative.nativeworld.com  
+**Domain:** alternatives.nativeworld.com  
 **Hosting:** Hostinger Business Plan  
 **Server IP:** 82.112.229.19  
 **Database:** u263459454_alternative  
@@ -347,7 +347,7 @@ bash .claude/deploy-to-hostinger.sh "test" "Testing deployment workflow" "patch"
 
 ```bash
 # Option 1: Check from local machine
-curl -I https://alternative.nativeworld.com/
+curl -I https://alternatives.nativeworld.com/
 
 # Option 2: SSH into Hostinger and check
 ssh -p 65002 u263459454@82.112.229.19
@@ -463,7 +463,7 @@ You can now:
 
 ```
 FTP Server: 82.112.229.19
-FTP Username: u263459454.alternative.nativeworld.com
+FTP Username: u263459454.alternatives.nativeworld.com
 FTP Port: 21
 
 SSH Server: 82.112.229.19
@@ -474,7 +474,7 @@ Database Host: 82.112.229.19
 Database Name: u263459454_alternative
 Database Username: u263459454_alternative
 
-Production URL: https://alternative.nativeworld.com
+Production URL: https://alternatives.nativeworld.com
 ```
 
 ---

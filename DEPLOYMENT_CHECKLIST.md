@@ -1,6 +1,6 @@
 # Hostinger Deployment Checklist
 
-**Domain:** alternative.nativeworld.com  
+**Domain:** alternatives.nativeworld.com  
 **Status:** Setup in Progress  
 **Last Updated:** $(date)
 
@@ -9,7 +9,7 @@
 ## ✅ Pre-Deployment Checklist
 
 ### Hostinger Account Setup
-- [ ] Have Hostinger account with subdomain `alternative.nativeworld.com` created
+- [ ] Have Hostinger account with subdomain `alternatives.nativeworld.com` created
 - [ ] SSH access configured (or password available)
 - [ ] FTP/SFTP access configured
 - [ ] MySQL database `alternative_ens` created
@@ -141,8 +141,8 @@
 
 5. **Verify in production:**
    ```bash
-   curl https://alternative.nativeworld.com/
-   curl https://alternative.nativeworld.com/api/trpc/auth.me
+   curl https://alternatives.nativeworld.com/
+   curl https://alternatives.nativeworld.com/api/trpc/auth.me
    ```
    - [ ] Application loads
    - [ ] API responding
@@ -223,7 +223,7 @@ pm2 restart alternative-ens
 
 Current Version: `1.0.3`  
 Last Deployment: `2026-04-12T22:10:00Z`  
-Production URL: `https://alternative.nativeworld.com`
+Production URL: `https://alternatives.nativeworld.com`
 
 ### Version Bump Strategy
 - **patch** (1.0.3 → 1.0.4): Bug fixes, small improvements
@@ -271,7 +271,7 @@ Production URL: `https://alternative.nativeworld.com`
 3. **Initial Deployment**
    - [ ] SSH into Hostinger server
    - [ ] Follow "Initial Server Setup" section
-   - [ ] Test application loads at https://alternative.nativeworld.com
+   - [ ] Test application loads at https://alternatives.nativeworld.com
 
 4. **Enable Monitoring**
    - [ ] Set up Slack webhook (optional)
