@@ -178,6 +178,15 @@ export default function ExpertPortal() {
     }
   };
 
+  // Watch form fields for completion tracking
+  const watchedFirstName = profileForm.watch("firstName");
+  const watchedLastName = profileForm.watch("lastName");
+  const watchedEmail = profileForm.watch("email");
+  const watchedPhone = profileForm.watch("phone");
+  const watchedSector = profileForm.watch("sector");
+  const watchedFunction = profileForm.watch("function");
+  const watchedBiography = profileForm.watch("biography");
+
   // Calculate form completion percentage
   useEffect(() => {
     if (step !== "profile") return;
@@ -211,13 +220,13 @@ export default function ExpertPortal() {
     }
     setFormSteps(newSteps);
   }, [
-    profileForm.watch("firstName"),
-    profileForm.watch("lastName"),
-    profileForm.watch("email"),
-    profileForm.watch("phone"),
-    profileForm.watch("sector"),
-    profileForm.watch("function"),
-    profileForm.watch("biography"),
+    watchedFirstName,
+    watchedLastName,
+    watchedEmail,
+    watchedPhone,
+    watchedSector,
+    watchedFunction,
+    watchedBiography,
     employmentHistory,
     educationHistory,
     step,
