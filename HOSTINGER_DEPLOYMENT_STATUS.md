@@ -34,13 +34,15 @@
   - No restarts needed
 - Server responding on `http://localhost:3000/` ✅
 
-### Phase 5: Configure Apache Proxy
-- **Status**: ⚠️ In Progress
-- Created `.htaccess` with Apache proxy configuration
-- Node.js server working locally on port 3000
+### Phase 5: Configure LiteSpeed Proxy
+- **Status**: ⚠️ Needs Configuration
+- **CRITICAL FINDING**: Hostinger uses LiteSpeed, not Apache!
+- Node.js server working perfectly on port 3000
 - **Issue**: HTTPS domain returning 403 Forbidden
-  - Likely cause: mod_proxy module not enabled on Hostinger shared hosting
-  - Alternative solutions being explored
+  - **Root Cause**: Using Apache .htaccess for LiteSpeed server
+  - **Solution**: Configure via Hostinger hPanel or LiteSpeed native settings
+  - Server Header: `LiteSpeed` (not Apache)
+  - HTTP/2 enabled, TLS 1.3 working perfectly
 
 ## 🔗 Current Accessibility
 
@@ -50,27 +52,56 @@
 | `https://alternatives.nativeworld.com/` | ❌ 403 Forbidden | Apache proxy not working; needs hPanel config |
 | Local machine `http://localhost:3000/` | ✅ Works | Development build verification |
 
-## 📋 Next Steps
+## 📋 Next Steps: Configure LiteSpeed Proxy
 
-### Option 1: Enable mod_proxy on Hostinger (Recommended)
-1. Log into Hostinger hPanel
-2. Navigate to Domains → alternatives.nativeworld.com
-3. Check for "Proxy" or "Custom Proxy" settings
-4. Enable mod_proxy support or contact Hostinger support to enable it
-5. Once enabled, the `.htaccess` configuration should work
+### Configuration Instructions (Hostinger hPanel)
 
-### Option 2: Alternative Routing Configuration
-If mod_proxy is not available, consider:
-1. Configuring subdomain settings in hPanel to route to custom port
-2. Using Node.js application server directly without Apache proxy
-3. Requesting Hostinger support to enable mod_proxy_http
+1. **Log into Hostinger hPanel**
+   - URL: https://hpanel.hostinger.com
+   - Username: your-hostinger-account
 
-### Option 3: Verify Configuration Through Browser
-Once mod_proxy is enabled, access `https://alternatives.nativeworld.com/` in a browser to verify:
-- Homepage loads correctly
-- React app renders
-- API endpoints respond
-- Database queries work
+2. **Navigate to Domains**
+   - Click "Domains" in the left sidebar
+   - Find and click "alternatives.nativeworld.com"
+
+3. **Configure Proxy Settings**
+   - Look for "Proxy" or "Reverse Proxy" settings
+   - Or find "Advanced" tab
+   - Set proxy to: `http://localhost:3000`
+   - Save configuration
+
+4. **Alternative: LiteSpeed Native Configuration**
+   - Access LiteSpeed WebAdmin Console (if available)
+   - Navigate to Virtual Hosts → alternatives.nativeworld.com
+   - Configure Context for "/" to proxy to `http://127.0.0.1:3000`
+   - Gracefully restart LiteSpeed
+
+5. **Verify Configuration**
+   ```bash
+   # After configuration, test in browser or command line
+   curl https://alternatives.nativeworld.com/
+   ```
+   - Should return HTML from React app (not 403)
+   - Check browser console for any errors
+
+### If hPanel Options Not Visible
+
+1. **Contact Hostinger Support**
+   - Explain: "We have a Node.js application running on port 3000. Need LiteSpeed to proxy requests from domain to localhost:3000"
+   - Request: Enable reverse proxy for subdomain
+
+2. **Temporary Workaround**
+   - Access via direct IP+port if available
+   - Or use SSH tunneling to access via localhost:3000 remotely
+
+### Verification Checklist
+Once proxy is configured, verify:
+- [ ] `curl https://alternatives.nativeworld.com/` returns HTML
+- [ ] Browser access to domain works without 403
+- [ ] React homepage loads
+- [ ] API endpoints respond (check Network tab in DevTools)
+- [ ] Database queries work
+- [ ] No console errors in browser DevTools
 
 ## 🗂️ Files on Hostinger Server
 
@@ -115,11 +146,13 @@ APOLLO_API_KEY=[configured]
 
 ## 🐛 Known Issues
 
-1. **HTTPS Proxy Returns 403**
-   - Status: Investigating
-   - Cause: mod_proxy likely disabled on shared hosting
-   - Workaround: Configure via hPanel or enable in server settings
-   - Impact: Domain HTTPS access not working; localhost works
+1. **HTTPS Domain Returns 403 Forbidden**
+   - **Status**: IDENTIFIED - Root cause found!
+   - **Cause**: Hostinger uses LiteSpeed web server, not Apache
+   - **Evidence**: Server header shows "LiteSpeed", TLS 1.3/HTTP/2 all working
+   - **Fix**: Configure LiteSpeed proxy via Hostinger hPanel (see "Next Steps" above)
+   - **Impact**: Domain HTTPS access blocked; localhost:3000 works perfectly
+   - **Priority**: HIGH - Need hPanel configuration to complete deployment
 
 ## 💡 Architecture
 
