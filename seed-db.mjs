@@ -7,7 +7,7 @@ async function seedDatabase() {
   let connection;
   try {
     // Parse DATABASE_URL
-    const url = new URL(DATABASE_URL);
+    const url = new URL(process.env.DATABASE_URL);
     const config = {
       host: url.hostname,
       user: url.username,
@@ -271,7 +271,7 @@ async function seedDatabase() {
         projectType: 'Advisory',
         targetCompanies: 'Fortune 500 Tech Companies',
         targetPersona: 'CTO, VP Engineering',
-        hourlyRate: '250.00',
+        rate: '250.00',
       },
       {
         clientContactId: clientContactIds[1],
@@ -280,7 +280,7 @@ async function seedDatabase() {
         projectType: 'Call',
         targetCompanies: 'FAANG Companies',
         targetPersona: 'Senior ML Engineer, Research Scientist',
-        hourlyRate: '200.00',
+        rate: '200.00',
       },
       {
         clientContactId: clientContactIds[2],
@@ -289,7 +289,7 @@ async function seedDatabase() {
         projectType: 'Advisory',
         targetCompanies: 'Investment Banks',
         targetPersona: 'CFO, VP Finance',
-        hourlyRate: '300.00',
+        rate: '300.00',
       },
       {
         clientContactId: clientContactIds[3],
@@ -298,7 +298,7 @@ async function seedDatabase() {
         projectType: 'ID',
         targetCompanies: 'Fintech Startups, Banks',
         targetPersona: 'Industry Expert, Analyst',
-        hourlyRate: '180.00',
+        rate: '180.00',
       },
       {
         clientContactId: clientContactIds[4],
@@ -307,7 +307,7 @@ async function seedDatabase() {
         projectType: 'Call',
         targetCompanies: 'Healthcare Systems',
         targetPersona: 'CIO, VP Operations',
-        hourlyRate: '280.00',
+        rate: '280.00',
       },
       {
         clientContactId: clientContactIds[5],
@@ -316,15 +316,15 @@ async function seedDatabase() {
         projectType: 'ID',
         targetCompanies: 'Healthcare Consultants',
         targetPersona: 'Compliance Expert, Regulatory Specialist',
-        hourlyRate: '220.00',
+        rate: '220.00',
       },
     ];
     
     const projectIds = [];
     for (const project of projects) {
       const [result] = await connection.execute(
-        'INSERT INTO projects (clientContactId, name, description, projectType, targetCompanies, targetPersona, hourlyRate) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [project.clientContactId, project.name, project.description, project.projectType, project.targetCompanies, project.targetPersona, project.hourlyRate]
+        'INSERT INTO projects (clientContactId, name, description, projectType, targetCompanies, targetPersona, rate) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [project.clientContactId, project.name, project.description, project.projectType, project.targetCompanies, project.targetPersona, project.rate]
       );
       projectIds.push(result.insertId);
     }

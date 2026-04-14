@@ -28,6 +28,18 @@ export const ENV = new Proxy({}, {
         return process.env.CLAUDE_API_KEY ?? "";
       case "apolloApiKey":
         return process.env.APOLLO_API_KEY ?? "";
+      case "smtpHost":
+        return process.env.SMTP_HOST ?? "";
+      case "smtpPort":
+        return parseInt(process.env.SMTP_PORT || "587");
+      case "smtpUser":
+        return process.env.SMTP_USER ?? "";
+      case "smtpPassword":
+        return process.env.SMTP_PASSWORD ?? "";
+      case "smtpFromEmail":
+        return process.env.SMTP_FROM_EMAIL ?? "";
+      case "smtpFromName":
+        return process.env.SMTP_FROM_NAME ?? "Alternatives Team";
       default:
         return undefined;
     }

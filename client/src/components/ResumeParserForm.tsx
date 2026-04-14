@@ -26,11 +26,12 @@ interface ParsedData {
 }
 
 interface ResumeParserFormProps {
-  onParsed: (data: ParsedData) => void;
+  onParsed: (data: ParsedData, file?: File) => void;
+  onSkip?: () => void;
   isLoading?: boolean;
 }
 
-export default function ResumeParserForm({ onParsed, isLoading = false }: ResumeParserFormProps) {
+export default function ResumeParserForm({ onParsed, onSkip, isLoading = false }: ResumeParserFormProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [parsedData, setParsedData] = useState<ParsedData | null>(null);
@@ -118,7 +119,7 @@ export default function ResumeParserForm({ onParsed, isLoading = false }: Resume
 
   const handleApplyParsedData = () => {
     if (parsedData) {
-      onParsed(parsedData);
+      onParsed(parsedData, file || undefined);
       toast.success("Resume data applied to your profile!");
     }
   };
@@ -255,13 +256,25 @@ export default function ResumeParserForm({ onParsed, isLoading = false }: Resume
                   </Alert>
                 )}
 
-                <Button
-                  onClick={handleApplyParsedData}
-                  className="w-full bg-primary hover:bg-primary/90"
-                  disabled={isLoading}
-                >
-                  Apply to Profile
-                </Button>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handleApplyParsedData}
+                    className="flex-1 bg-primary hover:bg-primary/90"
+                    disabled={isLoading}
+                  >
+                    Apply Data
+                  </Button>
+                  {onSkip && (
+                    <Button
+                      onClick={onSkip}
+                      variant="outline"
+                      className="flex-1"
+                      disabled={isLoading}
+                    >
+                      Continue
+                    </Button>
+                  )}
+                </div>
 
                 <Button
                   onClick={() => {

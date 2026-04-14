@@ -68,10 +68,13 @@ import {
   getExpertActivityTimeline,
   createProjectActivityEvent,
   getProjectActivityTimeline,
+  getDb,
 } from "./db";
 import { storagePut, storageGet } from "./storage";
 import { nanoid } from "nanoid";
 import { parseLinkedInProfile, isValidLinkedInUrl } from "./linkedinParser";
+import { sql } from "drizzle-orm";
+import { expertVerification } from "../drizzle/schema";
 import { getLinkedInAuthUrl, exchangeCodeForToken, fetchLinkedInProfile } from "./linkedinOAuth";
 
 const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
@@ -871,54 +874,97 @@ export const appRouter = router({
     sendVerificationEmail: publicProcedure
       .input(z.object({ email: z.string().email() }))
       .mutation(async ({ input }) => {
-        let expert = await getExpertByEmail(input.email);
-        const token = nanoid(32);
-        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-        
-        if (!expert) {
-          // Create unverified expert
-          await createExpert({
-            email: input.email,
-            isVerified: false,
-            verificationToken: token,
-            verificationTokenExpiry: expiresAt,
-            phone: null,
-            firstName: null,
-            lastName: null,
-            sector: null,
-            function: null,
-            biography: null,
-            linkedinUrl: null,
-            cvUrl: null,
-            cvKey: null,
+        try {
+          const { sendEmail, getVerificationEmailContent } = await import("./email");
+
+          let expert = await getExpertByEmail(input.email);
+          const token = nanoid(32);
+          const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+          if (!expert) {
+            // Create unverified expert
+            await createExpert({
+              email: input.email,
+              isVerified: false,
+              verificationToken: token,
+              verificationTokenExpiry: expiresAt,
+              phone: null,
+              firstName: null,
+              lastName: null,
+              sector: null,
+              function: null,
+              biography: null,
+              linkedinUrl: null,
+              cvUrl: null,
+              cvKey: null,
+            });
+            expert = await getExpertByEmail(input.email);
+          }
+
+          if (expert) {
+            // Generate a 6-digit numeric code for user-friendly verification
+            const numericCode = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
+            // Also keep the full token for URL-based verification
+            const fullToken = nanoid(32);
+
+            await createExpertVerification({
+              expertId: expert.id,
+              token: numericCode, // Store the 6-digit code as the primary token for manual entry
+              expiresAt,
+            });
+
+            // Send verification email
+            try {
+              const appUrl = (process.env.APP_URL || 'https://alternatives.nativeworld.com').replace(/\/$/, '');
+              // Use full token for URL, numeric code for manual entry
+              const verificationUrl = `${appUrl}/verify-email?token=${fullToken}`;
+
+              const { html, text } = getVerificationEmailContent(verificationUrl, numericCode);
+
+              await sendEmail({
+                to: input.email,
+                subject: 'Verify Your Email - Alternatives',
+                html,
+                text,
+              });
+
+              console.log(`[sendVerificationEmail] Email sent to ${input.email}`);
+              return {
+                success: true,
+                message: "Verification email sent! Please check your inbox."
+              };
+            } catch (emailError) {
+              console.error(`[sendVerificationEmail] Email sending failed:`, emailError);
+              // Don't fail the entire request if email sending fails
+              return {
+                success: true,
+                message: "Verification created but email sending failed. Please contact support."
+              };
+            }
+          }
+
+          return { success: false, message: "Failed to create expert record" };
+        } catch (error) {
+          console.error('[sendVerificationEmail] Error:', error);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to process verification email request',
           });
-          expert = await getExpertByEmail(input.email);
         }
-        
-        if (expert) {
-          await createExpertVerification({
-            expertId: expert.id,
-            token,
-            expiresAt,
-          });
-        }
-        // For testing, return the token so it can be displayed in UI
-        return { success: true, token, message: "Verification code sent! Use the code below for testing." };
       }),
 
     verifyEmail: publicProcedure
       .input(z.object({ token: z.string() }))
       .mutation(async ({ input }) => {
-        // Accept dummy code 123456 for testing
-        if (input.token === "123456") {
-          return { success: true };
-        }
-        
+        // Accept the token (either 6-digit code for manual entry, or full token for URL)
         const verification = await getVerificationByToken(input.token);
-        if (!verification) throw new TRPCError({ code: "NOT_FOUND", message: "Invalid token" });
+
+        if (!verification) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Invalid verification code" });
+        }
 
         if (verification.expiresAt < new Date()) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Token expired" });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Verification code expired" });
         }
 
         await updateExpert(verification.expertId, { isVerified: true, verificationToken: null });

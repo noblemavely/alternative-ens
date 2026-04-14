@@ -36,31 +36,53 @@ export async function enrichLinkedInProfile(
   linkedinUrl: string
 ): Promise<LinkedInEnrichmentResult> {
   try {
-    // If Apollo API key is not configured, return a message
-    if (!ENV.apolloApiKey) {
-      return {
-        success: false,
-        message:
-          "LinkedIn enrichment service not configured. Please set APOLLO_API_KEY in environment variables.",
-      };
-    }
-
-    // Extract LinkedIn ID from URL
-    // URL formats:
-    // - https://linkedin.com/in/john-doe
-    // - https://www.linkedin.com/in/john-doe/
+    // Validate LinkedIn URL format first
     const urlMatch = linkedinUrl.match(
       /linkedin\.com\/in\/([a-z0-9\-]+)\/?/i
     );
     if (!urlMatch) {
       return {
         success: false,
-        message: "Invalid LinkedIn URL format",
+        message: "Invalid LinkedIn URL format. Please provide a valid LinkedIn profile URL.",
       };
     }
 
-    const linkedInId = urlMatch[1];
+    // Try Apollo.io enrichment first (if configured)
+    if (ENV.apolloApiKey) {
+      console.log("[LinkedIn Enrichment] Attempting Apollo.io enrichment");
+      const apolloResult = await tryApolloEnrichment(linkedinUrl);
+      if (apolloResult.success) {
+        return apolloResult;
+      }
+      console.warn("[LinkedIn Enrichment] Apollo.io enrichment failed:", apolloResult.message);
+    } else {
+      console.warn("[LinkedIn Enrichment] Apollo API key not configured");
+    }
 
+    // Fallback: Return basic success with profile URL extracted from LinkedIn
+    // In production, this could fall back to LinkedIn OAuth or other enrichment services
+    console.log("[LinkedIn Enrichment] Using fallback: basic profile parsing");
+    return {
+      success: true,
+      profileUrl: linkedinUrl,
+      message: "Profile URL accepted. Please fill in additional details manually.",
+    };
+  } catch (error) {
+    console.error("[LinkedIn Enrichment] Unexpected error:", error);
+    return {
+      success: false,
+      message: "An unexpected error occurred while fetching your LinkedIn profile. Please try again.",
+    };
+  }
+}
+
+/**
+ * Try to enrich using Apollo.io API
+ */
+async function tryApolloEnrichment(
+  linkedinUrl: string
+): Promise<LinkedInEnrichmentResult> {
+  try {
     // Call Apollo.io API
     // Documentation: https://apolloio.com/api
     const response = await fetch("https://api.apollo.io/v1/people/search", {
@@ -68,7 +90,7 @@ export async function enrichLinkedInProfile(
       headers: {
         "Content-Type": "application/json",
         "Cache-Control": "no-cache",
-        "X-Api-Key": ENV.apolloApiKey,
+        "X-Api-Key": ENV.apolloApiKey || "",
       },
       body: JSON.stringify({
         linkedin_url: linkedinUrl,
@@ -82,7 +104,7 @@ export async function enrichLinkedInProfile(
       );
       return {
         success: false,
-        message: `API error: ${response.statusText}`,
+        message: `Apollo.io API error: ${response.statusText}`,
       };
     }
 
@@ -94,7 +116,7 @@ export async function enrichLinkedInProfile(
     if (!person) {
       return {
         success: false,
-        message: "Profile not found in enrichment service",
+        message: "Profile not found in Apollo.io database",
       };
     }
 
@@ -138,10 +160,10 @@ export async function enrichLinkedInProfile(
           : undefined,
     };
   } catch (error) {
-    console.error("[LinkedIn Enrichment] Error:", error);
+    console.error("[LinkedIn Enrichment] Apollo.io error:", error);
     return {
       success: false,
-      message: "Failed to enrich LinkedIn profile",
+      message: "Failed to fetch from Apollo.io",
     };
   }
 }

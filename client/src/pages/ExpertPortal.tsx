@@ -41,6 +41,7 @@ export default function ExpertPortal() {
   const [parsingLinkedin, setParsingLinkedin] = useState(false);
   const [showResumeResetDialog, setShowResumeResetDialog] = useState(false);
   const [pendingResumeData, setPendingResumeData] = useState<any>(null);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [linkedinProfileFetched, setLinkedinProfileFetched] = useState(false);
   const [employmentHistory, setEmploymentHistory] = useState<any[]>([]);
   const [educationHistory, setEducationHistory] = useState<any[]>([]);
@@ -130,9 +131,8 @@ export default function ExpertPortal() {
     try {
       const result = await sendVerificationMutation.mutateAsync({ email: data.email });
       setVerificationEmail(data.email);
-      setDisplayCode("123456");
       setStep("verification");
-      toast.success("Verification code sent! Check below for testing.");
+      toast.success("Verification code sent to your email.");
     } catch (error) {
       toast.error("Failed to send verification email");
     }
@@ -207,11 +207,12 @@ export default function ExpertPortal() {
   ]);
 
   // Handle parsed resume data - show reset dialog
-  const handleResumeParsed = (parsedData: any) => {
+  const handleResumeParsed = (parsedData: any, file?: File) => {
     if (!parsedData) return;
 
-    // Store the parsed data and show reset dialog
+    // Store the parsed data, file, and show reset dialog
     setPendingResumeData(parsedData);
+    setResumeFile(file || null);
     setShowResumeResetDialog(true);
   };
 
@@ -249,6 +250,7 @@ export default function ExpertPortal() {
 
     setShowResumeResetDialog(false);
     setPendingResumeData(null);
+    setResumeFile(null);
     setStep("preview");
   };
 
@@ -300,10 +302,8 @@ export default function ExpertPortal() {
       // Handle CV upload if file is selected
       let cvUrl = "";
       let cvKey = "";
-      const cvInput = document.getElementById("cv-upload") as HTMLInputElement;
 
-      if (cvInput?.files?.[0]) {
-        const file = cvInput.files[0];
+      if (resumeFile) {
         try {
           // Show uploading toast
           toast.loading("Uploading CV file...");
@@ -317,14 +317,14 @@ export default function ExpertPortal() {
               resolve(base64.split(",")[1] || base64);
             };
             reader.onerror = reject;
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(resumeFile);
           });
 
           // Upload via tRPC endpoint
           const uploadResult = await uploadCVMutation.mutateAsync({
-            fileName: file.name,
+            fileName: resumeFile.name,
             fileData,
-            contentType: file.type || "application/pdf",
+            contentType: resumeFile.type || "application/pdf",
           });
 
           cvUrl = uploadResult.url;
