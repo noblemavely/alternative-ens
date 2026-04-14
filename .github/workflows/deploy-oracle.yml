@@ -1,0 +1,59 @@
+name: Deploy to Oracle Cloud
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+      
+      - name: Install dependencies
+        run: pnpm install
+      
+      - name: Run type check
+        run: pnpm check
+      
+      - name: Build application
+        run: pnpm build
+      
+      - name: Upload to Oracle Cloud
+        env:
+          ORACLE_HOST: 80.225.252.115
+          ORACLE_USER: ubuntu
+          ORACLE_KEY: ${{ secrets.ORACLE_PRIVATE_KEY }}
+          ORACLE_APP_PATH: /opt/alternative-ens
+        run: |
+          # Setup SSH key
+          mkdir -p ~/.ssh
+          echo "$ORACLE_KEY" > ~/.ssh/oracle_key
+          chmod 600 ~/.ssh/oracle_key
+          
+          # Upload files via SCP
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/oracle_key -r dist/* $ORACLE_USER@$ORACLE_HOST:$ORACLE_APP_PATH/
+          
+          # Restart application via SSH
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/oracle_key $ORACLE_USER@$ORACLE_HOST << 'SSH'
+            cd $ORACLE_APP_PATH
+            pm2 restart alternative-ens || pm2 start index.js --name alternative-ens
+            pm2 save
+          SSH
+      
+      - name: Notify deployment
+        if: always()
+        run: echo "Deployment to Oracle Cloud completed"
