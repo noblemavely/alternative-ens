@@ -33,13 +33,15 @@ type EmailVerificationData = z.infer<typeof emailVerificationSchema>;
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function ExpertPortal() {
-  const [step, setStep] = useState<"email" | "verification" | "resume" | "profile" | "preview">("email");
+  const [step, setStep] = useState<"email" | "verification" | "profile" | "linkedin" | "experience" | "resume" | "preview">("email");
   const [verificationEmail, setVerificationEmail] = useState("");
   const [verificationToken, setVerificationToken] = useState("");
   const [displayCode, setDisplayCode] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [parsingLinkedin, setParsingLinkedin] = useState(false);
-  const [resumeParsed, setResumeParsed] = useState(false);
+  const [showResumeResetDialog, setShowResumeResetDialog] = useState(false);
+  const [pendingResumeData, setPendingResumeData] = useState<any>(null);
+  const [linkedinProfileFetched, setLinkedinProfileFetched] = useState(false);
   const [employmentHistory, setEmploymentHistory] = useState<any[]>([]);
   const [educationHistory, setEducationHistory] = useState<any[]>([]);
   const [createdExpertId, setCreatedExpertId] = useState<number | null>(null);
@@ -47,11 +49,14 @@ export default function ExpertPortal() {
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [formSteps, setFormSteps] = useState([
     { id: "email", label: "Email", completed: false },
-    { id: "resume", label: "Resume", completed: false },
+    { id: "verification", label: "Verification", completed: false },
     { id: "personal", label: "Personal Info", completed: false },
+    { id: "linkedin", label: "LinkedIn Profile", completed: false },
     { id: "experience", label: "Experience", completed: false },
+    { id: "resume", label: "Resume (Optional)", completed: false },
+    { id: "preview", label: "Preview", completed: false },
   ]);
-  const [currentFormStep, setCurrentFormStep] = useState("resume");
+  const [currentFormStep, setCurrentFormStep] = useState("profile");
 
   const utils = trpc.useUtils();
   const sectorsQuery = trpc.sectors.list.useQuery();
@@ -141,8 +146,8 @@ export default function ExpertPortal() {
     try {
       await verifyEmailMutation.mutateAsync({ token: verificationToken });
       profileForm.setValue("email", verificationEmail);
-      setStep("resume");
-      toast.success("Email verified! Now upload your resume.");
+      setStep("profile");
+      toast.success("Email verified! Now fill in your personal info.");
     } catch (error) {
       toast.error("Invalid verification code");
     }
@@ -201,31 +206,22 @@ export default function ExpertPortal() {
     step,
   ]);
 
-  // Handle parsed resume data
+  // Handle parsed resume data - show reset dialog
   const handleResumeParsed = (parsedData: any) => {
     if (!parsedData) return;
 
-    setResumeParsed(true);
+    // Store the parsed data and show reset dialog
+    setPendingResumeData(parsedData);
+    setShowResumeResetDialog(true);
+  };
 
-    // Auto-populate personal info from resume
-    if (parsedData.firstName) {
-      profileForm.setValue("firstName", parsedData.firstName);
-      toast.success(`Name: ${parsedData.firstName}${parsedData.lastName ? ' ' + parsedData.lastName : ''}`);
-    }
-    if (parsedData.lastName) {
-      profileForm.setValue("lastName", parsedData.lastName);
-    }
-    if (parsedData.phone) {
-      profileForm.setValue("phone", parsedData.phone);
-    }
-    if (parsedData.linkedinUrl) {
-      profileForm.setValue("linkedinUrl", parsedData.linkedinUrl);
-      setLinkedinUrl(parsedData.linkedinUrl);
-    }
+  // Handle resume reset confirmation
+  const handleResumeReset = (shouldReset: boolean) => {
+    if (!pendingResumeData) return;
 
-    // Populate employment history from resume
-    if (parsedData.employment && parsedData.employment.length > 0) {
-      const newEmployment = parsedData.employment.map((emp: any) => ({
+    if (shouldReset) {
+      // Clear and repopulate with resume data
+      const newEmployment = (pendingResumeData.employment || []).map((emp: any) => ({
         id: `emp-${Date.now()}-${Math.random()}`,
         company: emp.companyName || "",
         position: emp.position || "",
@@ -234,13 +230,8 @@ export default function ExpertPortal() {
         currentlyWorking: emp.isCurrent || false,
         description: emp.description || "",
       }));
-      setEmploymentHistory((prev) => [...prev, ...newEmployment]);
-      toast.success(`Added ${newEmployment.length} employment entries from resume`);
-    }
 
-    // Populate education history from resume
-    if (parsedData.education && parsedData.education.length > 0) {
-      const newEducation = parsedData.education.map((edu: any) => ({
+      const newEducation = (pendingResumeData.education || []).map((edu: any) => ({
         id: `edu-${Date.now()}-${Math.random()}`,
         school: edu.schoolName || "",
         degree: edu.degree || "",
@@ -248,36 +239,32 @@ export default function ExpertPortal() {
         startDate: edu.startDate || "",
         endDate: edu.endDate || "",
       }));
-      setEducationHistory((prev) => [...prev, ...newEducation]);
-      toast.success(`Added ${newEducation.length} education entries from resume`);
+
+      setEmploymentHistory(newEmployment);
+      setEducationHistory(newEducation);
+      toast.success("Resume data has been applied to your profile");
+    } else {
+      toast.info("Keeping your current experience entries");
     }
 
-    if (
-      (!parsedData.employment || parsedData.employment.length === 0) &&
-      (!parsedData.education || parsedData.education.length === 0)
-    ) {
-      toast.info("No employment or education data found in resume. You can add them manually.");
-    }
-
-    // Auto-navigate to profile after brief delay (2 seconds)
-    setTimeout(() => {
-      setStep("profile");
-      setCurrentFormStep("personal");
-    }, 2000);
+    setShowResumeResetDialog(false);
+    setPendingResumeData(null);
+    setStep("preview");
   };
 
-  const handleParseLinkedin = async () => {
-    if (!linkedinUrl.trim()) {
+  const handleFetchLinkedin = async () => {
+    const url = profileForm.getValues("linkedinUrl");
+    if (!url.trim()) {
       toast.error("Please enter a LinkedIn URL");
       return;
     }
     setParsingLinkedin(true);
     try {
       // Use Apollo.io enrichment endpoint for LinkedIn profiles
-      const result = await enrichLinkedinMutation.mutateAsync({ linkedinUrl });
+      const result = await enrichLinkedinMutation.mutateAsync({ linkedinUrl: url });
 
       if (!result.success) {
-        toast.error(result.message || "Failed to enrich LinkedIn profile");
+        toast.error(result.message || "Failed to fetch LinkedIn profile");
         setParsingLinkedin(false);
         return;
       }
@@ -287,50 +274,22 @@ export default function ExpertPortal() {
       if (result.lastName) profileForm.setValue("lastName", result.lastName);
       if (result.headline) profileForm.setValue("sector", result.headline);
       if (result.email) profileForm.setValue("email", result.email);
-      profileForm.setValue("linkedinUrl", linkedinUrl);
 
       // Auto-populate Function/Role from headline if available
       if (result.headline) {
         profileForm.setValue("function", result.headline);
       }
 
-      // Populate employment history
-      if (result.employment && result.employment.length > 0) {
-        setEmploymentHistory(
-          result.employment.map((emp: any) => ({
-            id: `emp-${Date.now()}-${Math.random()}`,
-            company: emp.companyName || "",
-            position: emp.position || "",
-            startDate: emp.startDate || "",
-            endDate: emp.endDate || "",
-            currentlyWorking: emp.isCurrent || false,
-            description: emp.description || "",
-          }))
-        );
-        toast.success(`Added ${result.employment.length} employment entries from LinkedIn`);
-      }
+      setLinkedinProfileFetched(true);
+      toast.success("LinkedIn profile fetched successfully!");
 
-      // Populate education history
-      if (result.education && result.education.length > 0) {
-        setEducationHistory(
-          result.education.map((edu: any) => ({
-            id: `edu-${Date.now()}-${Math.random()}`,
-            school: edu.schoolName || "",
-            degree: edu.degree || "",
-            field: edu.fieldOfStudy || "",
-            startDate: edu.startDate || "",
-            endDate: edu.endDate || "",
-          }))
-        );
-        toast.success(`Added ${result.education.length} education entries from LinkedIn`);
-      }
-
-      if (!result.employment && !result.education) {
-        toast.info("Profile enriched but no employment or education data found");
-      }
+      // Auto-navigate to experience step after brief delay
+      setTimeout(() => {
+        setStep("experience");
+      }, 1500);
     } catch (error) {
       console.error("LinkedIn enrichment error:", error);
-      toast.error("Failed to enrich LinkedIn profile. Make sure Apollo.io API key is configured.");
+      toast.error("Failed to fetch LinkedIn profile. Make sure the URL is valid and the API is configured.");
     } finally {
       setParsingLinkedin(false);
     }
@@ -548,262 +507,361 @@ export default function ExpertPortal() {
           </Card>
         )}
 
-        {/* Step 2.5: Resume Upload */}
-        {step === "resume" && (
-          <Card className="border-border shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-foreground">
-                📄 Upload Your Resume
-              </CardTitle>
-              <CardDescription>Help us auto-populate your profile information</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Upload your resume (PDF) to automatically extract your personal information, employment history, and education details.
-              </p>
-              <ResumeParserForm onParsed={handleResumeParsed} />
-              <div className="flex gap-2">
-                {resumeParsed && (
-                  <Button
-                    onClick={() => {
-                      setStep("profile");
-                      setCurrentFormStep("personal");
-                    }}
-                    className="flex-1 bg-primary hover:bg-primary/90"
-                  >
-                    Continue to Profile
-                  </Button>
-                )}
-                <Button
-                  onClick={() => {
-                    setStep("profile");
-                    setCurrentFormStep("personal");
-                  }}
-                  variant="outline"
-                  className={resumeParsed ? "flex-1" : "w-full"}
-                >
-                  {resumeParsed ? "Skip" : "Skip Resume Upload"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Step 3: Complete Profile */}
+        {/* Step 3: Personal Info */}
         {step === "profile" && (
           <div className="space-y-6">
-            {/* Progress Indicator */}
             <FormProgressIndicator
               steps={formSteps}
-              currentStep={currentFormStep}
-              completionPercentage={completionPercentage}
+              currentStep="personal"
+              completionPercentage={0}
             />
-
             <Card className="border-border shadow-lg">
               <CardHeader>
-                <CardTitle className="text-foreground">Complete Your Profile</CardTitle>
-                <CardDescription>Add your professional information</CardDescription>
+                <CardTitle className="text-foreground">Personal Information</CardTitle>
+                <CardDescription>Tell us about yourself</CardDescription>
               </CardHeader>
               <CardContent>
-              {/* Profile Form */}
-              <Form {...profileForm}>
-                <form onSubmit={profileForm.handleSubmit(handleCompleteProfile)} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={profileForm.control}
-                      name="firstName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">First Name *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="John" {...field} className="border-border" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={profileForm.control}
-                      name="lastName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">Last Name *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Smith" {...field} className="border-border" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <FormField
-                    control={profileForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground">Email *</FormLabel>
-                        <FormControl>
-                          <Input type="email" disabled {...field} className="border-border bg-secondary" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={profileForm.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground">Phone</FormLabel>
-                        <FormControl>
-                          <Input placeholder="+1 (555) 123-4567" {...field} className="border-border" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={profileForm.control}
-                    name="sector"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground">Sector / Industry</FormLabel>
-                        <FormControl>
-                          <Select value={field.value || ""} onValueChange={field.onChange}>
-                            <SelectTrigger className="border-border">
-                              <SelectValue placeholder="Select your sector" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {sectorsQuery.isLoading ? (
-                                <SelectItem value="loading" disabled>Loading sectors...</SelectItem>
-                              ) : sectorsQuery.data && sectorsQuery.data.length > 0 ? (
-                                sectorsQuery.data.map((sector: any) => (
-                                  <SelectItem key={sector.id} value={sector.name}>
-                                    {sector.name}
-                                  </SelectItem>
-                                ))
-                              ) : (
-                                <SelectItem value="none" disabled>No sectors available</SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={profileForm.control}
-                    name="function"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground">Function / Role</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., VP of Product, Senior Engineer" {...field} className="border-border" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={profileForm.control}
-                    name="linkedinUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground">LinkedIn Profile URL *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="url"
-                            placeholder="https://linkedin.com/in/yourprofile"
-                            {...field}
-                            className="border-border"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Connect to LinkedIn API Section */}
-                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg space-y-3">
-                    <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                      <span>🔗</span>
-                      Connect to LinkedIn Profile (Optional)
-                    </label>
-                    <p className="text-xs text-muted-foreground">Use Apollo.io to auto-populate Sector/Industry and Function/Role from your LinkedIn profile</p>
-                    <div className="flex gap-2">
-                      <Input
-                        type="url"
-                        placeholder="https://linkedin.com/in/yourprofile"
-                        value={linkedinUrl}
-                        onChange={(e) => setLinkedinUrl(e.target.value)}
-                        className="border-blue-300 flex-1"
-                      />
-                      <Button
-                        onClick={handleParseLinkedin}
-                        disabled={enrichLinkedinMutation.isPending}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                        type="button"
-                      >
-                        {enrichLinkedinMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 animate-spin" size={16} />
-                            Enriching...
-                          </>
-                        ) : (
-                          "Connect"
+                <Form {...profileForm}>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={profileForm.control}
+                        name="firstName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-foreground">First Name *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="John" {...field} className="border-border" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                      </Button>
+                      />
+                      <FormField
+                        control={profileForm.control}
+                        name="lastName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-foreground">Last Name *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Smith" {...field} className="border-border" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={profileForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground">Email *</FormLabel>
+                          <FormControl>
+                            <Input type="email" disabled {...field} className="border-border bg-secondary" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={profileForm.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground">Phone</FormLabel>
+                          <FormControl>
+                            <Input placeholder="+1 (555) 123-4567" {...field} className="border-border" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button
+                      onClick={() => {
+                        const firstName = profileForm.getValues("firstName");
+                        const lastName = profileForm.getValues("lastName");
+                        if (!firstName?.trim() || !lastName?.trim()) {
+                          toast.error("Please fill in first and last name");
+                          return;
+                        }
+                        setStep("linkedin");
+                      }}
+                      className="w-full bg-primary hover:bg-primary/90"
+                    >
+                      Continue
+                    </Button>
+                  </div>
+                </Form>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Step 4: LinkedIn Profile */}
+        {step === "linkedin" && (
+          <div className="space-y-6">
+            <FormProgressIndicator
+              steps={formSteps}
+              currentStep="linkedin"
+              completionPercentage={0}
+            />
+            <Card className="border-border shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-foreground">LinkedIn Profile</CardTitle>
+                <CardDescription>Connect your LinkedIn profile to auto-populate your experience</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...profileForm}>
+                  <div className="space-y-4">
+                    <FormField
+                      control={profileForm.control}
+                      name="linkedinUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground">LinkedIn Profile URL *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="url"
+                              placeholder="https://linkedin.com/in/yourprofile"
+                              {...field}
+                              className="border-border"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button
+                      onClick={() => setStep("experience")}
+                      className="w-full bg-primary hover:bg-primary/90"
+                    >
+                      Continue
+                    </Button>
+                  </div>
+                </Form>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Step 5: Work Experience */}
+        {step === "experience" && (
+          <div className="space-y-6">
+            <FormProgressIndicator
+              steps={formSteps}
+              currentStep="experience"
+              completionPercentage={0}
+            />
+            <Card className="border-border shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-foreground">Work Experience & Education</CardTitle>
+                <CardDescription>Add your professional history</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Employment History */}
+                <div>
+                  <EmploymentHistoryForm
+                    entries={employmentHistory}
+                    onAdd={(entry) => setEmploymentHistory([...employmentHistory, entry])}
+                    onUpdate={(entry) => setEmploymentHistory(employmentHistory.map(e => e.id === entry.id ? entry : e))}
+                    onDelete={(id) => setEmploymentHistory(employmentHistory.filter(e => e.id !== id))}
+                  />
+                </div>
+
+                {/* Education History */}
+                <div className="border-t border-border pt-6">
+                  <EducationHistoryForm
+                    entries={educationHistory}
+                    onAdd={(entry) => setEducationHistory([...educationHistory, entry])}
+                    onUpdate={(entry) => setEducationHistory(educationHistory.map(e => e.id === entry.id ? entry : e))}
+                    onDelete={(id) => setEducationHistory(educationHistory.filter(e => e.id !== id))}
+                  />
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 p-3 rounded text-sm text-muted-foreground">
+                  Resume upload is optional. You can skip it if you've already filled in your experience above.
+                </div>
+
+                <Button
+                  onClick={() => setStep("resume")}
+                  className="w-full bg-primary hover:bg-primary/90"
+                >
+                  Continue
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Step 6: Resume Upload (Optional) */}
+        {step === "resume" && (
+          <div className="space-y-6">
+            <FormProgressIndicator
+              steps={formSteps}
+              currentStep="resume"
+              completionPercentage={0}
+            />
+            <Card className="border-border shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-foreground">Upload Resume (Optional)</CardTitle>
+                <CardDescription>Upload your resume to auto-fill your experience</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ResumeParserForm
+                  onParsed={handleResumeParsed}
+                  onSkip={() => setStep("preview")}
+                />
+                <Button
+                  onClick={() => setStep("preview")}
+                  className="w-full bg-primary hover:bg-primary/90"
+                >
+                  Continue
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Resume Reset Dialog */}
+        {showResumeResetDialog && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="border-border w-full max-w-md">
+              <CardHeader>
+                <CardTitle className="text-foreground">Apply Resume Data?</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Would you like to reset and fill your experience with the parsed resume data? This will replace your current entries with the extracted information.
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => handleResumeReset(false)}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Keep Current
+                  </Button>
+                  <Button
+                    onClick={() => handleResumeReset(true)}
+                    className="flex-1 bg-primary hover:bg-primary/90"
+                  >
+                    Reset & Fill
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Step 7: Profile Preview (Before Submission) */}
+        {step === "preview" && !createdExpertData && (
+          <div className="space-y-6">
+            <FormProgressIndicator
+              steps={formSteps}
+              currentStep="preview"
+              completionPercentage={100}
+            />
+            <Card className="border-border shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-foreground">Review Your Profile</CardTitle>
+                <CardDescription>Please review your information before submitting</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase">First Name</p>
+                    <p className="text-lg font-semibold text-foreground">{profileForm.getValues("firstName")}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase">Last Name</p>
+                    <p className="text-lg font-semibold text-foreground">{profileForm.getValues("lastName")}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase">Email</p>
+                  <p className="text-lg font-semibold text-foreground">{profileForm.getValues("email")}</p>
+                </div>
+
+                {profileForm.getValues("phone") && (
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase">Phone</p>
+                    <p className="text-lg font-semibold text-foreground">{profileForm.getValues("phone")}</p>
+                  </div>
+                )}
+
+                {profileForm.getValues("linkedinUrl") && (
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase">LinkedIn Profile</p>
+                    <a href={profileForm.getValues("linkedinUrl")} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      {profileForm.getValues("linkedinUrl")}
+                    </a>
+                  </div>
+                )}
+
+                {employmentHistory.length > 0 && (
+                  <div className="border-t border-border pt-4">
+                    <p className="text-xs text-muted-foreground uppercase font-semibold mb-2">Employment</p>
+                    <div className="space-y-2">
+                      {employmentHistory.map((emp) => (
+                        <div key={emp.id} className="text-sm">
+                          <p className="font-semibold text-foreground">{emp.position} at {emp.company}</p>
+                          <p className="text-xs text-muted-foreground">{emp.startDate} - {emp.endDate || "Present"}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
+                )}
 
-                  {/* Employment History */}
+                {educationHistory.length > 0 && (
                   <div className="border-t border-border pt-4">
-                    <EmploymentHistoryForm 
-                      entries={employmentHistory}
-                      onAdd={(entry) => setEmploymentHistory([...employmentHistory, entry])}
-                      onUpdate={(entry) => setEmploymentHistory(employmentHistory.map(e => e.id === entry.id ? entry : e))}
-                      onDelete={(id) => setEmploymentHistory(employmentHistory.filter(e => e.id !== id))}
-                    />
+                    <p className="text-xs text-muted-foreground uppercase font-semibold mb-2">Education</p>
+                    <div className="space-y-2">
+                      {educationHistory.map((edu) => (
+                        <div key={edu.id} className="text-sm">
+                          <p className="font-semibold text-foreground">{edu.degree} in {edu.field}</p>
+                          <p className="text-xs text-muted-foreground">{edu.school} ({edu.startDate} - {edu.endDate})</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
+                )}
 
-                  {/* Education History */}
-                  <div className="border-t border-border pt-4">
-                    <EducationHistoryForm 
-                      entries={educationHistory}
-                      onAdd={(entry) => setEducationHistory([...educationHistory, entry])}
-                      onUpdate={(entry) => setEducationHistory(educationHistory.map(e => e.id === entry.id ? entry : e))}
-                      onDelete={(id) => setEducationHistory(educationHistory.filter(e => e.id !== id))}
-                    />
-                  </div>
-
+                <div className="flex gap-3">
                   <Button
-                    type="submit" 
-                    className="w-full bg-primary hover:bg-primary/90"
+                    onClick={() => setStep("experience")}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    onClick={() => profileForm.handleSubmit(handleCompleteProfile)()}
+                    className="flex-1 bg-primary hover:bg-primary/90"
                     disabled={createExpertMutation.isPending}
                   >
                     {createExpertMutation.isPending ? (
                       <>
                         <Loader2 className="mr-2 animate-spin" size={16} />
-                        Creating Profile...
+                        Submitting...
                       </>
                     ) : (
-                      "Complete Profile"
+                      "Submit Profile"
                     )}
                   </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
-        {/* Preview Step */}
+        {/* Final Success Preview */}
         {step === "preview" && createdExpertData && (
           <Card className="w-full max-w-2xl mx-auto border-border">
             <CardHeader className="bg-primary/5 border-b border-border">

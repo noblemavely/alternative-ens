@@ -1,5 +1,5 @@
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
 import Anthropic from '@anthropic-ai/sdk';
+import pdfParse from 'pdf-parse';
 import { ENV } from './_core/env';
 
 export interface ParsedEmployment {
@@ -31,30 +31,18 @@ export interface ParsedResumeData {
 }
 
 /**
- * Extract text from PDF buffer
+ * Extract text from PDF buffer using pdf-parse
  */
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
-    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
-    let fullText = '';
-
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => (item.str || ''))
-        .join(' ');
-      fullText += pageText + '\n';
-    }
-
-    if (!fullText || fullText.trim().length === 0) {
-      throw new Error('No text extracted from PDF');
-    }
-
-    return fullText;
+    const data = await pdfParse(buffer);
+    const text = data.text;
+    console.log('[Resume Parser] Successfully extracted text from PDF, length:', text.length);
+    return text;
   } catch (error) {
-    console.error('Error extracting PDF text:', error);
-    throw new Error('Failed to extract text from PDF');
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('[Resume Parser] Failed to extract text from PDF:', errorMessage);
+    throw new Error(`Failed to extract text from PDF: ${errorMessage}`);
   }
 }
 
