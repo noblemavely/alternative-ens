@@ -5,6 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2, Edit2 } from "lucide-react";
 import { toast } from "sonner";
+import { Autocomplete } from "@/components/Autocomplete";
+import { COMMON_COMPANIES } from "@/lib/suggestions";
 
 interface EmploymentEntry {
   id?: string;
@@ -96,11 +98,11 @@ export function EmploymentHistoryForm({
                 <label className="block text-sm font-medium text-slate-900 mb-1">
                   Company *
                 </label>
-                <Input
-                  placeholder="e.g., Acme Corp"
+                <Autocomplete
                   value={formData.company}
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  className="border-slate-300"
+                  onChange={(value) => setFormData({ ...formData, company: value })}
+                  options={COMMON_COMPANIES}
+                  placeholder="Select or type company name..."
                 />
               </div>
               <div>

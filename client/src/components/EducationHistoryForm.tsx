@@ -5,6 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Trash2, Edit2 } from "lucide-react";
 import { toast } from "sonner";
+import { Autocomplete } from "@/components/Autocomplete";
+import { COMMON_UNIVERSITIES, COMMON_DEGREES, COMMON_FIELDS_OF_STUDY } from "@/lib/suggestions";
 
 interface EducationEntry {
   id?: string;
@@ -95,11 +97,11 @@ export function EducationHistoryForm({
               <label className="block text-sm font-medium text-slate-900 mb-1">
                 School/University *
               </label>
-              <Input
-                placeholder="e.g., Stanford University"
+              <Autocomplete
                 value={formData.school}
-                onChange={(e) => setFormData({ ...formData, school: e.target.value })}
-                className="border-slate-300"
+                onChange={(value) => setFormData({ ...formData, school: value })}
+                options={COMMON_UNIVERSITIES}
+                placeholder="Select or type university name..."
               />
             </div>
 
@@ -108,22 +110,22 @@ export function EducationHistoryForm({
                 <label className="block text-sm font-medium text-slate-900 mb-1">
                   Degree *
                 </label>
-                <Input
-                  placeholder="e.g., Bachelor, Master"
+                <Autocomplete
                   value={formData.degree}
-                  onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
-                  className="border-slate-300"
+                  onChange={(value) => setFormData({ ...formData, degree: value })}
+                  options={COMMON_DEGREES}
+                  placeholder="Select degree..."
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-900 mb-1">
                   Field of Study *
                 </label>
-                <Input
-                  placeholder="e.g., Computer Science"
+                <Autocomplete
                   value={formData.field}
-                  onChange={(e) => setFormData({ ...formData, field: e.target.value })}
-                  className="border-slate-300"
+                  onChange={(value) => setFormData({ ...formData, field: value })}
+                  options={COMMON_FIELDS_OF_STUDY}
+                  placeholder="Select field of study..."
                 />
               </div>
             </div>
