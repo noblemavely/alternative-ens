@@ -73,7 +73,8 @@ A comprehensive Expert Network Service platform enabling Admins to manage Client
 - **Node.js** runtime
 
 ### Infrastructure
-- **Manus WebDev Platform** for hosting
+- **Hostinger/Oracle Cloud** for hosting
+- **Brevo SMTP** for email service
 - **S3** for file storage (CV documents)
 - **Docker/ECR** for containerization
 
@@ -114,19 +115,19 @@ DATABASE_URL=mysql://user:password@host:port/database_name
 # Authentication
 JWT_SECRET=your-secret-key-for-jwt-signing
 
-# OAuth (Manus)
-VITE_APP_ID=your-manus-app-id
-OAUTH_SERVER_URL=https://api.manus.im
-VITE_OAUTH_PORTAL_URL=https://login.manus.im
+# OAuth Configuration
+VITE_APP_ID=your-app-id
+OAUTH_SERVER_URL=https://your-oauth-server.com
+VITE_OAUTH_PORTAL_URL=https://your-login-portal.com
 
 # Owner Information
 OWNER_NAME=Your Name
 OWNER_OPEN_ID=your-open-id
 
-# Built-in APIs (Manus)
-BUILT_IN_FORGE_API_URL=https://api.manus.im
+# API Configuration
+BUILT_IN_FORGE_API_URL=https://your-api-endpoint.com
 BUILT_IN_FORGE_API_KEY=your-api-key
-VITE_FRONTEND_FORGE_API_URL=https://api.manus.im
+VITE_FRONTEND_FORGE_API_URL=https://your-api-endpoint.com
 VITE_FRONTEND_FORGE_API_KEY=your-frontend-api-key
 
 # Analytics (Optional)
@@ -172,7 +173,7 @@ The application uses Drizzle ORM for database management.
 pnpm drizzle-kit generate
 
 # Apply migrations
-# (Migrations are automatically applied on first run, or use the Manus UI)
+# (Migrations are automatically applied on first run)
 ```
 
 ### Database Schema
@@ -406,7 +407,7 @@ pnpm type-check
 ┌─────────────────────────────────────────────────────────────┐
 │              External Services                              │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │
-│  │ S3 Storage   │  │ OAuth (Manus)│  │ Email Service    │  │
+│  │ S3 Storage   │  │ OAuth Server │  │ Brevo SMTP       │  │
 │  └──────────────┘  └──────────────┘  └──────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -505,10 +506,11 @@ Profile Verification Status Updated
 
 ### Authentication Flow
 
-1. **Admin Login**: OAuth via Manus platform
+1. **Admin Login**: OAuth via configured OAuth provider
 2. **Session Management**: JWT cookies
 3. **Role-Based Access**: Admin-only procedures with `protectedProcedure`
 4. **Expert Registration**: Email verification with token validation
+5. **Email Service**: Brevo SMTP for sending verification emails
 
 ### API Endpoints (tRPC Procedures)
 
@@ -767,22 +769,33 @@ describe('Feature Name', () => {
 - Environment variables configured
 - Database migrations applied
 
-### Deploying to Manus Platform
+### Deploying to Production
 
-1. **Create a Checkpoint**:
+1. **Build the Application**:
    ```bash
-   # Via Manus UI or CLI
-   # Checkpoint captures current project state
+   pnpm build
    ```
 
-2. **Click Publish Button**:
-   - Navigate to Management UI
-   - Click "Publish" button (enabled after checkpoint)
-   - Select deployment options
+2. **Upload to Server**:
+   - SCP the `dist/` folder to your server
+   - Upload `.env` with production credentials
 
-3. **Monitor Deployment**:
-   - Check deployment logs in Dashboard
-   - Verify application is running at deployed URL
+3. **Install Dependencies and Start**:
+   ```bash
+   # On server
+   npm install --production
+   npm start
+   # Or use PM2 for process management
+   pm2 start dist/index.js --name alternative-ens
+   ```
+
+4. **Verify Deployment**:
+   - Check application is running on configured port
+   - Verify database connectivity
+   - Test email service (Brevo SMTP)
+   - Confirm OAuth endpoints are accessible
+
+See **COMPLETE_HOSTINGER_SETUP_GUIDE.md** for detailed deployment instructions.
 
 ### Environment-Specific Configuration
 
@@ -850,14 +863,15 @@ DEBUG=* pnpm dev
 
 **Development Server Logs**:
 ```bash
-# View in .manus-logs/devserver.log
-tail -f .manus-logs/devserver.log
+# Check npm/pnpm output in terminal
+# For PM2-managed processes:
+pm2 logs alternative-ens
 ```
 
 **Browser Console Logs**:
 ```bash
-# View in .manus-logs/browserConsole.log
-tail -f .manus-logs/browserConsole.log
+# Open browser developer tools (F12)
+# Check Console tab for client-side errors
 ```
 
 **Network Requests**:
