@@ -31,6 +31,7 @@ if (fs.existsSync(envPath)) {
   });
 }
 
+console.log("[ENV] DATABASE_URL loaded:", process.env.DATABASE_URL ? "YES - " + process.env.DATABASE_URL.substring(0, 30) + "..." : "NO");
 console.log("[ENV] CLAUDE_API_KEY loaded:", process.env.CLAUDE_API_KEY ? "YES - " + process.env.CLAUDE_API_KEY.substring(0, 20) + "..." : "NO");
 console.log("[ENV] APOLLO_API_KEY loaded:", process.env.APOLLO_API_KEY ? "YES" : "NO");
 
