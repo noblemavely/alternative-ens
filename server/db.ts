@@ -40,148 +40,144 @@ let _initializationPromise: Promise<void> | null = null;
 async function initializeSchema(pool: any) {
   try {
     const connection = await pool.getConnection();
+    console.log("[Database] Checking schema...");
 
-    // Check if sectors table exists
-    const result = await connection.query(
-      "SELECT COUNT(*) as count FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sectors'"
-    );
+    // Create all essential tables using raw SQL
+    const createTableStatements = [
+      `CREATE TABLE IF NOT EXISTS sectors (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL UNIQUE,
+        description TEXT,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-    if (result[0][0].count === 0) {
-      console.log("[Database] Tables not found, creating schema...");
+      `CREATE TABLE IF NOT EXISTS \`functions\` (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL UNIQUE,
+        description TEXT,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-      // Create all tables from db-init.sql
-      const createTablesSql = `
-        CREATE TABLE IF NOT EXISTS sectors (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          name VARCHAR(255) NOT NULL UNIQUE,
-          description TEXT,
-          createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `CREATE TABLE IF NOT EXISTS clients (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        phone VARCHAR(20),
+        companyName VARCHAR(255),
+        companyWebsite VARCHAR(255),
+        contactPerson VARCHAR(255),
+        sector VARCHAR(255),
+        industry VARCHAR(255),
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-        CREATE TABLE IF NOT EXISTS \`functions\` (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          name VARCHAR(255) NOT NULL UNIQUE,
-          description TEXT,
-          createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `CREATE TABLE IF NOT EXISTS experts (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        firstName VARCHAR(255),
+        lastName VARCHAR(255),
+        email VARCHAR(255) NOT NULL UNIQUE,
+        phone VARCHAR(20),
+        sector VARCHAR(255),
+        \`function\` VARCHAR(255),
+        linkedinUrl VARCHAR(255),
+        biography TEXT,
+        cvUrl VARCHAR(255),
+        cvKey VARCHAR(255),
+        verificationToken VARCHAR(255),
+        verificationTokenExpiry DATETIME,
+        isVerified BOOLEAN DEFAULT FALSE,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_email (email),
+        INDEX idx_verified (isVerified)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-        CREATE TABLE IF NOT EXISTS clients (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          name VARCHAR(255) NOT NULL,
-          email VARCHAR(255) NOT NULL UNIQUE,
-          phone VARCHAR(20),
-          companyName VARCHAR(255),
-          companyWebsite VARCHAR(255),
-          contactPerson VARCHAR(255),
-          sector VARCHAR(255),
-          industry VARCHAR(255),
-          createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `CREATE TABLE IF NOT EXISTS expertEmployment (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        expertId INT NOT NULL,
+        company VARCHAR(255) NOT NULL,
+        position VARCHAR(255) NOT NULL,
+        startDate VARCHAR(50),
+        endDate VARCHAR(50),
+        currentlyWorking BOOLEAN DEFAULT FALSE,
+        description TEXT,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (expertId) REFERENCES experts(id) ON DELETE CASCADE,
+        INDEX idx_expertId (expertId)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-        CREATE TABLE IF NOT EXISTS experts (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          firstName VARCHAR(255),
-          lastName VARCHAR(255),
-          email VARCHAR(255) NOT NULL UNIQUE,
-          phone VARCHAR(20),
-          sector VARCHAR(255),
-          \`function\` VARCHAR(255),
-          linkedinUrl VARCHAR(255),
-          biography TEXT,
-          cvUrl VARCHAR(255),
-          cvKey VARCHAR(255),
-          verificationToken VARCHAR(255),
-          verificationTokenExpiry DATETIME,
-          isVerified BOOLEAN DEFAULT FALSE,
-          createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          INDEX idx_email (email),
-          INDEX idx_verified (isVerified)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `CREATE TABLE IF NOT EXISTS expertEducation (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        expertId INT NOT NULL,
+        school VARCHAR(255) NOT NULL,
+        degree VARCHAR(255) NOT NULL,
+        field VARCHAR(255),
+        startDate VARCHAR(50),
+        endDate VARCHAR(50),
+        description TEXT,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (expertId) REFERENCES experts(id) ON DELETE CASCADE,
+        INDEX idx_expertId (expertId)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-        CREATE TABLE IF NOT EXISTS expertEmployment (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          expertId INT NOT NULL,
-          company VARCHAR(255) NOT NULL,
-          position VARCHAR(255) NOT NULL,
-          startDate VARCHAR(50),
-          endDate VARCHAR(50),
-          currentlyWorking BOOLEAN DEFAULT FALSE,
-          description TEXT,
-          createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          FOREIGN KEY (expertId) REFERENCES experts(id) ON DELETE CASCADE,
-          INDEX idx_expertId (expertId)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `CREATE TABLE IF NOT EXISTS expertVerification (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        expertId INT NOT NULL,
+        token VARCHAR(255) NOT NULL UNIQUE,
+        expiresAt DATETIME NOT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (expertId) REFERENCES experts(id) ON DELETE CASCADE,
+        INDEX idx_token (token),
+        INDEX idx_expertId (expertId)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-        CREATE TABLE IF NOT EXISTS expertEducation (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          expertId INT NOT NULL,
-          school VARCHAR(255) NOT NULL,
-          degree VARCHAR(255) NOT NULL,
-          field VARCHAR(255),
-          startDate VARCHAR(50),
-          endDate VARCHAR(50),
-          description TEXT,
-          createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          FOREIGN KEY (expertId) REFERENCES experts(id) ON DELETE CASCADE,
-          INDEX idx_expertId (expertId)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `CREATE TABLE IF NOT EXISTS adminUsers (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'admin',
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_email (email)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+    ];
 
-        CREATE TABLE IF NOT EXISTS expertVerification (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          expertId INT NOT NULL,
-          token VARCHAR(255) NOT NULL UNIQUE,
-          expiresAt DATETIME NOT NULL,
-          createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (expertId) REFERENCES experts(id) ON DELETE CASCADE,
-          INDEX idx_token (token),
-          INDEX idx_expertId (expertId)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    // Execute all table creation statements
+    for (const statement of createTableStatements) {
+      try {
+        await connection.execute(statement);
+      } catch (error: any) {
+        // Ignore "already exists" errors
+        if (!error?.message?.includes('already exists')) {
+          console.warn("[Database] Table creation notice:", error?.message);
+        }
+      }
+    }
 
-        CREATE TABLE IF NOT EXISTS adminUsers (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          name VARCHAR(255) NOT NULL,
-          email VARCHAR(255) NOT NULL UNIQUE,
-          password VARCHAR(255) NOT NULL,
-          role VARCHAR(50) DEFAULT 'admin',
-          createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          INDEX idx_email (email)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-        INSERT IGNORE INTO sectors (id, name, description) VALUES
+    // Insert sample sectors if table is empty
+    try {
+      await connection.execute(
+        `INSERT IGNORE INTO sectors (id, name, description) VALUES
         (1, 'Technology', 'Software, IT, and tech sector'),
         (2, 'Finance', 'Banking, investment, and financial services'),
         (3, 'Healthcare', 'Medical, pharmaceutical, and health services'),
-        (4, 'Manufacturing', 'Industrial production and operations');
-      `;
-
-      // Execute table creation
-      const statements = createTablesSql.split(';').filter(s => s.trim());
-      for (const statement of statements) {
-        if (statement.trim()) {
-          try {
-            await connection.query(statement);
-          } catch (e) {
-            // Ignore "table already exists" errors
-            if (!String(e).includes('already exists')) {
-              console.error("[Database] Error executing:", statement.substring(0, 50), e);
-            }
-          }
-        }
-      }
-
-      console.log("[Database] Schema initialization completed");
+        (4, 'Manufacturing', 'Industrial production and operations')`
+      );
+    } catch (error: any) {
+      console.log("[Database] Sectors already populated:", error?.message?.substring(0, 50));
     }
 
     connection.release();
+    console.log("[Database] Schema initialization completed successfully");
   } catch (error) {
     console.error("[Database] Schema initialization failed:", error);
+    throw error;
   }
 }
 
