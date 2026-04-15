@@ -53,6 +53,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
     const from = fromName ? `${fromName} <${fromEmail}>` : fromEmail;
 
     console.log(`[Email Service] Sending email to ${options.to} with subject: ${options.subject}`);
+    console.log(`[Email Service] From: ${from}`);
 
     const result = await transporter.sendMail({
       from,
@@ -65,7 +66,16 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
     console.log(`[Email Service] Email sent successfully to ${options.to}`, result.messageId);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`[Email Service] Failed to send email to ${options.to}:`, errorMessage);
+    const errorStack = error instanceof Error ? error.stack : '';
+    console.error(`[Email Service] Failed to send email to ${options.to}:`);
+    console.error(`[Email Service] Error Message: ${errorMessage}`);
+    console.error(`[Email Service] Error Stack: ${errorStack}`);
+    if ((error as any).code) {
+      console.error(`[Email Service] Error Code: ${(error as any).code}`);
+    }
+    if ((error as any).response) {
+      console.error(`[Email Service] SMTP Response: ${(error as any).response}`);
+    }
     throw new Error(`Failed to send email: ${errorMessage}`);
   }
 }
