@@ -38,9 +38,20 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL, { schema, mode: "default" });
+      const dbUrl = process.env.DATABASE_URL;
+      console.log("[Database] Initializing with URL:", dbUrl.substring(0, 50) + "...");
+
+      // Ensure proper hostname - prevent mysql2 from defaulting to 'db'
+      let connectionUrl = dbUrl;
+      if (dbUrl.includes("@db:") || dbUrl.includes("@db/")) {
+        console.log("[Database] WARNING: Found 'db' hostname, replacing with '127.0.0.1'");
+        connectionUrl = dbUrl.replace("@db:", "@127.0.0.1:").replace("@db/", "@127.0.0.1/");
+      }
+
+      _db = drizzle(connectionUrl, { schema, mode: "default" });
+      console.log("[Database] Connection initialized successfully");
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      console.error("[Database] Failed to connect:", error);
       _db = null;
     }
   }
