@@ -35,7 +35,6 @@ import {
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
-let _initializationPromise: Promise<void> | null = null;
 
 async function initializeSchema(pool: any) {
   try {
@@ -199,14 +198,14 @@ export async function getDb() {
 
       console.log("[Database] Connecting to:", config.host, "on port", config.port);
       const pool = mysql.createPool(config);
+
+      // Initialize schema BEFORE creating drizzle instance
+      console.log("[Database] Initializing schema...");
+      await initializeSchema(pool);
+      console.log("[Database] Schema initialization complete");
+
       _db = drizzle(pool, { schema, mode: "default" });
       console.log("[Database] Connection initialized successfully");
-
-      // Initialize schema on first connection
-      if (!_initializationPromise) {
-        _initializationPromise = initializeSchema(pool);
-      }
-      await _initializationPromise;
     } catch (error) {
       console.error("[Database] Failed to connect:", error);
       _db = null;
