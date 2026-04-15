@@ -16,7 +16,7 @@ export const adminAuthRouter = router({
       // Input is already validated by Zod schema above
 
       try {
-        const admin = await verifyAdminPassword(loginInput.email, loginInput.password);
+        const admin = await verifyAdminPassword(input.email, input.password);
 
         if (!admin) {
           throw new TRPCError({
