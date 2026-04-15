@@ -58,31 +58,29 @@ jobs:
 
       - name: Deploy to Digital Ocean
         env:
-          DO_HOST: ${{ secrets.DO_HOST }}
-          DO_USER: ${{ secrets.DO_USER }}
-          DO_KEY: ${{ secrets.DO_PRIVATE_KEY }}
-          DO_APP_PATH: ${{ secrets.DO_APP_PATH }}
+          DO_HOST: 68.183.86.134
+          DO_USER: root
+          DO_PASSWORD: ${{ secrets.DO_PASSWORD }}
+          DO_APP_PATH: /app
         run: |
-          # Setup SSH key
-          mkdir -p ~/.ssh
-          echo "$DO_KEY" > ~/.ssh/do_key
-          chmod 600 ~/.ssh/do_key
+          # Install sshpass for password-based SSH
+          apt-get update && apt-get install -y sshpass
 
           # Upload entire project structure for docker-compose
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/do_key -r . $DO_USER@$DO_HOST:$DO_APP_PATH/ \
+          sshpass -p "$DO_PASSWORD" scp -o StrictHostKeyChecking=no -r . $DO_USER@$DO_HOST:$DO_APP_PATH/ \
             --exclude=node_modules \
             --exclude=.git \
             --exclude=.env \
             --exclude=dist
 
           # Upload compiled dist folder
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/do_key -r dist $DO_USER@$DO_HOST:$DO_APP_PATH/
+          sshpass -p "$DO_PASSWORD" scp -o StrictHostKeyChecking=no -r dist $DO_USER@$DO_HOST:$DO_APP_PATH/
 
           # Upload .env file via SCP
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/do_key /tmp/.env $DO_USER@$DO_HOST:$DO_APP_PATH/.env
+          sshpass -p "$DO_PASSWORD" scp -o StrictHostKeyChecking=no /tmp/.env $DO_USER@$DO_HOST:$DO_APP_PATH/.env
 
           # Deploy using docker-compose via SSH
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/do_key $DO_USER@$DO_HOST << 'SSH'
+          sshpass -p "$DO_PASSWORD" ssh -o StrictHostKeyChecking=no $DO_USER@$DO_HOST << 'SSH'
             cd $DO_APP_PATH
 
             # Stop existing containers if any
