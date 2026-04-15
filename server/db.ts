@@ -1,5 +1,6 @@
 import { eq, and, like, or, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import * as mysql from "mysql2/promise";
 import * as schema from "../drizzle/schema";
 import {
   InsertUser,
@@ -41,7 +42,19 @@ export async function getDb() {
       const dbUrl = process.env.DATABASE_URL;
       console.log("[Database] Initializing with URL:", dbUrl.substring(0, 50) + "...");
 
-      _db = drizzle(dbUrl, { schema, mode: "default" });
+      // Parse MySQL URL format: mysql://user:password@host:port/database
+      const url = new URL(dbUrl);
+      const config = {
+        host: url.hostname,
+        port: url.port ? parseInt(url.port) : 3306,
+        user: url.username,
+        password: url.password,
+        database: url.pathname.slice(1), // Remove leading /
+      };
+
+      console.log("[Database] Connecting to:", config.host, "on port", config.port);
+      const pool = mysql.createPool(config);
+      _db = drizzle(pool, { schema, mode: "default" });
       console.log("[Database] Connection initialized successfully");
     } catch (error) {
       console.error("[Database] Failed to connect:", error);
