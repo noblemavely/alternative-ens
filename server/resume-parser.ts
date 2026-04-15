@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
-import pdfParse from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 import { ENV } from './_core/env';
+
+const pdfParse = PDFParse;
 
 export interface ParsedEmployment {
   companyName: string;
