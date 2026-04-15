@@ -50,8 +50,9 @@ export const systemRouter = router({
         message: "All data cleared successfully",
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("Error clearing database:", error);
-      throw new Error("Failed to clear database");
+      throw new Error(`Failed to clear database: ${errorMessage}`);
     }
   }),
 
@@ -60,8 +61,9 @@ export const systemRouter = router({
       const result = await seedDatabase();
       return result;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("Error seeding database:", error);
-      throw new Error("Failed to seed database");
+      throw new Error(`Failed to seed database: ${errorMessage}`);
     }
   }),
 });
