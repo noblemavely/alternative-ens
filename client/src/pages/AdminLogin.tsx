@@ -63,9 +63,9 @@ export default function AdminLogin() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
             <img
-              src="/logo.svg"
+              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/Alternative_Logo_White_Background-removebg-preview_9d4821e4.png"
               alt="AlterNatives"
-              className="h-10"
+              className="h-10 w-auto object-contain"
             />
             <span className="text-2xl font-bold text-slate-900">AlterNatives</span>
           </div>
