@@ -32,6 +32,30 @@ jobs:
       - name: Build application
         run: pnpm build
       
+      - name: Create .env file from secrets
+        run: |
+          cat > /tmp/.env << 'EOF'
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          NODE_ENV=production
+          VITE_APP_ID=alternative-ens
+          APP_ORIGIN=${{ secrets.APP_ORIGIN }}
+          LINKEDIN_CLIENT_ID=${{ secrets.LINKEDIN_CLIENT_ID }}
+          LINKEDIN_CLIENT_SECRET=${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}
+          APOLLO_API_KEY=${{ secrets.APOLLO_API_KEY }}
+          SMTP_HOST=${{ secrets.SMTP_HOST }}
+          SMTP_PORT=${{ secrets.SMTP_PORT }}
+          SMTP_USER=${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM_EMAIL=${{ secrets.SMTP_FROM_EMAIL }}
+          SMTP_FROM_NAME=${{ secrets.SMTP_FROM_NAME }}
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION=${{ secrets.AWS_REGION }}
+          AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}
+          EOF
+
       - name: Upload to Oracle Cloud
         env:
           ORACLE_HOST: 80.225.242.228
@@ -43,10 +67,13 @@ jobs:
           mkdir -p ~/.ssh
           echo "$ORACLE_KEY" > ~/.ssh/oracle_key
           chmod 600 ~/.ssh/oracle_key
-          
+
           # Upload files via SCP
           scp -o StrictHostKeyChecking=no -i ~/.ssh/oracle_key -r dist/* $ORACLE_USER@$ORACLE_HOST:$ORACLE_APP_PATH/
-          
+
+          # Upload .env file via SCP
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/oracle_key /tmp/.env $ORACLE_USER@$ORACLE_HOST:$ORACLE_APP_PATH/.env
+
           # Restart application via SSH
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/oracle_key $ORACLE_USER@$ORACLE_HOST << 'SSH'
             cd $ORACLE_APP_PATH
