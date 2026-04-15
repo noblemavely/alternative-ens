@@ -1,0 +1,63 @@
+name: Build and Deploy to Digital Ocean
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install pnpm
+        run: npm install -g pnpm@10.4.1
+      
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+      
+      - name: Build application
+        run: pnpm run build
+      
+      - name: Deploy to Digital Ocean
+        env:
+          DO_HOST: 68.183.86.134
+          DO_USER: root
+          DO_PASSWORD: ${{ secrets.DO_PASSWORD }}
+        run: |
+          # Install sshpass if not available
+          apt-get update && apt-get install -y sshpass
+          
+          # Copy dist folder to droplet
+          sshpass -p "$DO_PASSWORD" scp -r dist/ $DO_USER@$DO_HOST:/app/
+          sshpass -p "$DO_PASSWORD" scp package.json pnpm-lock.yaml $DO_USER@$DO_HOST:/app/
+          
+          # Rebuild and restart Docker containers
+          sshpass -p "$DO_PASSWORD" ssh -o StrictHostKeyChecking=no $DO_USER@$DO_HOST << 'SSHEOF'
+            cd /app
+            docker-compose down
+            docker-compose build --no-cache
+            docker-compose up -d
+            sleep 5
+            docker-compose logs app --tail=20
+          SSHEOF
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: build-and-deploy
+    if: always()
+    steps:
+      - name: Deployment Status
+        run: |
+          if [ "${{ needs.build-and-deploy.result }}" == "success" ]; then
+            echo "✅ Deployment successful to alternatives.nativeworld.com"
+          else
+            echo "❌ Deployment failed"
+          fi
