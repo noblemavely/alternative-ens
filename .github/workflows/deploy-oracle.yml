@@ -68,17 +68,34 @@ jobs:
           echo "$ORACLE_KEY" > ~/.ssh/oracle_key
           chmod 600 ~/.ssh/oracle_key
 
-          # Upload files via SCP
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/oracle_key -r dist/* $ORACLE_USER@$ORACLE_HOST:$ORACLE_APP_PATH/
+          # Upload entire project structure for docker-compose
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/oracle_key -r . $ORACLE_USER@$ORACLE_HOST:$ORACLE_APP_PATH/ \
+            --exclude=node_modules \
+            --exclude=.git \
+            --exclude=.env \
+            --exclude=dist
+
+          # Upload compiled dist folder
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/oracle_key -r dist $ORACLE_USER@$ORACLE_HOST:$ORACLE_APP_PATH/
 
           # Upload .env file via SCP
           scp -o StrictHostKeyChecking=no -i ~/.ssh/oracle_key /tmp/.env $ORACLE_USER@$ORACLE_HOST:$ORACLE_APP_PATH/.env
 
-          # Restart application via SSH
+          # Deploy using docker-compose via SSH
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/oracle_key $ORACLE_USER@$ORACLE_HOST << 'SSH'
             cd $ORACLE_APP_PATH
-            pm2 restart alternative-ens --update-env || pm2 start dist/index.js --name alternative-ens
-            pm2 save
+
+            # Stop existing containers if any
+            docker-compose down || true
+
+            # Start MySQL and app containers
+            docker-compose up -d
+
+            # Wait for database to be ready
+            sleep 10
+
+            # Check if both services are running
+            docker-compose ps
           SSH
       
       - name: Notify deployment
