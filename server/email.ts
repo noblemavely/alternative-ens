@@ -1,42 +1,61 @@
 import { ENV } from './_core/env';
 
-let transporter: any = null;
+async function sendEmailViaBrevoAPI(
+  to: string,
+  subject: string,
+  htmlContent: string,
+  textContent?: string
+): Promise<void> {
+  const apiKey = (ENV as any).brevoApiKey;
+  const fromEmail = (ENV as any).smtpFromEmail;
+  const fromName = (ENV as any).smtpFromName;
 
-async function getTransporter(): Promise<any> {
-  if (!transporter) {
-    try {
-      // Dynamically import nodemailer only when needed (lazy loading)
-      const { default: nodemailer } = await import('nodemailer');
-
-      const host = (ENV as any).smtpHost;
-      const port = parseInt((ENV as any).smtpPort, 10);
-      const user = (ENV as any).smtpUser;
-      const password = (ENV as any).smtpPassword;
-
-      if (!host || !user || !password || isNaN(port)) {
-        throw new Error('SMTP configuration is missing. Please set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASSWORD environment variables.');
-      }
-
-      transporter = nodemailer.createTransport({
-        host,
-        port,
-        secure: port === 465,
-        auth: {
-          user,
-          pass: password,
-        },
-        connectionTimeout: 10000, // 10 second timeout
-        socketTimeout: 10000,     // 10 second timeout
-      });
-
-      console.log(`[Email Service] SMTP configured for ${host}:${port}`);
-    } catch (error) {
-      console.error('[Email Service] Failed to initialize transporter:', error);
-      throw error;
-    }
+  if (!apiKey) {
+    throw new Error('BREVO_API_KEY environment variable is not set');
   }
 
-  return transporter;
+  if (!fromEmail) {
+    throw new Error('SMTP_FROM_EMAIL environment variable is not set');
+  }
+
+  const payload = {
+    sender: {
+      name: fromName || 'Alternatives Team',
+      email: fromEmail,
+    },
+    to: [
+      {
+        email: to,
+      },
+    ],
+    subject,
+    htmlContent,
+    textContent: textContent || '',
+  };
+
+  try {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Brevo API error: ${response.status} - ${JSON.stringify(errorData)}`);
+    }
+
+    const result = await response.json();
+    console.log(`[Email Service] Email sent successfully to ${to}`, result.messageId);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[Email Service] Failed to send email to ${to}:`);
+    console.error(`[Email Service] Error Message: ${errorMessage}`);
+    throw new Error(`Failed to send email: ${errorMessage}`);
+  }
 }
 
 export interface SendEmailOptions {
@@ -48,36 +67,23 @@ export interface SendEmailOptions {
 
 export async function sendEmail(options: SendEmailOptions): Promise<void> {
   try {
-    const transporter = await getTransporter();
     const fromEmail = (ENV as any).smtpFromEmail;
-    const fromName = (ENV as any).smtpFromName;
-
-    const from = fromName ? `${fromName} <${fromEmail}>` : fromEmail;
 
     console.log(`[Email Service] Sending email to ${options.to} with subject: ${options.subject}`);
-    console.log(`[Email Service] From: ${from}`);
+    console.log(`[Email Service] From: ${fromEmail}`);
 
-    const result = await transporter.sendMail({
-      from,
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-      text: options.text,
-    });
-
-    console.log(`[Email Service] Email sent successfully to ${options.to}`, result.messageId);
+    await sendEmailViaBrevoAPI(
+      options.to,
+      options.subject,
+      options.html,
+      options.text
+    );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : '';
     console.error(`[Email Service] Failed to send email to ${options.to}:`);
     console.error(`[Email Service] Error Message: ${errorMessage}`);
     console.error(`[Email Service] Error Stack: ${errorStack}`);
-    if ((error as any).code) {
-      console.error(`[Email Service] Error Code: ${(error as any).code}`);
-    }
-    if ((error as any).response) {
-      console.error(`[Email Service] SMTP Response: ${(error as any).response}`);
-    }
     throw new Error(`Failed to send email: ${errorMessage}`);
   }
 }
