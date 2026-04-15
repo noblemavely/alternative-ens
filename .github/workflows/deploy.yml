@@ -1,0 +1,48 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: Install pnpm
+      run: npm install -g pnpm
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Build application
+      run: npm run build
+
+    - name: Setup SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
+    - name: Deploy to server
+      run: |
+        ssh -i ~/.ssh/deploy_key root@${{ secrets.SERVER_IP }} << 'EOF'
+        cd /root/alternative-ens
+        git pull origin main
+        docker-compose down
+        docker-compose build --no-cache
+        docker-compose up -d
+        sleep 5
+        echo "Deployment completed!"
+        EOF
+      env:
+        DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        SERVER_IP: ${{ secrets.SERVER_IP }}
