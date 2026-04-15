@@ -43,11 +43,12 @@ CREATE TABLE IF NOT EXISTS experts (
   cvUrl VARCHAR(255),
   cvKey VARCHAR(255),
   verificationToken VARCHAR(255),
-  verified BOOLEAN DEFAULT FALSE,
+  verificationTokenExpiry DATETIME,
+  isVerified BOOLEAN DEFAULT FALSE,
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_email (email),
-  INDEX idx_verified (verified)
+  INDEX idx_verified (isVerified)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Expert Employment table
@@ -80,6 +81,19 @@ CREATE TABLE IF NOT EXISTS expertEducation (
   updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (expertId) REFERENCES experts(id) ON DELETE CASCADE,
   INDEX idx_expertId (expertId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Expert Verification table
+CREATE TABLE IF NOT EXISTS expertVerification (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  expertId INT NOT NULL,
+  token VARCHAR(255) NOT NULL,
+  expiresAt DATETIME NOT NULL,
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (expertId) REFERENCES experts(id) ON DELETE CASCADE,
+  INDEX idx_expertId (expertId),
+  INDEX idx_token (token)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Admin Users table
