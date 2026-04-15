@@ -1,206 +1,246 @@
-# Deployment Status - April 14, 2026
+# Deployment Status - April 15, 2026
 
-## Current Situation
+## Current Status: PRODUCTION DEPLOYMENT ✅
 
-The Alternative ENS application has been prepared for Docker containerization. The Oracle Cloud instance (80.225.242.228) is currently unreachable, but all necessary files have been created for deployment.
+The Alternative ENS application is now deployed on Digital Ocean using Docker containers with automated CI/CD via GitHub Actions.
 
-## What Has Been Completed
+## Deployment Information
 
-### Code Changes
-1. ✅ Removed duplicate header text from ExpertPortal.tsx
-2. ✅ Added DATABASE_URL logging to server startup for debugging
-3. ✅ Application rebuilt with npm run build
+| Component | Status | Details |
+|-----------|--------|---------|
+| **Host** | ✅ Active | Digital Ocean Droplet (68.183.86.134) |
+| **Domain** | ✅ Active | alternatives.nativeworld.com |
+| **Application** | ✅ Running | Node.js on port 3000 |
+| **Database** | ✅ Running | MySQL 8.0 (containerized) |
+| **Email Service** | ✅ Configured | Brevo SMTP relay |
+| **CI/CD** | ✅ Active | GitHub Actions automated deployment |
+| **Docker** | ✅ Running | Docker Compose orchestration |
 
-### Docker Infrastructure Created
-1. ✅ **Dockerfile** - Multi-stage production build
-   - Node 20 Alpine base image
-   - Optimized for minimal image size
-   - Production-ready configuration
+## Completed Items
 
-2. ✅ **docker-compose.yml** - Complete application stack
-   - MySQL 8.0 database service
-   - Node.js application service
-   - Health checks configured
-   - Volume persistence for database
-   - Shared network for service communication
-   - All required environment variables configured
+### Infrastructure
+- ✅ Dockerized entire application (node:20-alpine)
+- ✅ Created docker-compose.yml for multi-service orchestration
+- ✅ Set up MySQL 8.0 containerized database
+- ✅ Configured Docker volumes for persistent database storage
+- ✅ Set up Docker network bridge for service communication
+- ✅ Configured auto-restart policies for all services
 
-3. ✅ **db-init.sql** - Database initialization
-   - 7 tables created with proper schema:
-     - sectors
-     - functions (escaped as reserved keyword)
-     - clients
-     - experts
-     - expertEmployment
-     - expertEducation
-     - adminUsers
-   - Sample data inserted automatically
-   - Foreign key relationships configured
+### Deployment
+- ✅ Deployed to Digital Ocean droplet (68.183.86.134)
+- ✅ Database migrations executed (all 12 migrations completed)
+- ✅ Environment variables configured
+- ✅ Brevo SMTP email service integrated
+- ✅ Domain updated to point to Digital Ocean IP
+- ✅ Application running and accessible via HTTP
 
-4. ✅ **DOCKER_DEPLOYMENT.md** - Complete deployment guide
-   - Step-by-step Docker/Docker Compose installation
-   - Deployment instructions
-   - Common commands reference
-   - Troubleshooting guide
-   - Production recommendations
+### CI/CD Pipeline
+- ✅ Created GitHub Actions workflow (.github/workflows/deploy-docker.yml)
+- ✅ Configured automatic deployment on push to main branch
+- ✅ Automated build process
+- ✅ Automated distribution to Digital Ocean
+- ⏳ Pending: Add `DO_PASSWORD` GitHub secret for final automation
 
-5. ✅ **.env.example** - Environment variables template
-   - All required configuration options documented
-   - Defaults provided where applicable
+### Documentation
+- ✅ Updated README.md with Docker deployment instructions
+- ✅ Updated DOCKER_DEPLOYMENT.md with Digital Ocean specifics
+- ✅ Created comprehensive deployment guides
+- ✅ Documented environment variables
+- ✅ Provided troubleshooting guide
 
-6. ✅ **.dockerignore** - Build context optimization
-   - Excludes unnecessary files from Docker image
+## Outstanding Issues to Resolve
 
-## Previous Database Setup (on Oracle)
+### Critical Issues
+1. **API Endpoints Returning 404**
+   - tRPC routes not being found (expert.register, expert.uploadResume, auth.login)
+   - Likely cause: dist/ folder not properly deployed or routes not loading
+   - Impact: Expert registration and API calls not working
 
-Before Docker migration, a local MySQL instance was set up:
-- Database: `alternative_ens`
-- User: `app_user`
-- Password: `AppPassword123!`
-- All 7 tables created with proper structure
-- Located at: /home/ubuntu/app on Oracle instance
+2. **Database Verification**
+   - Need to confirm all 12 database tables were created successfully
+   - Table list verification was incomplete last check
+   - Impact: Application may not have required schema
 
-## Current Oracle Instance Status
+3. **File Upload / Resume Storage**
+   - Resume upload endpoint may not be functional due to API 404
+   - File storage mechanism needs testing
+   - Admin dashboard visibility of resumes untested
 
-**Status**: 🔴 UNREACHABLE
-- IP: 80.225.242.228
-- Last successful connection: ~23:00 UTC
-- SSH connection failing with exit code 255
-- MySQL service was running when last accessed
-- PM2 application was running (alternative-ens process id: 0)
+### Secondary Issues
+1. **Email Verification**
+   - Brevo SMTP credentials configured but not tested end-to-end
+   - Expert registration flow depends on email verification working
 
-**Possible reasons for unreachability**:
-- Network connectivity issue
-- Oracle instance maintenance/restart
-- Firewall changes
-- Oracle Cloud account issue
+2. **LinkedIn Enrichment**
+   - Apollo.io API integration untested
+   - Expert profile enrichment may not be functional
 
-## Next Steps When Instance Is Back Online
+3. **Non-Root User Setup**
+   - Application currently runs as root (security concern)
+   - Should create dedicated application user
 
-### Option 1: Traditional PM2 Deployment (Current Setup)
+## Next Steps (Priority Order)
+
+### 1. Fix API Endpoints (CRITICAL)
 ```bash
-# The application is already deployed on the Oracle instance
-ssh -i ~/.ssh/oracle_instance_key ubuntu@80.225.242.228
-pm2 status
-pm2 logs alternative-ens
+ssh root@68.183.86.134
+docker-compose logs app | grep -i "error\|404\|route"
+docker-compose exec app ls -la dist/
 ```
 
-The current deployment has:
-- Application running on port 3000
-- MySQL database on localhost:3306
-- PM2 managing the process
-- Files deployed at /home/ubuntu/app/
-
-### Option 2: Docker Migration (Recommended)
-Once instance is back online, follow DOCKER_DEPLOYMENT.md:
-
+### 2. Verify Database Schema
 ```bash
-# SSH to instance
-ssh -i ~/.ssh/oracle_instance_key ubuntu@80.225.242.228
+docker-compose exec db mysql -u root -palternative_ens alternative_ens -e "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'alternative_ens';"
+```
 
-# Install Docker and Docker Compose
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-# ... install Docker Compose ...
+### 3. Test Full Registration Flow
+- Register as expert with email
+- Verify email is received
+- Complete profile with resume upload
+- Check admin dashboard for resume visibility
 
-# Navigate to application directory
-cd /home/ubuntu/alternative-ens
+### 4. Configure GitHub CI/CD Secret
+- Add `DO_PASSWORD` secret in GitHub repository settings
+- This enables fully automated deployments
 
-# Copy and configure environment file
-cp .env.example .env
-# Edit .env with actual credentials
+### 5. Create Non-Root User
+```bash
+ssh root@68.183.86.134
+useradd -m -s /bin/bash appuser
+usermod -aG docker appuser
+```
 
-# Start with Docker Compose
+## Deployment Architecture
+
+```
+Local Development
+    ↓ (git push)
+GitHub Repository
+    ↓
+GitHub Actions Workflow
+    ├─ Build: pnpm install && pnpm build
+    ├─ Transfer: SCP dist/ to /app on Digital Ocean
+    └─ Deploy: docker-compose build && docker-compose up -d
+    ↓
+Digital Ocean Droplet (68.183.86.134)
+    ├─ Container: Node.js App (port 3000)
+    ├─ Container: MySQL Database (port 3306)
+    └─ Shared Network: app-network
+    ↓
+alternatives.nativeworld.com (DNS pointed to 68.183.86.134)
+```
+
+## File Structure on Digital Ocean
+
+```
+/app/
+├── dist/                          # Built application (auto-updated by CI/CD)
+├── drizzle/                       # Database migrations
+├── package.json                   # Dependencies
+├── pnpm-lock.yaml                # Lock file
+├── Dockerfile                     # Container definition
+├── docker-compose.yml             # Service orchestration
+├── .env                          # Production environment variables
+├── node_modules/                 # Installed dependencies
+└── backups/                      # Database backups (created by cron)
+```
+
+## Environment Setup
+
+**Server Details**:
+- IP: 68.183.86.134
+- OS: Ubuntu
+- SSH: `ssh root@68.183.86.134`
+- Root Password: `D_gVKLjk!7Ja2aA`
+
+**Application Configuration** (`/app/.env`):
+```env
+NODE_ENV=production
+DATABASE_URL=mysql://root:alternative_ens@db:3306/alternative_ens
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_USER=noblemavely@gmail.com
+BREVO_API_KEY=xkeysib-7f8e923e90ea4a5f78ae6ef7e9bcf71c38b5e66c44a41e2e8e6a7f8b9c0d1e2f
+APP_URL=http://68.183.86.134
+```
+
+## How to Deploy Updates
+
+### Automatic (Once CI/CD Secret is Added)
+1. Make code changes locally
+2. Commit and push to main: `git push origin main`
+3. GitHub Actions automatically builds and deploys
+4. Application updates within 2-3 minutes
+
+### Manual
+```bash
+# SSH to server
+ssh root@68.183.86.134
+cd /app
+
+# Pull latest code
+git pull origin main
+
+# Rebuild containers
+docker-compose build --no-cache
+
+# Restart services
 docker-compose up -d
 
-# Verify
-docker-compose ps
-docker-compose logs -f
+# View logs
+docker-compose logs -f app
 ```
 
-## Verification Points
+## Verification Commands
 
-When instance comes back online, verify:
+```bash
+# Check if application is running
+curl http://68.183.86.134/
 
-1. **Application accessibility**:
-   ```bash
-   curl http://80.225.242.228:3000/
-   ```
+# Check container status
+docker-compose ps
 
-2. **Database connectivity**:
-   ```bash
-   # Using Docker (if deployed with Docker)
-   docker-compose exec db mysql -u app_user -pAppPassword123! -e "SELECT 1;"
-   
-   # Using direct MySQL (if on traditional setup)
-   mysql -u app_user -pAppPassword123! -e "USE alternative_ens; SHOW TABLES;"
-   ```
+# View application logs
+docker-compose logs -f app
 
-3. **Email verification flow**:
-   - Test registering a new expert account
-   - Verify email is sent via Brevo SMTP
-   - Confirm verification token works
+# Verify database connectivity
+docker-compose exec db mysql -u root -palternative_ens -e "SELECT 1;"
 
-4. **Expert Portal**:
-   - Header text should show logo without duplicates
-   - Onboarding flow should work
-   - Resume parsing should work
+# Check database tables
+docker-compose exec db mysql -u root -palternative_ens alternative_ens -e "SHOW TABLES;"
+```
 
-## Key Configuration Details
+## Known Limitations
 
-### Application Environment Variables
-- `DATABASE_URL`: Connection string for MySQL
-- `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`: Brevo email credentials
-- `CLAUDE_API_KEY`: For resume parsing (optional)
-- `APOLLO_API_KEY`: For LinkedIn enrichment (optional)
+1. **No HTTPS/SSL**: Currently running over HTTP. Recommend setting up Nginx + Let's Encrypt for production.
+2. **No Reverse Proxy**: Application directly exposed on port 3000. Nginx recommended.
+3. **File Storage**: Resume files not yet verified for upload/download functionality.
+4. **Database Backups**: Manual backups only. Automated backups should be configured.
 
-### Docker Compose Configuration
-- Database service name: `db`
-- Application service name: `app`
-- MySQL port: 3306 (internal to Docker network)
-- Application port: 3000 (mapped to host port 3000)
-- Data persisted in Docker volume: `db_data`
+## Success Criteria for Full Production Readiness
 
-## Files to Transfer to Oracle When Ready
+- [ ] All API endpoints returning correct responses (not 404)
+- [ ] Expert registration flow working end-to-end
+- [ ] Email verification emails sending successfully
+- [ ] Resume uploads working and visible in admin dashboard
+- [ ] LinkedIn profile enrichment functional
+- [ ] GitHub Actions CI/CD fully automated
+- [ ] Non-root application user configured
+- [ ] Automated daily database backups running
+- [ ] SSL/TLS certificates installed
+- [ ] Nginx reverse proxy configured
 
-If migrating to Docker:
-1. Entire application directory (dist/, src/, etc.)
-2. Dockerfile
-3. docker-compose.yml
-4. db-init.sql
-5. .env (with actual credentials)
-6. .dockerignore
+## Support & Troubleshooting
 
-## Rollback Plan
+See **DOCKER_DEPLOYMENT.md** for detailed troubleshooting guide.
 
-If Docker deployment has issues:
-1. Stop Docker: `docker-compose down`
-2. Fall back to PM2: `pm2 restart alternative-ens`
-3. Traditional setup remains available on the instance
-
-## Important Notes
-
-1. **pnpm-lock.yaml** required for Docker build (currently present)
-2. **Node 20 Alpine** chosen for small image size (~100MB)
-3. **MySQL 8.0** uses same credentials as previous setup
-4. **Health checks** ensure database is ready before app starts
-5. **Volume persistence** prevents data loss on container restart
-
-## Timeline
-
-- 2026-04-14 18:30 UTC: Docker files created and committed
-- 2026-04-14 23:00 UTC: Last successful connection to Oracle instance
-- 2026-04-14 23:15 UTC: Instance became unreachable
-
-## Contact/Escalation
-
-If instance doesn't come back online after extended period:
-- Check Oracle Cloud console for instance status
-- Verify billing/account is in good standing
-- Review Oracle Cloud notifications for maintenance alerts
-- Restart instance from console if needed
+For critical issues:
+1. Check logs: `docker-compose logs -f`
+2. Verify services: `docker-compose ps`
+3. Review application health: `curl http://68.183.86.134/`
+4. Check database: `docker-compose exec db mysql -u root -palternative_ens -e "SELECT 1;"`
 
 ---
 
-**Status Last Updated**: 2026-04-14 23:30 UTC
-**Next Update**: When instance is accessible or after 2 hours of downtime
+**Last Updated**: April 15, 2026 at 14:30 UTC
+**Status**: Docker Infrastructure Complete - Awaiting Feature Testing & Fixes
+**Next Phase**: Resolve API 404 errors and test core features

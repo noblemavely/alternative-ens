@@ -15,6 +15,10 @@ A comprehensive Expert Network Service platform enabling Admins to manage Client
 - [API Documentation](#api-documentation)
 - [Testing](#testing)
 - [Deployment](#deployment)
+  - [Docker Deployment on Digital Ocean](#docker-deployment-architecture)
+  - [Quick Deployment Steps](#quick-deployment-steps)
+  - [Manual Deployment](#manual-deployment-to-digital-ocean)
+  - [CI/CD with GitHub Actions](#cicd-with-github-actions)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 
@@ -73,10 +77,11 @@ A comprehensive Expert Network Service platform enabling Admins to manage Client
 - **Node.js** runtime
 
 ### Infrastructure
-- **Hostinger/Oracle Cloud** for hosting
+- **Digital Ocean** (Docker containers) for hosting
 - **Brevo SMTP** for email service
 - **S3** for file storage (CV documents)
-- **Docker/ECR** for containerization
+- **Docker/Docker Compose** for containerization
+- **GitHub Actions** for CI/CD deployment
 
 ### Testing & Quality
 - **Vitest** for unit testing
@@ -762,54 +767,161 @@ describe('Feature Name', () => {
 
 ## Deployment
 
+### Current Deployment: Digital Ocean with Docker
+
+The application is deployed on Digital Ocean using Docker containers managed by Docker Compose.
+
+**Server Details**:
+- **Host**: 68.183.86.134
+- **Domain**: alternatives.nativeworld.com
+- **Database**: MySQL 8.0 (containerized)
+- **Email**: Brevo SMTP relay
+
 ### Prerequisites for Deployment
 
 - All tests passing (`pnpm test`)
 - Production build successful (`pnpm build`)
 - Environment variables configured
-- Database migrations applied
+- Docker and Docker Compose installed on server
+- SSH access to Digital Ocean droplet
 
-### Deploying to Production
+### Docker Deployment Architecture
 
-1. **Build the Application**:
+The application uses Docker Compose with two services:
+
+1. **App Service** (Node.js):
+   - Base Image: `node:20-alpine`
+   - Package Manager: `pnpm`
+   - Port: 3000
+   - Environment: Production
+
+2. **Database Service** (MySQL 8.0):
+   - Container: `mysql:8.0`
+   - Port: 3306 (internal only)
+   - Volume: Persistent data storage
+   - Auto-restart on failure
+
+### Quick Deployment Steps
+
+1. **Build the Application Locally**:
    ```bash
    pnpm build
    ```
 
-2. **Upload to Server**:
-   - SCP the `dist/` folder to your server
-   - Upload `.env` with production credentials
-
-3. **Install Dependencies and Start**:
+2. **Push Changes to GitHub**:
    ```bash
-   # On server
-   npm install --production
-   npm start
-   # Or use PM2 for process management
-   pm2 start dist/index.js --name alternative-ens
+   git add .
+   git commit -m "feat: your feature description"
+   git push origin main
    ```
 
-4. **Verify Deployment**:
-   - Check application is running on configured port
-   - Verify database connectivity
-   - Test email service (Brevo SMTP)
-   - Confirm OAuth endpoints are accessible
+3. **Automatic Deployment**:
+   - GitHub Actions workflow is triggered on push to `main` branch
+   - Workflow builds the application and deploys to Digital Ocean
+   - **Note**: Set `DO_PASSWORD` GitHub secret with your root password for CI/CD
 
-See **COMPLETE_HOSTINGER_SETUP_GUIDE.md** for detailed deployment instructions.
+### Manual Deployment to Digital Ocean
 
-### Environment-Specific Configuration
+If you need to deploy manually:
 
-**Development**:
-```env
-NODE_ENV=development
-DEBUG=true
+```bash
+# 1. SSH to the server
+ssh root@68.183.86.134
+
+# 2. Navigate to app directory
+cd /app
+
+# 3. Pull latest changes
+git pull origin main
+
+# 4. Rebuild Docker containers
+docker-compose build --no-cache
+
+# 5. Restart services
+docker-compose up -d
+
+# 6. Verify deployment
+docker-compose logs -f app
 ```
 
-**Production**:
+### Environment Variables (Production)
+
+Create `.env` file on the server:
+
 ```env
 NODE_ENV=production
 DEBUG=false
+DATABASE_URL=mysql://root:alternative_ens@db:3306/alternative_ens
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=noblemavely@gmail.com
+SMTP_PASSWORD=bskv4wGcai9yWss
+BREVO_API_KEY=xkeysib-7f8e923e90ea4a5f78ae6ef7e9bcf71c38b5e66c44a41e2e8e6a7f8b9c0d1e2f
+APP_URL=http://68.183.86.134
 ```
+
+### Docker Files
+
+- **Dockerfile**: Node.js application containerization
+- **docker-compose.yml**: Multi-container orchestration
+- **.github/workflows/deploy-docker.yml**: GitHub Actions CI/CD pipeline
+
+### Database Migrations
+
+Migrations are automatically applied when the app container starts. To manually run migrations:
+
+```bash
+# SSH to server
+ssh root@68.183.86.134
+cd /app
+
+# Run migrations in database container
+docker-compose exec db mysql -u root -palternative_ens alternative_ens < drizzle/migrations/[migration_file].sql
+```
+
+### Monitoring and Logs
+
+```bash
+# View application logs
+docker-compose logs -f app
+
+# View database logs
+docker-compose logs -f db
+
+# Check container status
+docker-compose ps
+
+# View process stats
+docker stats
+```
+
+### Scaling and Updates
+
+1. **Update Application Code**:
+   - Commit changes to GitHub
+   - GitHub Actions automatically deploys to Digital Ocean
+
+2. **Update Dependencies**:
+   ```bash
+   pnpm install
+   pnpm build
+   git commit -am "chore: update dependencies"
+   git push origin main
+   ```
+
+3. **Database Schema Changes**:
+   - Generate migrations: `pnpm drizzle-kit generate`
+   - Add migration files to repository
+   - Migrations run automatically on next deployment
+
+### Health Checks
+
+- **Application**: `http://68.183.86.134` should return HTML
+- **Database**: Verify connectivity from app container
+- **Email**: Test verification email sends during expert registration
+- **Logs**: Check `docker-compose logs app` for errors
+
+See **DOCKER_DEPLOYMENT.md** for detailed Docker setup and **DEPLOYMENT_TESTING_GUIDE.md** for testing procedures.
 
 ## Troubleshooting
 
@@ -953,11 +1065,13 @@ For issues, questions, or feature requests:
 
 ---
 
-**Last Updated**: April 12, 2026 (Client Data Architecture & Expert Resume PDFs)
-**Version**: 1.0.2 (Data Architecture Improvements)
+**Last Updated**: April 15, 2026 (Docker Deployment & GitHub Actions CI/CD)
+**Version**: 1.1.0 (Docker Infrastructure Release)
 **Status**: Production Ready ✅
 **Latest Features**: 
-- ✅ Email data moved from clients to clientContacts table
-- ✅ All 5 experts have static resume PDF files
-- ✅ Improved Admin Dashboard UI for clients
-- ✅ PDF Viewer: Iframe-based Implementation (Browser Native)
+- ✅ Docker containerization with docker-compose
+- ✅ Deployed to Digital Ocean (68.183.86.134)
+- ✅ GitHub Actions CI/CD pipeline for automated deployment
+- ✅ MySQL 8.0 containerized database
+- ✅ Domain: alternatives.nativeworld.com
+- ✅ Brevo SMTP email integration

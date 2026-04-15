@@ -145,10 +145,11 @@ EOF
 ### Prerequisites
 - Node.js v22.13.0+
 - pnpm v9.0.0+
-- MySQL/TiDB instance
+- MySQL/TiDB instance (local) OR Docker (for containerized local dev)
 - Git
+- Docker & Docker Compose (optional, for testing containerized deployment)
 
-### Initial Setup
+### Initial Setup (Development)
 
 ```bash
 # Clone repository
@@ -171,6 +172,41 @@ node seed-db.mjs
 
 # Start development server
 pnpm dev
+```
+
+### Setup with Docker (Optional - Mirrors Production)
+
+```bash
+# Clone repository
+git clone https://github.com/noblemavely/alternative-ens.git
+cd alternative-ens
+
+# Install dependencies
+pnpm install
+
+# Build application
+pnpm build
+
+# Create .env file (copy from docker-compose.yml template)
+cat > .env << 'EOF'
+NODE_ENV=development
+DATABASE_URL=mysql://root:alternative_ens@db:3306/alternative_ens
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=noblemavely@gmail.com
+SMTP_PASSWORD=bskv4wGcai9yWss
+BREVO_API_KEY=xkeysib-7f8e923e90ea4a5f78ae6ef7e9bcf71c38b5e66c44a41e2e8e6a7f8b9c0d1e2f
+APP_URL=http://localhost:3000
+EOF
+
+# Start with Docker Compose
+docker-compose up -d
+
+# Verify containers are running
+docker-compose ps
+
+# View logs
+docker-compose logs -f app
 ```
 
 ## Git Workflow
@@ -372,6 +408,95 @@ pnpm test:coverage
 - Mock external dependencies
 - Aim for >80% coverage on new code
 
+## Deployment & CI/CD
+
+### Production Deployment Architecture
+
+The application is deployed on Digital Ocean using Docker Compose:
+
+**Server Details:**
+- Host: 68.183.86.134
+- Domain: alternatives.nativeworld.com
+- Database: MySQL 8.0 (containerized)
+- Deployment: Docker Compose
+
+### How Deployment Works
+
+When you push to the `main` branch:
+
+1. GitHub Actions workflow triggers (`.github/workflows/deploy-docker.yml`)
+2. Application is built: `pnpm build`
+3. `dist/` folder is transferred to Digital Ocean
+4. Docker containers are rebuilt: `docker-compose build --no-cache`
+5. Services are restarted: `docker-compose up -d`
+6. Application is live within 2-3 minutes
+
+### Deployment Requirements
+
+For CI/CD to work, the `DO_PASSWORD` GitHub secret must be configured:
+
+1. Go to GitHub repository → Settings → Secrets and variables → Actions
+2. Create new secret: `DO_PASSWORD` = Digital Ocean root password
+3. CI/CD will then be fully automated
+
+### Deploying Your Changes
+
+```bash
+# 1. Make your changes
+git checkout -b feature/your-feature-name
+
+# 2. Test locally
+pnpm test
+pnpm build
+
+# 3. Commit with clear message
+git commit -m "feat: description of your feature"
+
+# 4. Push to main
+git push origin feature/your-feature-name
+
+# 5. Create Pull Request and get approval
+
+# 6. After merge, deployment is automatic!
+# Application will be live on https://alternatives.nativeworld.com
+```
+
+### Manual Deployment
+
+If you need to deploy without going through GitHub:
+
+```bash
+# SSH to server
+ssh root@68.183.86.134
+cd /app
+
+# Pull latest code
+git pull origin main
+
+# Rebuild and restart
+docker-compose build --no-cache
+docker-compose up -d
+
+# View logs
+docker-compose logs -f app
+```
+
+### Verifying Deployment
+
+```bash
+# Check if application is running
+curl https://alternatives.nativeworld.com/
+
+# View recent logs
+docker-compose logs -f app
+
+# Check container status
+docker-compose ps
+
+# Verify database connectivity
+docker-compose exec db mysql -u root -palternative_ens -e "SELECT 1;"
+```
+
 ## Documentation
 
 ### README.md
@@ -380,6 +505,22 @@ Update when:
 - Adding new features
 - Changing setup process
 - Updating architecture
+- Changing deployment process
+
+### DOCKER_DEPLOYMENT.md
+
+Update when:
+- Docker/Docker Compose changes
+- Server infrastructure changes
+- New deployment procedures
+- Troubleshooting steps
+
+### DEPLOYMENT_STATUS.md
+
+Update when:
+- Deployment status changes
+- Outstanding issues are resolved
+- New features are deployed
 
 ### ARCHITECTURE.md
 
