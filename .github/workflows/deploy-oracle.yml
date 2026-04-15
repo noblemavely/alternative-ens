@@ -34,10 +34,10 @@ jobs:
       
       - name: Upload to Oracle Cloud
         env:
-          ORACLE_HOST: 80.225.252.115
+          ORACLE_HOST: 80.225.242.228
           ORACLE_USER: ubuntu
           ORACLE_KEY: ${{ secrets.ORACLE_PRIVATE_KEY }}
-          ORACLE_APP_PATH: /opt/alternative-ens
+          ORACLE_APP_PATH: /home/ubuntu/app
         run: |
           # Setup SSH key
           mkdir -p ~/.ssh
@@ -50,7 +50,7 @@ jobs:
           # Restart application via SSH
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/oracle_key $ORACLE_USER@$ORACLE_HOST << 'SSH'
             cd $ORACLE_APP_PATH
-            pm2 restart alternative-ens || pm2 start index.js --name alternative-ens
+            pm2 restart alternative-ens --update-env || pm2 start dist/index.js --name alternative-ens
             pm2 save
           SSH
       
