@@ -52,7 +52,12 @@ export default function AdminLogin() {
       }
     } catch (error: any) {
       console.error("Login error:", error);
-      toast.error(error.message || "Failed to login");
+      const errorMessage = error?.data?.zodError ?
+        JSON.stringify(error.data.zodError) :
+        error?.message ||
+        "Failed to login";
+      console.error("Detailed error:", errorMessage);
+      toast.error(`Error: ${errorMessage}`);
     }
   };
 
@@ -65,9 +70,8 @@ export default function AdminLogin() {
             <img
               src="https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/Alternative_Logo_White_Background-removebg-preview_9d4821e4.png"
               alt="AlterNatives"
-              className="h-10 w-auto object-contain"
+              className="h-12 w-auto object-contain"
             />
-            <span className="text-2xl font-bold text-slate-900">AlterNatives</span>
           </div>
           <p className="text-slate-600">Admin Portal</p>
         </div>

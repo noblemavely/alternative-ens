@@ -55,6 +55,10 @@ export default function AdminExpertDetail() {
   // Fetch client contacts
   const contactsQuery = trpc.clientContacts.list.useQuery();
 
+  // Fetch sectors and functions picklists
+  const sectorsQuery = trpc.sectors.list.useQuery();
+  const functionsQuery = trpc.functions.list.useQuery();
+
   // Fetch projects for this expert (where expert is shortlisted)
   const expertProjectsQuery = trpc.experts.getProjectsForExpert.useQuery(
     { expertId: expertId! },
@@ -352,21 +356,49 @@ export default function AdminExpertDetail() {
                   </div>
                   <div>
                     <Label className="text-xs font-semibold text-slate-600">Sector</Label>
-                    <Input
-                      value={formData.sector}
-                      onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
-                      disabled={!isEditing}
-                      className="text-slate-900"
-                    />
+                    {isEditing ? (
+                      <Select value={formData.sector} onValueChange={(value) => setFormData({ ...formData, sector: value })}>
+                        <SelectTrigger className="text-slate-900">
+                          <SelectValue placeholder="Select a sector..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sectorsQuery.data?.map((sector: any) => (
+                            <SelectItem key={sector.id} value={sector.name}>
+                              {sector.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        value={formData.sector}
+                        disabled={true}
+                        className="text-slate-900"
+                      />
+                    )}
                   </div>
                   <div>
                     <Label className="text-xs font-semibold text-slate-600">Function</Label>
-                    <Input
-                      value={formData.function}
-                      onChange={(e) => setFormData({ ...formData, function: e.target.value })}
-                      disabled={!isEditing}
-                      className="text-slate-900"
-                    />
+                    {isEditing ? (
+                      <Select value={formData.function} onValueChange={(value) => setFormData({ ...formData, function: value })}>
+                        <SelectTrigger className="text-slate-900">
+                          <SelectValue placeholder="Select a function..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {functionsQuery.data?.map((func: any) => (
+                            <SelectItem key={func.id} value={func.name}>
+                              {func.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        value={formData.function}
+                        disabled={true}
+                        className="text-slate-900"
+                      />
+                    )}
                   </div>
                 </div>
                 <div>

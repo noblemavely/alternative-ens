@@ -971,12 +971,14 @@ export async function seedDatabase() {
       },
     ];
     
-    const clientResults = [];
+    const clientIds = [];
     for (const client of clientData) {
       const result = await db.insert(clients).values(client);
-      clientResults.push(result);
+      // Get the last inserted ID using MySQL's LAST_INSERT_ID()
+      const idResult = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
+      const insertedId = (idResult.rows[0] as any).id as number;
+      clientIds.push(insertedId);
     }
-    const clientIds = clientResults.map(r => r[0].insertId as number);
 
     // Seed Client Contacts
     const clientContactData = [
@@ -988,12 +990,14 @@ export async function seedDatabase() {
       { clientId: clientIds[2], contactName: 'Frank Anderson', email: 'frank.anderson@healthcaresolutions.com', phone: '+1-555-0206', role: 'SPOC', workType: 'Research', isActive: true },
     ];
     
-    const contactResults = [];
+    const contactIds = [];
     for (const contact of clientContactData) {
       const result = await db.insert(clientContacts).values(contact);
-      contactResults.push(result);
+      // Get the last inserted ID using MySQL's LAST_INSERT_ID()
+      const idResult = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
+      const insertedId = (idResult.rows[0] as any).id as number;
+      contactIds.push(insertedId);
     }
-    const contactIds = contactResults.map(r => r[0].insertId as number);
 
     // Seed Experts
     const expertData = [
@@ -1074,12 +1078,14 @@ export async function seedDatabase() {
       },
     ];
     
-    const expertResults = [];
+    const expertIds = [];
     for (const expert of expertData) {
       const result = await db.insert(experts).values(expert);
-      expertResults.push(result);
+      // Get the last inserted ID using MySQL's LAST_INSERT_ID()
+      const idResult = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
+      const insertedId = (idResult.rows[0] as any).id as number;
+      expertIds.push(insertedId);
     }
-    const expertIds = expertResults.map(r => r[0].insertId as number);
 
     // Seed Expert Employment History
     const employmentData = [
@@ -1179,12 +1185,14 @@ export async function seedDatabase() {
       },
     ];
     
-    const projectResults = [];
+    const projectIds = [];
     for (const project of projectData) {
       const result = await db.insert(projects).values(project);
-      projectResults.push(result);
+      // Get the last inserted ID using MySQL's LAST_INSERT_ID()
+      const idResult = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
+      const insertedId = (idResult.rows[0] as any).id as number;
+      projectIds.push(insertedId);
     }
-    const projectIds = projectResults.map(r => r[0].insertId as number);
 
     // Seed Screening Questions
     const questionData = [
