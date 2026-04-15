@@ -1,4 +1,27 @@
 // Use a lazy-loaded getter so environment variables are read at access time, not at module load time
+interface EnvVariables {
+  appId: string;
+  cookieSecret: string;
+  databaseUrl: string;
+  oAuthServerUrl: string;
+  ownerOpenId: string;
+  isProduction: boolean;
+  forgeApiUrl: string;
+  forgeApiKey: string;
+  linkedinClientId: string;
+  linkedinClientSecret: string;
+  appOrigin: string;
+  claudeApiKey: string;
+  apolloApiKey: string;
+  smtpHost: string;
+  smtpPort: number;
+  smtpUser: string;
+  smtpPassword: string;
+  smtpFromEmail: string;
+  smtpFromName: string;
+  brevoApiKey: string;
+}
+
 export const ENV = new Proxy({}, {
   get: (target, prop: string) => {
     switch (prop) {
@@ -46,4 +69,4 @@ export const ENV = new Proxy({}, {
         return undefined;
     }
   }
-} as any);
+} as any) as EnvVariables;

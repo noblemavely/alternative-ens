@@ -1,7 +1,8 @@
 import { eq, and, like, or, inArray, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import * as mysql from "mysql2/promise";
 import * as schema from "../drizzle/schema";
+import type { Pool } from "mysql2/promise";
 import {
   InsertUser,
   users,
@@ -34,7 +35,7 @@ import {
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
-let _db: ReturnType<typeof drizzle> | null = null;
+let _db: (MySql2Database<typeof schema> & { $client: Pool }) | null = null;
 
 async function initializeSchema(pool: any) {
   try {
@@ -180,7 +181,7 @@ async function initializeSchema(pool: any) {
   }
 }
 
-export async function getDb() {
+export async function getDb(): Promise<(MySql2Database<typeof schema> & { $client: Pool }) | null> {
   if (!_db && process.env.DATABASE_URL) {
     try {
       const dbUrl = process.env.DATABASE_URL;
@@ -428,11 +429,16 @@ export async function createProject(data: Omit<Project, "id" | "createdAt" | "up
   if (!db) throw new Error("Database not available");
 
   const result = await db.insert(projects).values(data);
+  const pool = (db as any).$client;
+
+  // Get the inserted project ID
+  const [rows] = await pool.execute('SELECT LAST_INSERT_ID() as id');
+  const projectId = (rows[0] as any).id as number;
 
   // Create initial activity timeline event
-  if (result.insertId) {
+  if (projectId) {
     await createProjectActivityEvent(
-      Number(result.insertId),
+      projectId,
       "created",
       "Project Created",
       `Project was created with initial status: ${data.status || "Active"}`
