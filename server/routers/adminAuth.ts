@@ -8,38 +8,12 @@ const ENV = process.env;
 
 export const adminAuthRouter = router({
   login: publicProcedure
-    .mutation(async ({ ctx }) => {
-      // Extract input from request body
-      let loginInput = ctx.req.body;
-
-      console.log("[AdminAuth] Raw request body type:", typeof loginInput);
-      console.log("[AdminAuth] Raw request body:", JSON.stringify(loginInput).slice(0, 500));
-      console.log("[AdminAuth] Body keys:", Object.keys(loginInput || {}));
-
-      // Handle batch format from httpBatchLink
-      // Format can be: {"0": {"json": {email, password}}} or {"0": {"input": {email, password}}}
-      if (loginInput && typeof loginInput === 'object' && !loginInput.email && !loginInput.password) {
-        if (loginInput['0']) {
-          console.log("[AdminAuth] Found batch key '0':", JSON.stringify(loginInput['0']).slice(0, 300));
-          if (loginInput['0'].json) {
-            loginInput = loginInput['0'].json;
-            console.log("[AdminAuth] Extracted from json key");
-          } else if (loginInput['0'].input) {
-            loginInput = loginInput['0'].input;
-            console.log("[AdminAuth] Extracted from input key");
-          }
-        }
-      }
-
-      console.log("[AdminAuth] After extraction - email:", loginInput?.email, "password exists:", !!loginInput?.password);
-
-      // Validate input
-      if (!loginInput?.email || !loginInput?.password) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Email and password are required",
-        });
-      }
+    .input(z.object({
+      email: z.string().email(),
+      password: z.string().min(1),
+    }))
+    .mutation(async ({ input }) => {
+      // Input is already validated by Zod schema above
 
       try {
         const admin = await verifyAdminPassword(loginInput.email, loginInput.password);

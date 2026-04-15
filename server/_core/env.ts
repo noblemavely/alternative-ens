@@ -40,6 +40,8 @@ export const ENV = new Proxy({}, {
         return process.env.SMTP_FROM_EMAIL ?? "";
       case "smtpFromName":
         return process.env.SMTP_FROM_NAME ?? "Alternatives Team";
+      case "brevoApiKey":
+        return process.env.BREVO_API_KEY ?? "";
       default:
         return undefined;
     }

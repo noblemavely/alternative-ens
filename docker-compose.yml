@@ -26,6 +26,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: alternative-ens-app
+    env_file:
+      - .env
     environment:
       NODE_ENV: production
       DATABASE_URL: mysql://root:alternative_ens@db:3306/alternative_ens
