@@ -980,11 +980,12 @@ export async function seedDatabase() {
     const clientIds = [];
     const pool = (db as any).$client;
     for (const client of clientData) {
-      const result = await db.insert(clients).values(client);
-      // Get the last inserted ID using MySQL's LAST_INSERT_ID()
-      const [rows] = await pool.execute('SELECT LAST_INSERT_ID() as id');
-      const insertedId = (rows[0] as any).id as number;
-      clientIds.push(insertedId);
+      // Insert using raw SQL to get insertId
+      const [result] = await pool.execute(
+        'INSERT INTO clients (name, email, phone, companyName, companyWebsite, contactPerson, sector) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [client.name, client.email, client.phone, client.companyName, client.companyWebsite, client.contactPerson, client.sector]
+      );
+      clientIds.push((result as any).insertId);
     }
 
     // Seed Client Contacts
@@ -999,10 +1000,11 @@ export async function seedDatabase() {
     
     const contactIds = [];
     for (const contact of clientContactData) {
-      const result = await db.insert(clientContacts).values(contact);
-      // Get the last inserted ID using MySQL's LAST_INSERT_ID()
-      const [rows] = await pool.execute('SELECT LAST_INSERT_ID() as id');
-      const insertedId = (rows[0] as any).id as number;
+      const [result] = await pool.execute(
+        'INSERT INTO clientContacts (clientId, contactName, email, phone, role, workType, isActive) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [contact.clientId, contact.contactName, contact.email, contact.phone, contact.role, contact.workType, contact.isActive]
+      );
+      const insertedId = (result as any).insertId;
       contactIds.push(insertedId);
     }
 
@@ -1087,11 +1089,11 @@ export async function seedDatabase() {
     
     const expertIds = [];
     for (const expert of expertData) {
-      const result = await db.insert(experts).values(expert);
-      // Get the last inserted ID using MySQL's LAST_INSERT_ID()
-      const [rows] = await pool.execute('SELECT LAST_INSERT_ID() as id');
-      const insertedId = (rows[0] as any).id as number;
-      expertIds.push(insertedId);
+      const [result] = await pool.execute(
+        'INSERT INTO experts (email, phone, firstName, lastName, sector, function, biography, linkedinUrl, cvUrl, cvKey, isVerified, verificationToken, verificationTokenExpiry) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [expert.email, expert.phone, expert.firstName, expert.lastName, expert.sector, expert.function, expert.biography, expert.linkedinUrl, expert.cvUrl, expert.cvKey, expert.isVerified, expert.verificationToken, expert.verificationTokenExpiry]
+      );
+      expertIds.push((result as any).insertId);
     }
 
     // Seed Expert Employment History
@@ -1194,11 +1196,11 @@ export async function seedDatabase() {
     
     const projectIds = [];
     for (const project of projectData) {
-      const result = await db.insert(projects).values(project);
-      // Get the last inserted ID using MySQL's LAST_INSERT_ID()
-      const [rows] = await pool.execute('SELECT LAST_INSERT_ID() as id');
-      const insertedId = (rows[0] as any).id as number;
-      projectIds.push(insertedId);
+      const [result] = await pool.execute(
+        'INSERT INTO projects (clientContactId, name, description, projectType, targetCompanies, targetPersona, rate, currency, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [project.clientContactId, project.name, project.description, project.projectType, project.targetCompanies, project.targetPersona, project.rate, project.currency, project.status]
+      );
+      projectIds.push((result as any).insertId);
     }
 
     // Seed Screening Questions
