@@ -1,4 +1,4 @@
-import { eq, and, like, or, inArray } from "drizzle-orm";
+import { eq, and, like, or, inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import * as mysql from "mysql2/promise";
 import * as schema from "../drizzle/schema";
@@ -972,11 +972,12 @@ export async function seedDatabase() {
     ];
     
     const clientIds = [];
+    const pool = (db as any).$client;
     for (const client of clientData) {
       const result = await db.insert(clients).values(client);
       // Get the last inserted ID using MySQL's LAST_INSERT_ID()
-      const idResult = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
-      const insertedId = (idResult.rows[0] as any).id as number;
+      const [rows] = await pool.execute('SELECT LAST_INSERT_ID() as id');
+      const insertedId = (rows[0] as any).id as number;
       clientIds.push(insertedId);
     }
 
@@ -994,8 +995,8 @@ export async function seedDatabase() {
     for (const contact of clientContactData) {
       const result = await db.insert(clientContacts).values(contact);
       // Get the last inserted ID using MySQL's LAST_INSERT_ID()
-      const idResult = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
-      const insertedId = (idResult.rows[0] as any).id as number;
+      const [rows] = await pool.execute('SELECT LAST_INSERT_ID() as id');
+      const insertedId = (rows[0] as any).id as number;
       contactIds.push(insertedId);
     }
 
@@ -1082,8 +1083,8 @@ export async function seedDatabase() {
     for (const expert of expertData) {
       const result = await db.insert(experts).values(expert);
       // Get the last inserted ID using MySQL's LAST_INSERT_ID()
-      const idResult = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
-      const insertedId = (idResult.rows[0] as any).id as number;
+      const [rows] = await pool.execute('SELECT LAST_INSERT_ID() as id');
+      const insertedId = (rows[0] as any).id as number;
       expertIds.push(insertedId);
     }
 
@@ -1189,8 +1190,8 @@ export async function seedDatabase() {
     for (const project of projectData) {
       const result = await db.insert(projects).values(project);
       // Get the last inserted ID using MySQL's LAST_INSERT_ID()
-      const idResult = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
-      const insertedId = (idResult.rows[0] as any).id as number;
+      const [rows] = await pool.execute('SELECT LAST_INSERT_ID() as id');
+      const insertedId = (rows[0] as any).id as number;
       projectIds.push(insertedId);
     }
 
