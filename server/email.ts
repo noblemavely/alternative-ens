@@ -25,6 +25,8 @@ async function getTransporter(): Promise<any> {
           user,
           pass: password,
         },
+        connectionTimeout: 10000, // 10 second timeout
+        socketTimeout: 10000,     // 10 second timeout
       });
 
       console.log(`[Email Service] SMTP configured for ${host}:${port}`);
