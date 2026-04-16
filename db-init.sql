@@ -24,9 +24,14 @@ CREATE TABLE IF NOT EXISTS clients (
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
   phone VARCHAR(20),
+  companyName VARCHAR(255),
+  companyWebsite VARCHAR(255),
+  contactPerson VARCHAR(255),
+  sector VARCHAR(255),
   industry VARCHAR(255),
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Experts table
@@ -34,16 +39,16 @@ CREATE TABLE IF NOT EXISTS experts (
   id INT AUTO_INCREMENT PRIMARY KEY,
   firstName VARCHAR(255),
   lastName VARCHAR(255),
-  email VARCHAR(255) NOT NULL UNIQUE,
+  email VARCHAR(320) NOT NULL UNIQUE,
   phone VARCHAR(20),
   sector VARCHAR(255),
   `function` VARCHAR(255),
-  linkedinUrl VARCHAR(255),
-  biography TEXT,
-  cvUrl VARCHAR(255),
-  cvKey VARCHAR(255),
+  linkedinUrl VARCHAR(500),
+  biography LONGTEXT,
+  cvUrl VARCHAR(500),
+  cvKey VARCHAR(500),
   verificationToken VARCHAR(255),
-  verificationTokenExpiry DATETIME,
+  verificationTokenExpiry TIMESTAMP NULL,
   isVerified BOOLEAN DEFAULT FALSE,
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -106,6 +111,83 @@ CREATE TABLE IF NOT EXISTS adminUsers (
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Client Contacts table
+CREATE TABLE IF NOT EXISTS clientContacts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  clientId INT NOT NULL,
+  contactName VARCHAR(255) NOT NULL,
+  email VARCHAR(320) NOT NULL,
+  phone VARCHAR(20),
+  role VARCHAR(255),
+  workType VARCHAR(255),
+  isActive BOOLEAN DEFAULT TRUE NOT NULL,
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (clientId) REFERENCES clients(id) ON DELETE CASCADE,
+  INDEX idx_email (email),
+  INDEX idx_clientId (clientId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Projects table
+CREATE TABLE IF NOT EXISTS projects (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  clientContactId INT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description LONGTEXT,
+  projectType ENUM('Call', 'Advisory', 'ID') NOT NULL,
+  targetCompanies TEXT,
+  targetPersona TEXT,
+  rate DECIMAL(10, 2),
+  currency VARCHAR(3) DEFAULT 'USD' NOT NULL,
+  status ENUM('Active', 'On Hold', 'Closed') DEFAULT 'Active' NOT NULL,
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (clientContactId) REFERENCES clientContacts(id) ON DELETE CASCADE,
+  INDEX idx_clientContactId (clientContactId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Screening Questions table
+CREATE TABLE IF NOT EXISTS screeningQuestions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  projectId INT NOT NULL,
+  question LONGTEXT NOT NULL,
+  `order` INT DEFAULT 0 NOT NULL,
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE,
+  INDEX idx_projectId (projectId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Shortlists table
+CREATE TABLE IF NOT EXISTS shortlists (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  projectId INT NOT NULL,
+  expertId INT NOT NULL,
+  status ENUM('pending', 'interested', 'rejected', 'new', 'contacted', 'attempting_contact', 'engaged', 'qualified', 'proposal_sent', 'negotiation', 'verbal_agreement', 'closed_won', 'closed_lost') DEFAULT 'pending' NOT NULL,
+  notes LONGTEXT,
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE,
+  FOREIGN KEY (expertId) REFERENCES experts(id) ON DELETE CASCADE,
+  INDEX idx_projectId (projectId),
+  INDEX idx_expertId (expertId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Expert-Client Mapping table
+CREATE TABLE IF NOT EXISTS expertClientMapping (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  expertId INT NOT NULL,
+  clientId INT NOT NULL,
+  status ENUM('shortlisted', 'contacted', 'attempting_contact', 'engaged', 'qualified', 'proposal_sent', 'negotiation', 'verbal_agreement', 'closed_won', 'closed_lost') DEFAULT 'shortlisted' NOT NULL,
+  notes LONGTEXT,
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (expertId) REFERENCES experts(id) ON DELETE CASCADE,
+  FOREIGN KEY (clientId) REFERENCES clients(id) ON DELETE CASCADE,
+  INDEX idx_expertId (expertId),
+  INDEX idx_clientId (clientId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insert sample data (optional, can be commented out)
