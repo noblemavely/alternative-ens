@@ -910,24 +910,32 @@ export async function seedDatabase() {
   try {
     console.log("[seedDatabase] Starting seed operation");
 
-    // Start with simple approach: just seed picklists (sectors and functions)
-    // This is the minimal viable seed to populate the admin dropdowns
-
     // Clear existing data (in reverse order of dependencies)
-    console.log("[seedDatabase] Clearing existing picklist data...");
-    try {
-      await db.delete(sectors);
-      console.log("[seedDatabase] Deleted sectors");
-    } catch (e) {
-      console.log("[seedDatabase] No sectors to delete");
-    }
-
-    try {
-      await db.delete(functions);
-      console.log("[seedDatabase] Deleted functions");
-    } catch (e) {
-      console.log("[seedDatabase] No functions to delete");
-    }
+    console.log("[seedDatabase] Deleting existing data...");
+    await db.delete(expertVerification);
+    console.log("[seedDatabase] Deleted expertVerification");
+    await db.delete(shortlists);
+    console.log("[seedDatabase] Deleted shortlists");
+    await db.delete(expertClientMapping);
+    console.log("[seedDatabase] Deleted expertClientMapping");
+    await db.delete(screeningQuestions);
+    console.log("[seedDatabase] Deleted screeningQuestions");
+    await db.delete(projects);
+    console.log("[seedDatabase] Deleted projects");
+    await db.delete(expertEducation);
+    console.log("[seedDatabase] Deleted expertEducation");
+    await db.delete(expertEmployment);
+    console.log("[seedDatabase] Deleted expertEmployment");
+    await db.delete(experts);
+    console.log("[seedDatabase] Deleted experts");
+    await db.delete(clientContacts);
+    console.log("[seedDatabase] Deleted clientContacts");
+    await db.delete(clients);
+    console.log("[seedDatabase] Deleted clients");
+    await db.delete(functions);
+    console.log("[seedDatabase] Deleted functions");
+    await db.delete(sectors);
+    console.log("[seedDatabase] Deleted sectors");
 
     // Seed Sectors
     console.log("[seedDatabase] Seeding sectors...");
@@ -938,18 +946,10 @@ export async function seedDatabase() {
       { name: 'Manufacturing', description: 'Industrial, Automotive, Consumer Goods' },
       { name: 'Retail', description: 'E-commerce, Brick & Mortar, Fashion' },
     ];
-    for (const sector of sectorData) {
-      try {
-        await db.insert(sectors).values(sector);
-        console.log("[seedDatabase] Inserted sector:", sector.name);
-      } catch (e) {
-        console.log("[seedDatabase] Failed to insert sector:", sector.name, e);
-      }
-    }
+    await db.insert(sectors).values(sectorData);
     console.log("[seedDatabase] Sectors seeded successfully");
 
     // Seed Functions
-    console.log("[seedDatabase] Seeding functions...");
     const functionData = [
       { name: 'Chief Executive Officer', description: 'C-level executive leadership' },
       { name: 'Chief Financial Officer', description: 'Financial leadership and strategy' },
@@ -958,24 +958,292 @@ export async function seedDatabase() {
       { name: 'Senior Manager', description: 'Management level' },
       { name: 'Product Manager', description: 'Product leadership and strategy' },
     ];
-    for (const func of functionData) {
-      try {
-        await db.insert(functions).values(func);
-        console.log("[seedDatabase] Inserted function:", func.name);
-      } catch (e) {
-        console.log("[seedDatabase] Failed to insert function:", func.name, e);
-      }
-    }
-    console.log("[seedDatabase] Functions seeded successfully");
+    await db.insert(functions).values(functionData);
 
+    // Seed Clients
+    const clientData = [
+      {
+        name: 'John Smith',
+        email: 'john.smith@techcorp.com',
+        phone: '+1-555-0101',
+        companyName: 'TechCorp Inc',
+        companyWebsite: 'https://techcorp.com',
+        contactPerson: 'John Smith',
+        sector: 'Technology',
+      },
+      {
+        name: 'Sarah Johnson',
+        email: 'sarah.johnson@financeplus.com',
+        phone: '+1-555-0102',
+        companyName: 'FinancePlus LLC',
+        companyWebsite: 'https://financeplus.com',
+        contactPerson: 'Sarah Johnson',
+        sector: 'Finance',
+      },
+      {
+        name: 'Michael Chen',
+        email: 'michael.chen@healthcare.com',
+        phone: '+1-555-0103',
+        companyName: 'HealthCare Solutions',
+        companyWebsite: 'https://healthcaresolutions.com',
+        contactPerson: 'Michael Chen',
+        sector: 'Healthcare',
+      },
+    ];
 
-    console.log("[seedDatabase] Picklist seed completed successfully");
+    // Insert clients and retrieve their IDs
+    const insertedClients = await db.insert(clients).values(clientData);
+    // For Drizzle, we need to fetch the inserted clients to get their IDs
+    // Fetch in the same order as the original data to maintain consistency
+    const fetchedClients = await Promise.all(
+      clientData.map(c =>
+        db.select().from(clients).where(eq(clients.email, c.email)).limit(1)
+      )
+    );
+    const clientIds = fetchedClients.map(result => result[0]?.id).filter((id): id is number => id !== undefined);
+
+    // Seed Client Contacts
+    const clientContactData = [
+      { clientId: clientIds[0], contactName: 'Alice Brown', email: 'alice.brown@techcorp.com', phone: '+1-555-0201', role: 'Hiring Manager', workType: 'Recruitment', isActive: true },
+      { clientId: clientIds[0], contactName: 'Bob Wilson', email: 'bob.wilson@techcorp.com', phone: '+1-555-0202', role: 'Project Lead', workType: 'Advisory', isActive: true },
+      { clientId: clientIds[1], contactName: 'Carol Davis', email: 'carol.davis@financeplus.com', phone: '+1-555-0203', role: 'SPOC', workType: 'Research', isActive: true },
+      { clientId: clientIds[1], contactName: 'David Miller', email: 'david.miller@financeplus.com', phone: '+1-555-0204', role: 'Hiring Manager', workType: 'Recruitment', isActive: true },
+      { clientId: clientIds[2], contactName: 'Emma Taylor', email: 'emma.taylor@healthcaresolutions.com', phone: '+1-555-0205', role: 'Project Lead', workType: 'Advisory', isActive: true },
+      { clientId: clientIds[2], contactName: 'Frank Anderson', email: 'frank.anderson@healthcaresolutions.com', phone: '+1-555-0206', role: 'SPOC', workType: 'Research', isActive: true },
+    ];
+
+    await db.insert(clientContacts).values(clientContactData);
+    const fetchedContacts = await Promise.all(
+      clientContactData.map(c =>
+        db.select().from(clientContacts).where(eq(clientContacts.email, c.email)).limit(1)
+      )
+    );
+    const contactIds = fetchedContacts.map(result => result[0]?.id).filter((id): id is number => id !== undefined);
+
+    // Seed Experts
+    const expertData = [
+      {
+        email: 'expert1@example.com',
+        phone: '+1-555-1001',
+        firstName: 'Robert',
+        lastName: 'Thompson',
+        sector: 'Technology',
+        function: 'Chief Technology Officer',
+        biography: 'Experienced CTO with 15+ years in cloud infrastructure and AI/ML solutions.',
+        linkedinUrl: 'https://linkedin.com/in/rthompson',
+        isVerified: true,
+      },
+      {
+        email: 'expert2@example.com',
+        phone: '+1-555-1002',
+        firstName: 'Jennifer',
+        lastName: 'Martinez',
+        sector: 'Finance',
+        function: 'Chief Financial Officer',
+        biography: 'CFO with expertise in financial strategy, M&A, and capital markets.',
+        linkedinUrl: 'https://linkedin.com/in/jmartinez',
+        isVerified: true,
+      },
+      {
+        email: 'expert3@example.com',
+        phone: '+1-555-1003',
+        firstName: 'Christopher',
+        lastName: 'Lee',
+        sector: 'Healthcare',
+        function: 'Vice President',
+        biography: 'VP of Operations in healthcare with focus on digital transformation.',
+        linkedinUrl: 'https://linkedin.com/in/clee',
+        isVerified: true,
+      },
+      {
+        email: 'expert4@example.com',
+        phone: '+1-555-1004',
+        firstName: 'Amanda',
+        lastName: 'White',
+        sector: 'Technology',
+        function: 'Product Manager',
+        biography: 'Product Manager specializing in SaaS platforms and user experience.',
+        linkedinUrl: 'https://linkedin.com/in/awhite',
+        isVerified: false,
+      },
+      {
+        email: 'expert5@example.com',
+        phone: '+1-555-1005',
+        firstName: 'Daniel',
+        lastName: 'Garcia',
+        sector: 'Retail',
+        function: 'Chief Executive Officer',
+        biography: 'CEO with proven track record in e-commerce and omnichannel retail.',
+        linkedinUrl: 'https://linkedin.com/in/dgarcia',
+        isVerified: true,
+      },
+    ];
+
+    await db.insert(experts).values(expertData);
+    const fetchedExperts = await Promise.all(
+      expertData.map(e =>
+        db.select().from(experts).where(eq(experts.email, e.email)).limit(1)
+      )
+    );
+    const expertIds = fetchedExperts.map(result => result[0]?.id).filter((id): id is number => id !== undefined);
+
+    // Seed Expert Employment History
+    const employmentData = [
+      { expertId: expertIds[0], companyName: 'Google', position: 'Senior Infrastructure Engineer', startDate: '2018-01', endDate: null, isCurrent: true, description: 'Led cloud infrastructure team' },
+      { expertId: expertIds[0], companyName: 'Amazon', position: 'Cloud Architect', startDate: '2015-06', endDate: '2017-12', isCurrent: false, description: 'Designed AWS solutions for enterprise clients' },
+      { expertId: expertIds[1], companyName: 'Goldman Sachs', position: 'Managing Director', startDate: '2019-03', endDate: null, isCurrent: true, description: 'Head of Financial Strategy' },
+      { expertId: expertIds[1], companyName: 'JP Morgan', position: 'Vice President', startDate: '2014-09', endDate: '2019-02', isCurrent: false, description: 'Investment banking division' },
+      { expertId: expertIds[2], companyName: 'Pfizer', position: 'VP Operations', startDate: '2017-05', endDate: null, isCurrent: true, description: 'Digital transformation initiatives' },
+      { expertId: expertIds[2], companyName: 'Merck', position: 'Senior Manager', startDate: '2012-01', endDate: '2017-04', isCurrent: false, description: 'Operations and supply chain' },
+    ];
+    await db.insert(expertEmployment).values(employmentData);
+
+    // Seed Expert Education History
+    const educationData = [
+      { expertId: expertIds[0], schoolName: 'Stanford University', degree: 'Master of Science', fieldOfStudy: 'Computer Science', startDate: '2014-09', endDate: '2016-05', description: 'Specialized in distributed systems' },
+      { expertId: expertIds[0], schoolName: 'UC Berkeley', degree: 'Bachelor of Science', fieldOfStudy: 'Electrical Engineering', startDate: '2010-09', endDate: '2014-05', description: 'GPA: 3.8' },
+      { expertId: expertIds[1], schoolName: 'Harvard Business School', degree: 'MBA', fieldOfStudy: 'Business Administration', startDate: '2012-09', endDate: '2014-05', description: 'Baker Scholar' },
+      { expertId: expertIds[1], schoolName: 'Yale University', degree: 'Bachelor of Science', fieldOfStudy: 'Economics', startDate: '2008-09', endDate: '2012-05', description: 'Cum Laude' },
+      { expertId: expertIds[2], schoolName: 'Johns Hopkins University', degree: 'Master of Health Administration', fieldOfStudy: 'Healthcare Management', startDate: '2015-09', endDate: '2017-05', description: 'Focus on operations' },
+      { expertId: expertIds[2], schoolName: 'University of Michigan', degree: 'Bachelor of Science', fieldOfStudy: 'Biology', startDate: '2010-09', endDate: '2014-05', description: 'Pre-med track' },
+    ];
+    await db.insert(expertEducation).values(educationData);
+
+    // Seed Projects
+    const projectData = [
+      {
+        clientContactId: contactIds[0],
+        name: 'Cloud Migration Initiative',
+        description: 'Migrate legacy systems to AWS cloud infrastructure',
+        projectType: 'Advisory' as const,
+        targetCompanies: 'Fortune 500 Tech Companies',
+        targetPersona: 'CTO, VP Engineering',
+        rate: '5000.00',
+        currency: 'USD',
+        status: 'Active' as const,
+      },
+      {
+        clientContactId: contactIds[1],
+        name: 'AI/ML Expert Search',
+        description: 'Find senior AI/ML engineers for new research division',
+        projectType: 'Call' as const,
+        targetCompanies: 'FAANG Companies',
+        targetPersona: 'Senior ML Engineer, Research Scientist',
+        rate: '500.00',
+        currency: 'USD',
+        status: 'Active' as const,
+      },
+      {
+        clientContactId: contactIds[2],
+        name: 'Financial Strategy Review',
+        description: 'Review and optimize financial strategy for next 5 years',
+        projectType: 'Advisory' as const,
+        targetCompanies: 'Investment Banks',
+        targetPersona: 'CFO, VP Finance',
+        rate: '5500.00',
+        currency: 'USD',
+        status: 'Active' as const,
+      },
+      {
+        clientContactId: contactIds[3],
+        name: 'Market Research - Fintech',
+        description: 'Conduct market research on fintech disruption',
+        projectType: 'ID' as const,
+        targetCompanies: 'Fintech Startups, Banks',
+        targetPersona: 'Industry Expert, Analyst',
+        rate: '7000.00',
+        currency: 'USD',
+        status: 'Active' as const,
+      },
+      {
+        clientContactId: contactIds[4],
+        name: 'Digital Health Transformation',
+        description: 'Plan digital transformation for healthcare provider',
+        projectType: 'Call' as const,
+        targetCompanies: 'Healthcare Systems',
+        targetPersona: 'CIO, VP Operations',
+        rate: '600.00',
+        currency: 'EUR',
+        status: 'Active' as const,
+      },
+      {
+        clientContactId: contactIds[5],
+        name: 'Regulatory Compliance Study',
+        description: 'Study new healthcare regulations and compliance requirements',
+        projectType: 'ID' as const,
+        targetCompanies: 'Healthcare Consultants',
+        targetPersona: 'Compliance Expert, Regulatory Specialist',
+        rate: '6500.00',
+        currency: 'GBP',
+        status: 'Active' as const,
+      },
+    ];
+
+    await db.insert(projects).values(projectData);
+    const fetchedProjects = await Promise.all(
+      projectData.map(p =>
+        db.select().from(projects).where(eq(projects.name, p.name)).limit(1)
+      )
+    );
+    const projectIds = fetchedProjects.map(result => result[0]?.id).filter((id): id is number => id !== undefined);
+
+    // Seed Screening Questions
+    const questionData = [
+      { projectId: projectIds[0], question: 'What is your experience with AWS cloud migration?', order: 1 },
+      { projectId: projectIds[0], question: 'Have you worked with legacy system modernization?', order: 2 },
+      { projectId: projectIds[0], question: 'What is your experience with cost optimization?', order: 3 },
+      { projectId: projectIds[1], question: 'What is your experience with machine learning models?', order: 1 },
+      { projectId: projectIds[1], question: 'Have you published research papers?', order: 2 },
+      { projectId: projectIds[2], question: 'What is your experience with financial planning?', order: 1 },
+      { projectId: projectIds[2], question: 'Have you worked on M&A transactions?', order: 2 },
+      { projectId: projectIds[3], question: 'What is your knowledge of fintech trends?', order: 1 },
+      { projectId: projectIds[4], question: 'What is your experience with EHR systems?', order: 1 },
+      { projectId: projectIds[5], question: 'What is your knowledge of healthcare regulations?', order: 1 },
+    ];
+    await db.insert(screeningQuestions).values(questionData);
+
+    // Seed Shortlists
+    const shortlistData = [
+      { projectId: projectIds[0], expertId: expertIds[0], status: 'contacted' as const, notes: 'Excellent fit for cloud migration' },
+      { projectId: projectIds[0], expertId: expertIds[1], status: 'pending' as const, notes: 'Awaiting response' },
+      { projectId: projectIds[1], expertId: expertIds[3], status: 'interested' as const, notes: 'Very interested in AI/ML role' },
+      { projectId: projectIds[2], expertId: expertIds[1], status: 'engaged' as const, notes: 'In discussions about engagement' },
+      { projectId: projectIds[2], expertId: expertIds[4], status: 'pending' as const, notes: 'Initial outreach sent' },
+      { projectId: projectIds[3], expertId: expertIds[1], status: 'contacted' as const, notes: 'Confirmed availability' },
+      { projectId: projectIds[4], expertId: expertIds[2], status: 'engaged' as const, notes: 'Proposal under review' },
+      { projectId: projectIds[5], expertId: expertIds[2], status: 'interested' as const, notes: 'Strong regulatory background' },
+      { projectId: projectIds[5], expertId: expertIds[4], status: 'pending' as const, notes: 'Awaiting confirmation' },
+    ];
+    await db.insert(shortlists).values(shortlistData);
+
+    // Seed Expert-Client Mapping
+    const mappingData = [
+      { expertId: expertIds[0], clientId: clientIds[0], status: 'engaged' as const, notes: 'Active engagement on cloud project' },
+      { expertId: expertIds[1], clientId: clientIds[0], status: 'contacted' as const, notes: 'Initial conversation completed' },
+      { expertId: expertIds[1], clientId: clientIds[1], status: 'engaged' as const, notes: 'Working on financial strategy' },
+      { expertId: expertIds[2], clientId: clientIds[2], status: 'engaged' as const, notes: 'Digital transformation lead' },
+      { expertId: expertIds[3], clientId: clientIds[0], status: 'shortlisted' as const, notes: 'Potential for AI/ML projects' },
+      { expertId: expertIds[4], clientId: clientIds[1], status: 'contacted' as const, notes: 'Fintech expertise valuable' },
+      { expertId: expertIds[4], clientId: clientIds[2], status: 'shortlisted' as const, notes: 'Retail background relevant' },
+    ];
+    await db.insert(expertClientMapping).values(mappingData);
+    console.log("[seedDatabase] All data seeded successfully");
+
     return {
       success: true,
-      message: 'Database seeded successfully with picklist data',
+      message: 'Database seeded successfully with sample data',
       summary: {
         sectors: 5,
         functions: 6,
+        clients: 3,
+        clientContacts: 6,
+        experts: 5,
+        employmentRecords: 6,
+        educationRecords: 6,
+        projects: 6,
+        screeningQuestions: 10,
+        shortlistRecords: 9,
+        expertClientMappings: 7,
       },
     };
   } catch (error) {
