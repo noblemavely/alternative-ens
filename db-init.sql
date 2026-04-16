@@ -37,23 +37,23 @@ CREATE TABLE IF NOT EXISTS clients (
 -- Experts table
 CREATE TABLE IF NOT EXISTS experts (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  first_name VARCHAR(255),
-  last_name VARCHAR(255),
+  firstName VARCHAR(255),
+  lastName VARCHAR(255),
   email VARCHAR(320) NOT NULL UNIQUE,
   phone VARCHAR(20),
   sector VARCHAR(255),
   `function` VARCHAR(255),
-  linkedin_url VARCHAR(500),
+  linkedinUrl VARCHAR(500),
   biography LONGTEXT,
-  cv_url VARCHAR(500),
-  cv_key VARCHAR(500),
-  verification_token VARCHAR(255),
-  verification_token_expiry TIMESTAMP NULL,
-  is_verified BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  cvUrl VARCHAR(500),
+  cvKey VARCHAR(500),
+  verificationToken VARCHAR(255),
+  verificationTokenExpiry TIMESTAMP NULL,
+  isVerified BOOLEAN DEFAULT FALSE,
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_email (email),
-  INDEX idx_verified (is_verified)
+  INDEX idx_verified (isVerified)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Expert Employment table
