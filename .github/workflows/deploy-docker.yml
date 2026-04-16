@@ -33,7 +33,7 @@ jobs:
           DO_PASSWORD: ${{ secrets.DO_PASSWORD }}
         run: |
           # Install sshpass if not available
-          apt-get update && apt-get install -y sshpass
+          sudo apt-get update && sudo apt-get install -y sshpass
           
           # Copy dist folder to droplet
           sshpass -p "$DO_PASSWORD" scp -r dist/ $DO_USER@$DO_HOST:/app/
