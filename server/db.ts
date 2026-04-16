@@ -907,22 +907,20 @@ export async function seedDatabase() {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const pool = (db as any).$client;
-
   try {
     // Clear existing data (in reverse order of dependencies)
-    await pool.execute('DELETE FROM expertVerification');
-    await pool.execute('DELETE FROM shortlists');
-    await pool.execute('DELETE FROM expertClientMapping');
-    await pool.execute('DELETE FROM screeningQuestions');
-    await pool.execute('DELETE FROM projects');
-    await pool.execute('DELETE FROM expertEducation');
-    await pool.execute('DELETE FROM expertEmployment');
-    await pool.execute('DELETE FROM experts');
-    await pool.execute('DELETE FROM clientContacts');
-    await pool.execute('DELETE FROM clients');
-    await pool.execute('DELETE FROM functions');
-    await pool.execute('DELETE FROM sectors');
+    await db.delete(expertVerification);
+    await db.delete(shortlists);
+    await db.delete(expertClientMapping);
+    await db.delete(screeningQuestions);
+    await db.delete(projects);
+    await db.delete(expertEducation);
+    await db.delete(expertEmployment);
+    await db.delete(experts);
+    await db.delete(clientContacts);
+    await db.delete(clients);
+    await db.delete(functions);
+    await db.delete(sectors);
 
     // Seed Sectors
     const sectorData = [
@@ -932,12 +930,7 @@ export async function seedDatabase() {
       { name: 'Manufacturing', description: 'Industrial, Automotive, Consumer Goods' },
       { name: 'Retail', description: 'E-commerce, Brick & Mortar, Fashion' },
     ];
-    for (const sector of sectorData) {
-      await pool.execute(
-        'INSERT INTO sectors (name, description) VALUES (?, ?)',
-        [sector.name, sector.description]
-      );
-    }
+    await db.insert(sectors).values(sectorData);
 
     // Seed Functions
     const functionData = [
@@ -948,12 +941,7 @@ export async function seedDatabase() {
       { name: 'Senior Manager', description: 'Management level' },
       { name: 'Product Manager', description: 'Product leadership and strategy' },
     ];
-    for (const func of functionData) {
-      await pool.execute(
-        'INSERT INTO functions (name, description) VALUES (?, ?)',
-        [func.name, func.description]
-      );
-    }
+    await db.insert(functions).values(functionData);
 
     // Seed Clients
     const clientData = [
@@ -986,15 +974,11 @@ export async function seedDatabase() {
       },
     ];
 
-    const clientIds = [];
-    for (const client of clientData) {
-      // Insert using raw SQL to get insertId
-      const [result] = await pool.execute(
-        'INSERT INTO clients (name, email, phone, companyName, companyWebsite, contactPerson, sector) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [client.name, client.email, client.phone, client.companyName, client.companyWebsite, client.contactPerson, client.sector]
-      );
-      clientIds.push((result as any).insertId);
-    }
+    // Insert clients and retrieve their IDs
+    const insertedClients = await db.insert(clients).values(clientData);
+    // For Drizzle, we need to fetch the inserted clients to get their IDs
+    const fetchedClients = await db.select().from(clients).where(inArray(clients.email, clientData.map(c => c.email)));
+    const clientIds = fetchedClients.map(c => c.id);
 
     // Seed Client Contacts
     const clientContactData = [
@@ -1005,16 +989,10 @@ export async function seedDatabase() {
       { clientId: clientIds[2], contactName: 'Emma Taylor', email: 'emma.taylor@healthcaresolutions.com', phone: '+1-555-0205', role: 'Project Lead', workType: 'Advisory', isActive: true },
       { clientId: clientIds[2], contactName: 'Frank Anderson', email: 'frank.anderson@healthcaresolutions.com', phone: '+1-555-0206', role: 'SPOC', workType: 'Research', isActive: true },
     ];
-    
-    const contactIds = [];
-    for (const contact of clientContactData) {
-      const [result] = await pool.execute(
-        'INSERT INTO clientContacts (clientId, contactName, email, phone, role, workType, isActive) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [contact.clientId, contact.contactName, contact.email, contact.phone, contact.role, contact.workType, contact.isActive]
-      );
-      const insertedId = (result as any).insertId;
-      contactIds.push(insertedId);
-    }
+
+    await db.insert(clientContacts).values(clientContactData);
+    const fetchedContacts = await db.select().from(clientContacts).where(inArray(clientContacts.email, clientContactData.map(c => c.email)));
+    const contactIds = fetchedContacts.map(c => c.id);
 
     // Seed Experts
     const expertData = [
@@ -1027,11 +1005,7 @@ export async function seedDatabase() {
         function: 'Chief Technology Officer',
         biography: 'Experienced CTO with 15+ years in cloud infrastructure and AI/ML solutions.',
         linkedinUrl: 'https://linkedin.com/in/rthompson',
-        cvUrl: null,
-        cvKey: null,
         isVerified: true,
-        verificationToken: null,
-        verificationTokenExpiry: null,
       },
       {
         email: 'expert2@example.com',
@@ -1042,11 +1016,7 @@ export async function seedDatabase() {
         function: 'Chief Financial Officer',
         biography: 'CFO with expertise in financial strategy, M&A, and capital markets.',
         linkedinUrl: 'https://linkedin.com/in/jmartinez',
-        cvUrl: null,
-        cvKey: null,
         isVerified: true,
-        verificationToken: null,
-        verificationTokenExpiry: null,
       },
       {
         email: 'expert3@example.com',
@@ -1057,11 +1027,7 @@ export async function seedDatabase() {
         function: 'Vice President',
         biography: 'VP of Operations in healthcare with focus on digital transformation.',
         linkedinUrl: 'https://linkedin.com/in/clee',
-        cvUrl: null,
-        cvKey: null,
         isVerified: true,
-        verificationToken: null,
-        verificationTokenExpiry: null,
       },
       {
         email: 'expert4@example.com',
@@ -1072,11 +1038,7 @@ export async function seedDatabase() {
         function: 'Product Manager',
         biography: 'Product Manager specializing in SaaS platforms and user experience.',
         linkedinUrl: 'https://linkedin.com/in/awhite',
-        cvUrl: null,
-        cvKey: null,
         isVerified: false,
-        verificationToken: null,
-        verificationTokenExpiry: null,
       },
       {
         email: 'expert5@example.com',
@@ -1087,22 +1049,13 @@ export async function seedDatabase() {
         function: 'Chief Executive Officer',
         biography: 'CEO with proven track record in e-commerce and omnichannel retail.',
         linkedinUrl: 'https://linkedin.com/in/dgarcia',
-        cvUrl: null,
-        cvKey: null,
         isVerified: true,
-        verificationToken: null,
-        verificationTokenExpiry: null,
       },
     ];
-    
-    const expertIds = [];
-    for (const expert of expertData) {
-      const [result] = await pool.execute(
-        'INSERT INTO experts (email, phone, firstName, lastName, sector, function, biography, linkedinUrl, cvUrl, cvKey, isVerified, verificationToken, verificationTokenExpiry) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [expert.email, expert.phone, expert.firstName, expert.lastName, expert.sector, expert.function, expert.biography, expert.linkedinUrl, expert.cvUrl, expert.cvKey, expert.isVerified, expert.verificationToken, expert.verificationTokenExpiry]
-      );
-      expertIds.push((result as any).insertId);
-    }
+
+    await db.insert(experts).values(expertData);
+    const fetchedExperts = await db.select().from(experts).where(inArray(experts.email, expertData.map(e => e.email)));
+    const expertIds = fetchedExperts.map(e => e.id);
 
     // Seed Expert Employment History
     const employmentData = [
@@ -1113,13 +1066,7 @@ export async function seedDatabase() {
       { expertId: expertIds[2], companyName: 'Pfizer', position: 'VP Operations', startDate: '2017-05', endDate: null, isCurrent: true, description: 'Digital transformation initiatives' },
       { expertId: expertIds[2], companyName: 'Merck', position: 'Senior Manager', startDate: '2012-01', endDate: '2017-04', isCurrent: false, description: 'Operations and supply chain' },
     ];
-
-    for (const record of employmentData) {
-      await pool.execute(
-        'INSERT INTO expertEmployment (expertId, companyName, position, startDate, endDate, isCurrent, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [record.expertId, record.companyName, record.position, record.startDate, record.endDate, record.isCurrent, record.description]
-      );
-    }
+    await db.insert(expertEmployment).values(employmentData);
 
     // Seed Expert Education History
     const educationData = [
@@ -1130,13 +1077,7 @@ export async function seedDatabase() {
       { expertId: expertIds[2], schoolName: 'Johns Hopkins University', degree: 'Master of Health Administration', fieldOfStudy: 'Healthcare Management', startDate: '2015-09', endDate: '2017-05', description: 'Focus on operations' },
       { expertId: expertIds[2], schoolName: 'University of Michigan', degree: 'Bachelor of Science', fieldOfStudy: 'Biology', startDate: '2010-09', endDate: '2014-05', description: 'Pre-med track' },
     ];
-
-    for (const record of educationData) {
-      await pool.execute(
-        'INSERT INTO expertEducation (expertId, schoolName, degree, fieldOfStudy, startDate, endDate, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [record.expertId, record.schoolName, record.degree, record.fieldOfStudy, record.startDate, record.endDate, record.description]
-      );
-    }
+    await db.insert(expertEducation).values(educationData);
 
     // Seed Projects
     const projectData = [
@@ -1207,15 +1148,10 @@ export async function seedDatabase() {
         status: 'Active' as const,
       },
     ];
-    
-    const projectIds = [];
-    for (const project of projectData) {
-      const [result] = await pool.execute(
-        'INSERT INTO projects (clientContactId, name, description, projectType, targetCompanies, targetPersona, rate, currency, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [project.clientContactId, project.name, project.description, project.projectType, project.targetCompanies, project.targetPersona, project.rate, project.currency, project.status]
-      );
-      projectIds.push((result as any).insertId);
-    }
+
+    await db.insert(projects).values(projectData);
+    const fetchedProjects = await db.select().from(projects).where(inArray(projects.name, projectData.map(p => p.name)));
+    const projectIds = fetchedProjects.map(p => p.id);
 
     // Seed Screening Questions
     const questionData = [
@@ -1230,10 +1166,7 @@ export async function seedDatabase() {
       { projectId: projectIds[4], question: 'What is your experience with EHR systems?', order: 1 },
       { projectId: projectIds[5], question: 'What is your knowledge of healthcare regulations?', order: 1 },
     ];
-    
-    for (const question of questionData) {
-      await db.insert(screeningQuestions).values(question);
-    }
+    await db.insert(screeningQuestions).values(questionData);
 
     // Seed Shortlists
     const shortlistData = [
@@ -1247,10 +1180,7 @@ export async function seedDatabase() {
       { projectId: projectIds[5], expertId: expertIds[2], status: 'interested' as const, notes: 'Strong regulatory background' },
       { projectId: projectIds[5], expertId: expertIds[4], status: 'pending' as const, notes: 'Awaiting confirmation' },
     ];
-    
-    for (const shortlist of shortlistData) {
-      await db.insert(shortlists).values(shortlist);
-    }
+    await db.insert(shortlists).values(shortlistData);
 
     // Seed Expert-Client Mapping
     const mappingData = [
@@ -1262,10 +1192,7 @@ export async function seedDatabase() {
       { expertId: expertIds[4], clientId: clientIds[1], status: 'contacted' as const, notes: 'Fintech expertise valuable' },
       { expertId: expertIds[4], clientId: clientIds[2], status: 'shortlisted' as const, notes: 'Retail background relevant' },
     ];
-    
-    for (const mapping of mappingData) {
-      await db.insert(expertClientMapping).values(mapping);
-    }
+    await db.insert(expertClientMapping).values(mappingData);
 
     return {
       success: true,
