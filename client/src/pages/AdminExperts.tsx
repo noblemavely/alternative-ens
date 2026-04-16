@@ -399,23 +399,13 @@ export default function AdminExperts() {
                   </thead>
                   <tbody>
                     {filteredExperts.map((expert) => (
-                      <tr
-                        key={expert.id}
-                        className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={(e) => {
-                          // Only navigate if clicking on data cells, not action buttons
-                          if (e.target instanceof HTMLElement) {
-                            if (e.target.closest('td:last-child')) return; // Don't navigate when clicking action buttons
-                          }
-                          navigate(`/admin/experts/${expert.id}`);
-                        }}
-                      >
-                        <td className="py-3 px-4 font-medium">
+                      <tr key={expert.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                        <td className="py-3 px-4 font-medium cursor-pointer" onClick={() => navigate(`/admin/experts/${expert.id}`)}>
                           {expert.firstName} {expert.lastName}
                         </td>
-                        <td className="py-3 px-4 text-muted-foreground">{expert.email}</td>
-                        <td className="py-3 px-4 text-muted-foreground">{expert.sector || "-"}</td>
-                        <td className="py-3 px-4 text-muted-foreground">{expert.function || "-"}</td>
+                        <td className="py-3 px-4 text-muted-foreground cursor-pointer" onClick={() => navigate(`/admin/experts/${expert.id}`)}>{expert.email}</td>
+                        <td className="py-3 px-4 text-muted-foreground cursor-pointer" onClick={() => navigate(`/admin/experts/${expert.id}`)}>{expert.sector || "-"}</td>
+                        <td className="py-3 px-4 text-muted-foreground cursor-pointer" onClick={() => navigate(`/admin/experts/${expert.id}`)}>{expert.function || "-"}</td>
                         <td className="py-3 px-4 text-right space-x-2 flex justify-end">
                           <ButtonWithTooltip variant="ghost" size="sm" tooltip="Edit this expert" onClick={(e) => { e.stopPropagation(); handleEdit(expert); }} className="gap-1">
                             <Edit2 size={16} />
