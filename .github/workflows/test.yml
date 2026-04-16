@@ -30,7 +30,7 @@ jobs:
         run: pnpm install
 
       - name: Run type check
-        run: pnpm type-check || true
+        run: pnpm check || true
 
       - name: Run linter
         run: pnpm lint || true
