@@ -98,12 +98,12 @@ async function initializeSchema(pool: any) {
       `CREATE TABLE IF NOT EXISTS expertEmployment (
         id INT AUTO_INCREMENT PRIMARY KEY,
         expertId INT NOT NULL,
-        company VARCHAR(255) NOT NULL,
+        companyName VARCHAR(255) NOT NULL,
         position VARCHAR(255) NOT NULL,
-        startDate VARCHAR(50),
-        endDate VARCHAR(50),
-        currentlyWorking BOOLEAN DEFAULT FALSE,
-        description TEXT,
+        startDate VARCHAR(10),
+        endDate VARCHAR(10),
+        isCurrent BOOLEAN DEFAULT FALSE,
+        description LONGTEXT,
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (expertId) REFERENCES experts(id) ON DELETE CASCADE,
@@ -113,12 +113,12 @@ async function initializeSchema(pool: any) {
       `CREATE TABLE IF NOT EXISTS expertEducation (
         id INT AUTO_INCREMENT PRIMARY KEY,
         expertId INT NOT NULL,
-        school VARCHAR(255) NOT NULL,
-        degree VARCHAR(255) NOT NULL,
-        field VARCHAR(255),
-        startDate VARCHAR(50),
-        endDate VARCHAR(50),
-        description TEXT,
+        schoolName VARCHAR(255) NOT NULL,
+        degree VARCHAR(255),
+        fieldOfStudy VARCHAR(255),
+        startDate VARCHAR(10),
+        endDate VARCHAR(10),
+        description LONGTEXT,
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (expertId) REFERENCES experts(id) ON DELETE CASCADE,
@@ -1105,35 +1105,35 @@ export async function seedDatabase() {
 
     // Seed Expert Employment History
     const employmentData = [
-      { expertId: expertIds[0], company: 'Google', position: 'Senior Infrastructure Engineer', startDate: '2018-01', endDate: null, currentlyWorking: true, description: 'Led cloud infrastructure team' },
-      { expertId: expertIds[0], company: 'Amazon', position: 'Cloud Architect', startDate: '2015-06', endDate: '2017-12', currentlyWorking: false, description: 'Designed AWS solutions for enterprise clients' },
-      { expertId: expertIds[1], company: 'Goldman Sachs', position: 'Managing Director', startDate: '2019-03', endDate: null, currentlyWorking: true, description: 'Head of Financial Strategy' },
-      { expertId: expertIds[1], company: 'JP Morgan', position: 'Vice President', startDate: '2014-09', endDate: '2019-02', currentlyWorking: false, description: 'Investment banking division' },
-      { expertId: expertIds[2], company: 'Pfizer', position: 'VP Operations', startDate: '2017-05', endDate: null, currentlyWorking: true, description: 'Digital transformation initiatives' },
-      { expertId: expertIds[2], company: 'Merck', position: 'Senior Manager', startDate: '2012-01', endDate: '2017-04', currentlyWorking: false, description: 'Operations and supply chain' },
+      { expertId: expertIds[0], companyName: 'Google', position: 'Senior Infrastructure Engineer', startDate: '2018-01', endDate: null, isCurrent: true, description: 'Led cloud infrastructure team' },
+      { expertId: expertIds[0], companyName: 'Amazon', position: 'Cloud Architect', startDate: '2015-06', endDate: '2017-12', isCurrent: false, description: 'Designed AWS solutions for enterprise clients' },
+      { expertId: expertIds[1], companyName: 'Goldman Sachs', position: 'Managing Director', startDate: '2019-03', endDate: null, isCurrent: true, description: 'Head of Financial Strategy' },
+      { expertId: expertIds[1], companyName: 'JP Morgan', position: 'Vice President', startDate: '2014-09', endDate: '2019-02', isCurrent: false, description: 'Investment banking division' },
+      { expertId: expertIds[2], companyName: 'Pfizer', position: 'VP Operations', startDate: '2017-05', endDate: null, isCurrent: true, description: 'Digital transformation initiatives' },
+      { expertId: expertIds[2], companyName: 'Merck', position: 'Senior Manager', startDate: '2012-01', endDate: '2017-04', isCurrent: false, description: 'Operations and supply chain' },
     ];
 
     for (const record of employmentData) {
       await pool.execute(
-        'INSERT INTO expertEmployment (expertId, company, position, startDate, endDate, currentlyWorking, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [record.expertId, record.company, record.position, record.startDate, record.endDate, record.currentlyWorking, record.description]
+        'INSERT INTO expertEmployment (expertId, companyName, position, startDate, endDate, isCurrent, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [record.expertId, record.companyName, record.position, record.startDate, record.endDate, record.isCurrent, record.description]
       );
     }
 
     // Seed Expert Education History
     const educationData = [
-      { expertId: expertIds[0], school: 'Stanford University', degree: 'Master of Science', field: 'Computer Science', startDate: '2014-09', endDate: '2016-05', description: 'Specialized in distributed systems' },
-      { expertId: expertIds[0], school: 'UC Berkeley', degree: 'Bachelor of Science', field: 'Electrical Engineering', startDate: '2010-09', endDate: '2014-05', description: 'GPA: 3.8' },
-      { expertId: expertIds[1], school: 'Harvard Business School', degree: 'MBA', field: 'Business Administration', startDate: '2012-09', endDate: '2014-05', description: 'Baker Scholar' },
-      { expertId: expertIds[1], school: 'Yale University', degree: 'Bachelor of Science', field: 'Economics', startDate: '2008-09', endDate: '2012-05', description: 'Cum Laude' },
-      { expertId: expertIds[2], school: 'Johns Hopkins University', degree: 'Master of Health Administration', field: 'Healthcare Management', startDate: '2015-09', endDate: '2017-05', description: 'Focus on operations' },
-      { expertId: expertIds[2], school: 'University of Michigan', degree: 'Bachelor of Science', field: 'Biology', startDate: '2010-09', endDate: '2014-05', description: 'Pre-med track' },
+      { expertId: expertIds[0], schoolName: 'Stanford University', degree: 'Master of Science', fieldOfStudy: 'Computer Science', startDate: '2014-09', endDate: '2016-05', description: 'Specialized in distributed systems' },
+      { expertId: expertIds[0], schoolName: 'UC Berkeley', degree: 'Bachelor of Science', fieldOfStudy: 'Electrical Engineering', startDate: '2010-09', endDate: '2014-05', description: 'GPA: 3.8' },
+      { expertId: expertIds[1], schoolName: 'Harvard Business School', degree: 'MBA', fieldOfStudy: 'Business Administration', startDate: '2012-09', endDate: '2014-05', description: 'Baker Scholar' },
+      { expertId: expertIds[1], schoolName: 'Yale University', degree: 'Bachelor of Science', fieldOfStudy: 'Economics', startDate: '2008-09', endDate: '2012-05', description: 'Cum Laude' },
+      { expertId: expertIds[2], schoolName: 'Johns Hopkins University', degree: 'Master of Health Administration', fieldOfStudy: 'Healthcare Management', startDate: '2015-09', endDate: '2017-05', description: 'Focus on operations' },
+      { expertId: expertIds[2], schoolName: 'University of Michigan', degree: 'Bachelor of Science', fieldOfStudy: 'Biology', startDate: '2010-09', endDate: '2014-05', description: 'Pre-med track' },
     ];
 
     for (const record of educationData) {
       await pool.execute(
-        'INSERT INTO expertEducation (expertId, school, degree, field, startDate, endDate, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [record.expertId, record.school, record.degree, record.field, record.startDate, record.endDate, record.description]
+        'INSERT INTO expertEducation (expertId, schoolName, degree, fieldOfStudy, startDate, endDate, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [record.expertId, record.schoolName, record.degree, record.fieldOfStudy, record.startDate, record.endDate, record.description]
       );
     }
 
