@@ -251,8 +251,8 @@ export const adminUsers = mysqlTable("admin_users", {
   password: text("password").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   role: mysqlEnum("role", ["super_admin", "admin"]).default("admin"),
-  isActive: boolean("isActive").default(true),
-  createdAt: timestamp("createdAt").defaultNow(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
   lastLogin: timestamp("last_login"),
 });
 
