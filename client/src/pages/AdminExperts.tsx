@@ -407,14 +407,14 @@ export default function AdminExperts() {
                         <td className="py-3 px-4 text-muted-foreground">{expert.sector || "-"}</td>
                         <td className="py-3 px-4 text-muted-foreground">{expert.function || "-"}</td>
                         <td className="py-3 px-4 text-right space-x-2 flex justify-end">
-                          <ButtonWithTooltip variant="ghost" size="sm" tooltip="Edit this expert" onClick={() => handleEdit(expert)} className="gap-1">
+                          <ButtonWithTooltip variant="ghost" size="sm" tooltip="Edit this expert" onClick={(e) => { e.stopPropagation(); handleEdit(expert); }} className="gap-1">
                             <Edit2 size={16} />
                           </ButtonWithTooltip>
                           <ButtonWithTooltip
                             variant="ghost"
                             size="sm"
                             tooltip="Delete this expert"
-                            onClick={() => handleDelete(expert.id, `${expert.firstName} ${expert.lastName}`)}
+                            onClick={(e) => { e.stopPropagation(); handleDelete(expert.id, `${expert.firstName} ${expert.lastName}`); }}
                             className="text-destructive hover:text-destructive"
                           >
                             <Trash2 size={16} />
