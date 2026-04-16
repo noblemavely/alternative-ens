@@ -50,6 +50,7 @@ export const adminAuthRouter = router({
           },
         };
       } catch (error: any) {
+        console.error("[AdminAuth.login]Error during login:", error);
         if (error.code === "UNAUTHORIZED") {
           throw error;
         }
