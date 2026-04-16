@@ -399,7 +399,17 @@ export default function AdminExperts() {
                   </thead>
                   <tbody>
                     {filteredExperts.map((expert) => (
-                      <tr key={expert.id} className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`/admin/experts/${expert.id}`)}>
+                      <tr
+                        key={expert.id}
+                        className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={(e) => {
+                          // Only navigate if clicking on data cells, not action buttons
+                          if (e.target instanceof HTMLElement) {
+                            if (e.target.closest('td:last-child')) return; // Don't navigate when clicking action buttons
+                          }
+                          navigate(`/admin/experts/${expert.id}`);
+                        }}
+                      >
                         <td className="py-3 px-4 font-medium">
                           {expert.firstName} {expert.lastName}
                         </td>
