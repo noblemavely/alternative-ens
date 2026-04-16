@@ -147,6 +147,78 @@ async function initializeSchema(pool: any) {
         updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_email (email)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+      `CREATE TABLE IF NOT EXISTS clientContacts (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        clientId INT NOT NULL,
+        contactName VARCHAR(255) NOT NULL,
+        email VARCHAR(320) NOT NULL,
+        phone VARCHAR(20),
+        role VARCHAR(255),
+        workType VARCHAR(255),
+        isActive BOOLEAN DEFAULT TRUE NOT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (clientId) REFERENCES clients(id) ON DELETE CASCADE,
+        INDEX idx_email (email),
+        INDEX idx_clientId (clientId)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+      `CREATE TABLE IF NOT EXISTS projects (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        clientContactId INT NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        description LONGTEXT,
+        projectType ENUM('Call', 'Advisory', 'ID') NOT NULL,
+        targetCompanies TEXT,
+        targetPersona TEXT,
+        rate DECIMAL(10, 2),
+        currency VARCHAR(3) DEFAULT 'USD' NOT NULL,
+        status ENUM('Active', 'On Hold', 'Closed') DEFAULT 'Active' NOT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (clientContactId) REFERENCES clientContacts(id) ON DELETE CASCADE,
+        INDEX idx_clientContactId (clientContactId)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+      `CREATE TABLE IF NOT EXISTS screeningQuestions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        projectId INT NOT NULL,
+        question LONGTEXT NOT NULL,
+        \`order\` INT DEFAULT 0 NOT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE,
+        INDEX idx_projectId (projectId)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+      `CREATE TABLE IF NOT EXISTS shortlists (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        projectId INT NOT NULL,
+        expertId INT NOT NULL,
+        status ENUM('pending', 'interested', 'rejected', 'new', 'contacted', 'attempting_contact', 'engaged', 'qualified', 'proposal_sent', 'negotiation', 'verbal_agreement', 'closed_won', 'closed_lost') DEFAULT 'pending' NOT NULL,
+        notes LONGTEXT,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (expertId) REFERENCES experts(id) ON DELETE CASCADE,
+        INDEX idx_projectId (projectId),
+        INDEX idx_expertId (expertId)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+      `CREATE TABLE IF NOT EXISTS expertClientMapping (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        expertId INT NOT NULL,
+        clientId INT NOT NULL,
+        status ENUM('shortlisted', 'contacted', 'attempting_contact', 'engaged', 'qualified', 'proposal_sent', 'negotiation', 'verbal_agreement', 'closed_won', 'closed_lost') DEFAULT 'shortlisted' NOT NULL,
+        notes LONGTEXT,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (expertId) REFERENCES experts(id) ON DELETE CASCADE,
+        FOREIGN KEY (clientId) REFERENCES clients(id) ON DELETE CASCADE,
+        INDEX idx_expertId (expertId),
+        INDEX idx_clientId (clientId)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
     ];
 
     // Execute all table creation statements
