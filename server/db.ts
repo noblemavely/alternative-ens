@@ -994,8 +994,13 @@ export async function seedDatabase() {
     // Insert clients and retrieve their IDs
     const insertedClients = await db.insert(clients).values(clientData);
     // For Drizzle, we need to fetch the inserted clients to get their IDs
-    const fetchedClients = await db.select().from(clients).where(inArray(clients.email, clientData.map(c => c.email)));
-    const clientIds = fetchedClients.map(c => c.id);
+    // Fetch in the same order as the original data to maintain consistency
+    const fetchedClients = await Promise.all(
+      clientData.map(c =>
+        db.select().from(clients).where(eq(clients.email, c.email)).limit(1)
+      )
+    );
+    const clientIds = fetchedClients.map(result => result[0]?.id).filter((id): id is number => id !== undefined);
 
     // Seed Client Contacts
     const clientContactData = [
@@ -1008,8 +1013,12 @@ export async function seedDatabase() {
     ];
 
     await db.insert(clientContacts).values(clientContactData);
-    const fetchedContacts = await db.select().from(clientContacts).where(inArray(clientContacts.email, clientContactData.map(c => c.email)));
-    const contactIds = fetchedContacts.map(c => c.id);
+    const fetchedContacts = await Promise.all(
+      clientContactData.map(c =>
+        db.select().from(clientContacts).where(eq(clientContacts.email, c.email)).limit(1)
+      )
+    );
+    const contactIds = fetchedContacts.map(result => result[0]?.id).filter((id): id is number => id !== undefined);
 
     // Seed Experts
     const expertData = [
@@ -1071,8 +1080,12 @@ export async function seedDatabase() {
     ];
 
     await db.insert(experts).values(expertData);
-    const fetchedExperts = await db.select().from(experts).where(inArray(experts.email, expertData.map(e => e.email)));
-    const expertIds = fetchedExperts.map(e => e.id);
+    const fetchedExperts = await Promise.all(
+      expertData.map(e =>
+        db.select().from(experts).where(eq(experts.email, e.email)).limit(1)
+      )
+    );
+    const expertIds = fetchedExperts.map(result => result[0]?.id).filter((id): id is number => id !== undefined);
 
     // Seed Expert Employment History
     const employmentData = [
@@ -1105,7 +1118,7 @@ export async function seedDatabase() {
         projectType: 'Advisory' as const,
         targetCompanies: 'Fortune 500 Tech Companies',
         targetPersona: 'CTO, VP Engineering',
-        rate: 5000.00,
+        rate: '5000.00',
         currency: 'USD',
         status: 'Active' as const,
       },
@@ -1116,7 +1129,7 @@ export async function seedDatabase() {
         projectType: 'Call' as const,
         targetCompanies: 'FAANG Companies',
         targetPersona: 'Senior ML Engineer, Research Scientist',
-        rate: 500.00,
+        rate: '500.00',
         currency: 'USD',
         status: 'Active' as const,
       },
@@ -1127,7 +1140,7 @@ export async function seedDatabase() {
         projectType: 'Advisory' as const,
         targetCompanies: 'Investment Banks',
         targetPersona: 'CFO, VP Finance',
-        rate: 5500.00,
+        rate: '5500.00',
         currency: 'USD',
         status: 'Active' as const,
       },
@@ -1138,7 +1151,7 @@ export async function seedDatabase() {
         projectType: 'ID' as const,
         targetCompanies: 'Fintech Startups, Banks',
         targetPersona: 'Industry Expert, Analyst',
-        rate: 7000.00,
+        rate: '7000.00',
         currency: 'USD',
         status: 'Active' as const,
       },
@@ -1149,7 +1162,7 @@ export async function seedDatabase() {
         projectType: 'Call' as const,
         targetCompanies: 'Healthcare Systems',
         targetPersona: 'CIO, VP Operations',
-        rate: 600.00,
+        rate: '600.00',
         currency: 'EUR',
         status: 'Active' as const,
       },
@@ -1160,15 +1173,19 @@ export async function seedDatabase() {
         projectType: 'ID' as const,
         targetCompanies: 'Healthcare Consultants',
         targetPersona: 'Compliance Expert, Regulatory Specialist',
-        rate: 6500.00,
+        rate: '6500.00',
         currency: 'GBP',
         status: 'Active' as const,
       },
     ];
 
     await db.insert(projects).values(projectData);
-    const fetchedProjects = await db.select().from(projects).where(inArray(projects.name, projectData.map(p => p.name)));
-    const projectIds = fetchedProjects.map(p => p.id);
+    const fetchedProjects = await Promise.all(
+      projectData.map(p =>
+        db.select().from(projects).where(eq(projects.name, p.name)).limit(1)
+      )
+    );
+    const projectIds = fetchedProjects.map(result => result[0]?.id).filter((id): id is number => id !== undefined);
 
     // Seed Screening Questions
     const questionData = [
