@@ -16,14 +16,14 @@ import {
  */
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
+  openId: varchar("open_id", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
-  loginMethod: varchar("loginMethod", { length: 64 }),
+  loginMethod: varchar("login_method", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  lastSignedIn: timestamp("last_signed_in").defaultNow().notNull(),
 });
 
 export type User = typeof users.$inferSelect;
@@ -37,13 +37,13 @@ export const clients = mysqlTable("clients", {
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   phone: varchar("phone", { length: 20 }),
-  companyName: varchar("companyName", { length: 255 }),
-  companyWebsite: varchar("companyWebsite", { length: 255 }),
-  contactPerson: varchar("contactPerson", { length: 255 }),
+  companyName: varchar("company_name", { length: 255 }),
+  companyWebsite: varchar("company_website", { length: 255 }),
+  contactPerson: varchar("contact_person", { length: 255 }),
   sector: varchar("sector", { length: 255 }),
   industry: varchar("industry", { length: 255 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Client = typeof clients.$inferSelect;
@@ -52,17 +52,17 @@ export type InsertClient = typeof clients.$inferInsert;
 /**
  * Client Contacts table - multiple contacts per client for different work types
  */
-export const clientContacts = mysqlTable("clientContacts", {
+export const clientContacts = mysqlTable("client_contacts", {
   id: int("id").autoincrement().primaryKey(),
-  clientId: int("clientId").notNull(),
-  contactName: varchar("contactName", { length: 255 }).notNull(),
+  clientId: int("client_id").notNull(),
+  contactName: varchar("contact_name", { length: 255 }).notNull(),
   email: varchar("email", { length: 320 }).notNull(),
   phone: varchar("phone", { length: 20 }),
   role: varchar("role", { length: 255 }), // e.g., "Hiring Manager", "Project Lead", "SPOC"
-  workType: varchar("workType", { length: 255 }), // e.g., "Advisory", "Recruitment", "Research"
-  isActive: boolean("isActive").default(true).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  workType: varchar("work_type", { length: 255 }), // e.g., "Advisory", "Recruitment", "Research"
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 export type ClientContact = typeof clientContacts.$inferSelect;
@@ -75,19 +75,19 @@ export const experts = mysqlTable("experts", {
   id: int("id").autoincrement().primaryKey(),
   email: varchar("email", { length: 320 }).notNull().unique(),
   phone: varchar("phone", { length: 20 }),
-  firstName: varchar("firstName", { length: 255 }),
-  lastName: varchar("lastName", { length: 255 }),
+  firstName: varchar("first_name", { length: 255 }),
+  lastName: varchar("last_name", { length: 255 }),
   sector: varchar("sector", { length: 255 }),
   function: varchar("function", { length: 255 }),
   biography: longtext("biography"),
-  linkedinUrl: varchar("linkedinUrl", { length: 500 }),
-  cvUrl: varchar("cvUrl", { length: 500 }),
-  cvKey: varchar("cvKey", { length: 500 }), // S3 key for CV
-  isVerified: boolean("isVerified").default(false).notNull(),
-  verificationToken: varchar("verificationToken", { length: 255 }),
-  verificationTokenExpiry: timestamp("verificationTokenExpiry"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  linkedinUrl: varchar("linkedin_url", { length: 500 }),
+  cvUrl: varchar("cv_url", { length: 500 }),
+  cvKey: varchar("cv_key", { length: 500 }), // S3 key for CV
+  isVerified: boolean("is_verified").default(false).notNull(),
+  verificationToken: varchar("verification_token", { length: 255 }),
+  verificationTokenExpiry: timestamp("verification_token_expiry"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Expert = typeof experts.$inferSelect;
@@ -96,17 +96,17 @@ export type InsertExpert = typeof experts.$inferInsert;
 /**
  * Expert Employment History
  */
-export const expertEmployment = mysqlTable("expertEmployment", {
+export const expertEmployment = mysqlTable("expert_employment", {
   id: int("id").autoincrement().primaryKey(),
-  expertId: int("expertId").notNull(),
-  companyName: varchar("companyName", { length: 255 }).notNull(),
+  expertId: int("expert_id").notNull(),
+  companyName: varchar("company_name", { length: 255 }).notNull(),
   position: varchar("position", { length: 255 }).notNull(),
-  startDate: varchar("startDate", { length: 10 }), // YYYY-MM format
-  endDate: varchar("endDate", { length: 10 }), // YYYY-MM format, null if current
-  isCurrent: boolean("isCurrent").default(false).notNull(),
+  startDate: varchar("start_date", { length: 10 }), // YYYY-MM format
+  endDate: varchar("end_date", { length: 10 }), // YYYY-MM format, null if current
+  isCurrent: boolean("is_current").default(false).notNull(),
   description: longtext("description"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 export type ExpertEmployment = typeof expertEmployment.$inferSelect;
@@ -115,17 +115,17 @@ export type InsertExpertEmployment = typeof expertEmployment.$inferInsert;
 /**
  * Expert Education History
  */
-export const expertEducation = mysqlTable("expertEducation", {
+export const expertEducation = mysqlTable("expert_education", {
   id: int("id").autoincrement().primaryKey(),
-  expertId: int("expertId").notNull(),
-  schoolName: varchar("schoolName", { length: 255 }).notNull(),
+  expertId: int("expert_id").notNull(),
+  schoolName: varchar("school_name", { length: 255 }).notNull(),
   degree: varchar("degree", { length: 255 }),
-  fieldOfStudy: varchar("fieldOfStudy", { length: 255 }),
-  startDate: varchar("startDate", { length: 10 }), // YYYY-MM format
-  endDate: varchar("endDate", { length: 10 }), // YYYY-MM format
+  fieldOfStudy: varchar("field_of_study", { length: 255 }),
+  startDate: varchar("start_date", { length: 10 }), // YYYY-MM format
+  endDate: varchar("end_date", { length: 10 }), // YYYY-MM format
   description: longtext("description"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 export type ExpertEducation = typeof expertEducation.$inferSelect;
@@ -136,17 +136,17 @@ export type InsertExpertEducation = typeof expertEducation.$inferInsert;
  */
 export const projects = mysqlTable("projects", {
   id: int("id").autoincrement().primaryKey(),
-  clientContactId: int("clientContactId").notNull(), // Reference to specific contact for this project
+  clientContactId: int("client_contact_id").notNull(), // Reference to specific contact for this project
   name: varchar("name", { length: 255 }).notNull(),
   description: longtext("description"),
-  projectType: mysqlEnum("projectType", ["Call", "Advisory", "ID"]).notNull(),
-  targetCompanies: text("targetCompanies"), // Comma-separated or JSON
-  targetPersona: text("targetPersona"),
+  projectType: mysqlEnum("project_type", ["Call", "Advisory", "ID"]).notNull(),
+  targetCompanies: text("target_companies"), // Comma-separated or JSON
+  targetPersona: text("target_persona"),
   rate: decimal("rate", { precision: 10, scale: 2 }),
   currency: varchar("currency", { length: 3 }).default("USD").notNull(), // ISO 4217 currency code
   status: mysqlEnum("status", ["Active", "On Hold", "Closed"]).default("Active").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Project = typeof projects.$inferSelect;
@@ -155,13 +155,13 @@ export type InsertProject = typeof projects.$inferInsert;
 /**
  * Screening Questions table - questions associated with projects
  */
-export const screeningQuestions = mysqlTable("screeningQuestions", {
+export const screeningQuestions = mysqlTable("screening_questions", {
   id: int("id").autoincrement().primaryKey(),
-  projectId: int("projectId").notNull(),
+  projectId: int("project_id").notNull(),
   question: longtext("question").notNull(),
   order: int("order").default(0).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 export type ScreeningQuestion = typeof screeningQuestions.$inferSelect;
@@ -172,12 +172,12 @@ export type InsertScreeningQuestion = typeof screeningQuestions.$inferInsert;
  */
 export const shortlists = mysqlTable("shortlists", {
   id: int("id").autoincrement().primaryKey(),
-  projectId: int("projectId").notNull(),
-  expertId: int("expertId").notNull(),
+  projectId: int("project_id").notNull(),
+  expertId: int("expert_id").notNull(),
   status: mysqlEnum("status", ["pending", "interested", "rejected", "new", "contacted", "attempting_contact", "engaged", "qualified", "proposal_sent", "negotiation", "verbal_agreement", "closed_won", "closed_lost"]).default("pending").notNull(),
   notes: longtext("notes"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Shortlist = typeof shortlists.$inferSelect;
@@ -186,12 +186,12 @@ export type InsertShortlist = typeof shortlists.$inferInsert;
 /**
  * Expert Verification table - tracks email verification tokens
  */
-export const expertVerification = mysqlTable("expertVerification", {
+export const expertVerification = mysqlTable("expert_verification", {
   id: int("id").autoincrement().primaryKey(),
-  expertId: int("expertId").notNull(),
+  expertId: int("expert_id").notNull(),
   token: varchar("token", { length: 255 }).notNull().unique(),
-  expiresAt: timestamp("expiresAt").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export type ExpertVerification = typeof expertVerification.$inferSelect;
@@ -200,14 +200,14 @@ export type InsertExpertVerification = typeof expertVerification.$inferInsert;
 /**
  * Expert-Client Mapping table - tracks relationship between experts and clients with status
  */
-export const expertClientMapping = mysqlTable("expertClientMapping", {
+export const expertClientMapping = mysqlTable("expert_client_mapping", {
   id: int("id").autoincrement().primaryKey(),
-  expertId: int("expertId").notNull(),
-  clientId: int("clientId").notNull(),
+  expertId: int("expert_id").notNull(),
+  clientId: int("client_id").notNull(),
   status: mysqlEnum("status", ["shortlisted", "contacted", "attempting_contact", "engaged", "qualified", "proposal_sent", "negotiation", "verbal_agreement", "closed_won", "closed_lost"]).default("shortlisted").notNull(),
   notes: longtext("notes"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 export type ExpertClientMapping = typeof expertClientMapping.$inferSelect;
@@ -221,8 +221,8 @@ export const sectors = mysqlTable("sectors", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull().unique(),
   description: text("description"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Sector = typeof sectors.$inferSelect;
@@ -235,8 +235,8 @@ export const functions = mysqlTable("functions", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull().unique(),
   description: text("description"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Function = typeof functions.$inferSelect;
@@ -262,15 +262,15 @@ export type NewAdminUser = typeof adminUsers.$inferInsert;
 /**
  * Audit Log table - tracks all changes to entities
  */
-export const auditLog = mysqlTable("auditLog", {
+export const auditLog = mysqlTable("audit_log", {
   id: int("id").autoincrement().primaryKey(),
-  entityType: mysqlEnum("entityType", ["client", "expert", "project", "admin_user", "contact", "shortlist"]).notNull(),
-  entityId: int("entityId").notNull(),
-  operationType: mysqlEnum("operationType", ["create", "update", "delete"]).notNull(),
-  adminId: int("adminId"), // References adminUsers.id - nullable for system operations
-  fieldChanged: varchar("fieldChanged", { length: 255 }), // Which field was modified
-  oldValue: longtext("oldValue"), // JSON representation
-  newValue: longtext("newValue"), // JSON representation
+  entityType: mysqlEnum("entity_type", ["client", "expert", "project", "admin_user", "contact", "shortlist"]).notNull(),
+  entityId: int("entity_id").notNull(),
+  operationType: mysqlEnum("operation_type", ["create", "update", "delete"]).notNull(),
+  adminId: int("admin_id"), // References adminUsers.id - nullable for system operations
+  fieldChanged: varchar("field_changed", { length: 255 }), // Which field was modified
+  oldValue: longtext("old_value"), // JSON representation
+  newValue: longtext("new_value"), // JSON representation
   reason: text("reason"), // Optional reason for the change
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
@@ -281,15 +281,15 @@ export type InsertAuditLog = typeof auditLog.$inferInsert;
 /**
  * Project Activity Timeline table - tracks status changes for projects
  */
-export const projectActivityTimeline = mysqlTable("projectActivityTimeline", {
+export const projectActivityTimeline = mysqlTable("project_activity_timeline", {
   id: int("id").autoincrement().primaryKey(),
-  projectId: int("projectId").notNull(),
+  projectId: int("project_id").notNull(),
   type: mysqlEnum("type", ["created", "status_changed"]).notNull(),
-  fromStatus: varchar("fromStatus", { length: 50 }),
-  toStatus: varchar("toStatus", { length: 50 }),
+  fromStatus: varchar("from_status", { length: 50 }),
+  toStatus: varchar("to_status", { length: 50 }),
   title: varchar("title", { length: 255 }).notNull(),
   description: longtext("description"),
-  changedBy: int("changedBy"), // References adminUsers.id
+  changedBy: int("changed_by"), // References adminUsers.id
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
