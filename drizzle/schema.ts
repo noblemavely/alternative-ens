@@ -35,11 +35,13 @@ export type InsertUser = typeof users.$inferInsert;
 export const clients = mysqlTable("clients", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
   phone: varchar("phone", { length: 20 }),
   companyName: varchar("companyName", { length: 255 }),
   companyWebsite: varchar("companyWebsite", { length: 255 }),
   contactPerson: varchar("contactPerson", { length: 255 }),
   sector: varchar("sector", { length: 255 }),
+  industry: varchar("industry", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
