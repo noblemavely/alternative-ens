@@ -209,6 +209,7 @@ ON DUPLICATE KEY UPDATE description = VALUES(description);
 
 -- Insert default admin user
 -- Password: admin123 (should be changed in production)
+-- Hash generated with: bcrypt.hash('admin123', 10)
 INSERT INTO adminUsers (name, email, password, role) VALUES
-('Admin User', 'admin@alternative.com', '$2a$10$YIjlrPNoS9/sCrtWx8DXiOAVzhWrO7VlCc5O.CxIGWq5M6p.LCkfi', 'admin')
+('Admin User', 'admin@alternative.com', '$2b$10$ldOJcekvvcFly715QREIKOrE2bNt66nR/Zqt/9b/ZwCWYGdFup96O', 'admin')
 ON DUPLICATE KEY UPDATE password = VALUES(password);
