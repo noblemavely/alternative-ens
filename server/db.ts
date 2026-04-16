@@ -908,21 +908,37 @@ export async function seedDatabase() {
   if (!db) throw new Error("Database not available");
 
   try {
+    console.log("[seedDatabase] Starting seed operation");
+
     // Clear existing data (in reverse order of dependencies)
+    console.log("[seedDatabase] Deleting existing data...");
     await db.delete(expertVerification);
+    console.log("[seedDatabase] Deleted expertVerification");
     await db.delete(shortlists);
+    console.log("[seedDatabase] Deleted shortlists");
     await db.delete(expertClientMapping);
+    console.log("[seedDatabase] Deleted expertClientMapping");
     await db.delete(screeningQuestions);
+    console.log("[seedDatabase] Deleted screeningQuestions");
     await db.delete(projects);
+    console.log("[seedDatabase] Deleted projects");
     await db.delete(expertEducation);
+    console.log("[seedDatabase] Deleted expertEducation");
     await db.delete(expertEmployment);
+    console.log("[seedDatabase] Deleted expertEmployment");
     await db.delete(experts);
+    console.log("[seedDatabase] Deleted experts");
     await db.delete(clientContacts);
+    console.log("[seedDatabase] Deleted clientContacts");
     await db.delete(clients);
+    console.log("[seedDatabase] Deleted clients");
     await db.delete(functions);
+    console.log("[seedDatabase] Deleted functions");
     await db.delete(sectors);
+    console.log("[seedDatabase] Deleted sectors");
 
     // Seed Sectors
+    console.log("[seedDatabase] Seeding sectors...");
     const sectorData = [
       { name: 'Technology', description: 'Software, IT, Cloud Computing' },
       { name: 'Finance', description: 'Banking, Investment, Insurance' },
@@ -931,6 +947,7 @@ export async function seedDatabase() {
       { name: 'Retail', description: 'E-commerce, Brick & Mortar, Fashion' },
     ];
     await db.insert(sectors).values(sectorData);
+    console.log("[seedDatabase] Sectors seeded successfully");
 
     // Seed Functions
     const functionData = [
@@ -1193,6 +1210,7 @@ export async function seedDatabase() {
       { expertId: expertIds[4], clientId: clientIds[2], status: 'shortlisted' as const, notes: 'Retail background relevant' },
     ];
     await db.insert(expertClientMapping).values(mappingData);
+    console.log("[seedDatabase] All data seeded successfully");
 
     return {
       success: true,
