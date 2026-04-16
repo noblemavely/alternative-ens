@@ -406,19 +406,32 @@ export default function AdminExperts() {
                         <td className="py-3 px-4 text-muted-foreground cursor-pointer" onClick={() => navigate(`/admin/experts/${expert.id}`)}>{expert.email}</td>
                         <td className="py-3 px-4 text-muted-foreground cursor-pointer" onClick={() => navigate(`/admin/experts/${expert.id}`)}>{expert.sector || "-"}</td>
                         <td className="py-3 px-4 text-muted-foreground cursor-pointer" onClick={() => navigate(`/admin/experts/${expert.id}`)}>{expert.function || "-"}</td>
-                        <td className="py-3 px-4 text-right space-x-2 flex justify-end">
-                          <ButtonWithTooltip variant="ghost" size="sm" tooltip="Edit this expert" onClick={(e) => { e.stopPropagation(); handleEdit(expert); }} className="gap-1">
+                        <td
+                          className="py-3 px-4 text-right space-x-2 flex justify-end"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleEdit(expert);
+                            }}
+                            title="Edit this expert"
+                          >
                             <Edit2 size={16} />
-                          </ButtonWithTooltip>
-                          <ButtonWithTooltip
-                            variant="ghost"
-                            size="sm"
-                            tooltip="Delete this expert"
-                            onClick={(e) => { e.stopPropagation(); handleDelete(expert.id, `${expert.firstName} ${expert.lastName}`); }}
-                            className="text-destructive hover:text-destructive"
+                          </button>
+                          <button
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9 text-destructive hover:text-destructive"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDelete(expert.id, `${expert.firstName} ${expert.lastName}`);
+                            }}
+                            title="Delete this expert"
                           >
                             <Trash2 size={16} />
-                          </ButtonWithTooltip>
+                          </button>
                         </td>
                       </tr>
                     ))}
