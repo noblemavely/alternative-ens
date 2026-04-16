@@ -206,3 +206,9 @@ INSERT INTO `functions` (name, description) VALUES
 ('Analyst', 'Data, business, and financial analysts'),
 ('Other', 'Other professional roles')
 ON DUPLICATE KEY UPDATE description = VALUES(description);
+
+-- Insert default admin user
+-- Password: admin123 (should be changed in production)
+INSERT INTO adminUsers (name, email, password, role) VALUES
+('Admin User', 'admin@alternative.com', '$2a$10$YIjlrPNoS9/sCrtWx8DXiOAVzhWrO7VlCc5O.CxIGWq5M6p.LCkfi', 'admin')
+ON DUPLICATE KEY UPDATE password = VALUES(password);
