@@ -50,10 +50,21 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  // In Docker, files are at /app/dist/public. In development, they're relative to this file location
-  const distPath = process.env.NODE_ENV === "production"
-    ? path.resolve("/app/dist/public")
-    : path.resolve(import.meta.dirname, "../..", "dist", "public");
+  // Determine the correct dist path based on environment
+  let distPath: string;
+
+  // For production Docker deployment
+  if (fs.existsSync("/app/dist/public")) {
+    distPath = path.resolve("/app/dist/public");
+  } else if (fs.existsSync("./dist/public")) {
+    // Relative to current working directory (when started from project root)
+    distPath = path.resolve("./dist/public");
+  } else {
+    // Fallback: relative to this file location
+    distPath = path.resolve(import.meta.dirname, "../..", "dist", "public");
+  }
+
+  console.log(`[ServeStatic] Using distPath: ${distPath}, exists: ${fs.existsSync(distPath)}`);
 
   if (!fs.existsSync(distPath)) {
     console.error(
