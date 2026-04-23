@@ -35,11 +35,15 @@ COPY --from=builder /app/dist ./dist
 # Copy environment template (will be overridden by docker-compose)
 COPY .env.example .env.example
 
+# Copy entrypoint script
+COPY entrypoint.sh entrypoint.sh
+RUN chmod +x entrypoint.sh
+
 # Expose port
 EXPOSE 3000
 
 # Set production environment
 ENV NODE_ENV=production
 
-# Start application
-CMD ["node", "dist/index.js"]
+# Start application using entrypoint script
+ENTRYPOINT ["./entrypoint.sh"]
