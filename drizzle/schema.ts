@@ -188,10 +188,10 @@ export type InsertShortlist = typeof shortlists.$inferInsert;
  */
 export const expertVerification = mysqlTable("expert_verification", {
   id: int("id").autoincrement().primaryKey(),
-  expertId: int("expertId").notNull(),
+  expertId: int("expert_id").notNull(),
   token: varchar("token", { length: 255 }).notNull().unique(),
-  expiresAt: timestamp("expiresAt").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull(),
 });
 
 export type ExpertVerification = typeof expertVerification.$inferSelect;
