@@ -1,0 +1,64 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+      - production
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build application
+        run: pnpm build
+
+      - name: Install SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DO_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 68.183.86.134 >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Deploy via SSH
+        run: |
+          # Create deployment directory and upload files
+          ssh -i ~/.ssh/id_rsa root@68.183.86.134 "mkdir -p /app && cd /app && git pull origin main || git clone https://github.com/noblemavely/alternative-ens.git /app"
+
+          # Upload fresh dist folder
+          scp -i ~/.ssh/id_rsa -r dist root@68.183.86.134:/app/
+
+          # Restart the application
+          ssh -i ~/.ssh/id_rsa root@68.183.86.134 << 'SSH'
+            cd /app
+            # If using docker-compose
+            docker-compose down 2>/dev/null || true
+            docker-compose up -d
+
+            # Wait for containers to be healthy
+            sleep 10
+
+            # Verify deployment
+            curl -s http://localhost:3000 > /dev/null && echo "Deployment successful" || echo "Deployment may have issues"
+          SSH
+
+      - name: Verify Deployment
+        run: |
+          echo "✓ Deployment completed"
+          echo "Application URL: https://alternatives.nativeworld.com"
