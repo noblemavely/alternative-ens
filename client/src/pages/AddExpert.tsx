@@ -10,11 +10,17 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
+import { Textarea } from "@/components/ui/textarea";
+import { EmploymentHistoryForm } from "@/components/EmploymentHistoryForm";
+import { EducationHistoryForm } from "@/components/EducationHistoryForm";
+import ResumeParserForm from "@/components/ResumeParserForm";
 
 const expertSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Valid email required"),
+  phone: z.string().optional(),
+  linkedinUrl: z.string().min(1, "LinkedIn Profile URL is required"),
   sector: z.string().optional(),
   function: z.string().optional(),
   biography: z.string().optional(),
@@ -24,6 +30,10 @@ type ExpertFormData = z.infer<typeof expertSchema>;
 
 export default function AddExpert() {
   const [, navigate] = useLocation();
+  const [employmentHistory, setEmploymentHistory] = require("react").useState<any[]>([]);
+  const [educationHistory, setEducationHistory] = require("react").useState<any[]>([]);
+  const [resumeFile, setResumeFile] = require("react").useState<File | null>(null);
+
   const createMutation = trpc.experts.create.useMutation();
   const sectorsQuery = trpc.sectors.list.useQuery();
   const functionsQuery = trpc.functions.list.useQuery();
@@ -34,6 +44,8 @@ export default function AddExpert() {
       firstName: "",
       lastName: "",
       email: "",
+      phone: "",
+      linkedinUrl: "",
       sector: "",
       function: "",
       biography: "",
@@ -46,9 +58,13 @@ export default function AddExpert() {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
+        phone: data.phone,
+        linkedinUrl: data.linkedinUrl,
         sector: data.sector,
         function: data.function,
         biography: data.biography,
+        employment: employmentHistory,
+        education: educationHistory,
       });
       toast.success("Expert created successfully");
       navigate("/admin/experts");
@@ -127,6 +143,36 @@ export default function AddExpert() {
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone</FormLabel>
+                        <FormControl>
+                          <Input type="tel" placeholder="+1 (555) 000-0000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="linkedinUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>LinkedIn Profile URL *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://linkedin.com/in/johndoe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
                     name="sector"
                     render={({ field }) => (
                       <FormItem>
@@ -185,12 +231,42 @@ export default function AddExpert() {
                     <FormItem>
                       <FormLabel>Biography</FormLabel>
                       <FormControl>
-                        <textarea placeholder="Expert background and experience..." className="w-full p-2 border border-border rounded-md" rows={4} {...field} />
+                        <Textarea placeholder="Expert background and experience..." rows={4} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                <div className="pt-6 border-t border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Employment History</h3>
+                  <EmploymentHistoryForm
+                    value={employmentHistory}
+                    onChange={setEmploymentHistory}
+                  />
+                </div>
+
+                <div className="pt-6 border-t border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Education History</h3>
+                  <EducationHistoryForm
+                    value={educationHistory}
+                    onChange={setEducationHistory}
+                  />
+                </div>
+
+                <div className="pt-6 border-t border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Resume/CV (Optional)</h3>
+                  <ResumeParserForm
+                    onParsed={(data, resetForm) => {
+                      if (resetForm) {
+                        setEmploymentHistory(data.employment || []);
+                        setEducationHistory(data.education || []);
+                      }
+                      setResumeFile(data.file || null);
+                    }}
+                    onSkip={() => setResumeFile(null)}
+                  />
+                </div>
 
                 <div className="flex gap-3 pt-4">
                   <Button type="submit" disabled={createMutation.isPending}>
