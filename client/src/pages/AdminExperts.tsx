@@ -17,6 +17,8 @@ import { Plus, Trash2, Edit2, Upload, Loader2, Link2, Users } from "lucide-react
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { ButtonWithTooltip } from "@/components/ButtonWithTooltip";
+import { EmploymentHistoryForm } from "@/components/EmploymentHistoryForm";
+import { EducationHistoryForm } from "@/components/EducationHistoryForm";
 
 const expertSchema = z.object({
   email: z.string().email("Invalid email"),
@@ -37,7 +39,9 @@ export default function AdminExperts() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [parsingLinkedin, setParsingLinkedin] = useState(false);
-  
+  const [employmentEntries, setEmploymentEntries] = useState<any[]>([]);
+  const [educationEntries, setEducationEntries] = useState<any[]>([]);
+
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
   const [sectorFilter, setSectorFilter] = useState<string>(urlParams.get('sector') || "");
@@ -71,6 +75,8 @@ export default function AdminExperts() {
   const updateMutation = trpc.experts.update.useMutation();
   const deleteMutation = trpc.experts.delete.useMutation();
   const parseLinkedinMutation = trpc.linkedin.parseProfile.useMutation();
+  const addEmploymentMutation = trpc.expertEmployment.add.useMutation();
+  const addEducationMutation = trpc.expertEducation.add.useMutation();
 
   const form = useForm<ExpertFormData>({
     resolver: zodResolver(expertSchema),
@@ -111,17 +117,53 @@ export default function AdminExperts() {
 
   const onSubmit = async (data: ExpertFormData) => {
     try {
+      let expertId = editingId;
+
       if (editingId) {
         await updateMutation.mutateAsync({ id: editingId, ...data });
         toast.success("Expert updated successfully");
       } else {
-        await createMutation.mutateAsync(data);
+        const result = await createMutation.mutateAsync(data);
+        expertId = result.id;
         toast.success("Expert created successfully");
       }
+
+      // Add employment entries if any
+      if (employmentEntries.length > 0 && expertId) {
+        for (const entry of employmentEntries) {
+          await addEmploymentMutation.mutateAsync({
+            expertId,
+            companyName: entry.company,
+            position: entry.position,
+            startDate: entry.startDate,
+            endDate: entry.endDate || undefined,
+            isCurrent: entry.currentlyWorking,
+            description: entry.description || undefined,
+          });
+        }
+      }
+
+      // Add education entries if any
+      if (educationEntries.length > 0 && expertId) {
+        for (const entry of educationEntries) {
+          await addEducationMutation.mutateAsync({
+            expertId,
+            schoolName: entry.school,
+            degree: entry.degree,
+            fieldOfStudy: entry.field,
+            startDate: entry.startDate,
+            endDate: entry.endDate || undefined,
+            description: entry.description || undefined,
+          });
+        }
+      }
+
       form.reset();
       setOpen(false);
       setEditingId(null);
       setLinkedinUrl("");
+      setEmploymentEntries([]);
+      setEducationEntries([]);
       expertsQuery.refetch();
     } catch (error) {
       toast.error("Failed to save expert");
@@ -131,6 +173,8 @@ export default function AdminExperts() {
   const handleEdit = (expert: any) => {
     form.reset(expert);
     setEditingId(expert.id);
+    setEmploymentEntries([]);
+    setEducationEntries([]);
     setOpen(true);
   };
 
@@ -211,6 +255,8 @@ export default function AdminExperts() {
                   form.reset();
                   setEditingId(null);
                   setLinkedinUrl("");
+                  setEmploymentEntries([]);
+                  setEducationEntries([]);
                 }}
                 className="gap-2 whitespace-nowrap"
               >
@@ -367,7 +413,41 @@ export default function AdminExperts() {
                     )}
                   />
 
-                  <Button type="submit" className="w-full" disabled={createMutation.isPending || updateMutation.isPending}>
+                  {/* Employment History */}
+                  <div className="mt-6 pt-4 border-t">
+                    <EmploymentHistoryForm
+                      entries={employmentEntries}
+                      onAdd={(entry) => setEmploymentEntries([...employmentEntries, entry])}
+                      onUpdate={(entry) => {
+                        const idx = employmentEntries.findIndex(e => e.id === entry.id);
+                        if (idx >= 0) {
+                          const updated = [...employmentEntries];
+                          updated[idx] = entry;
+                          setEmploymentEntries(updated);
+                        }
+                      }}
+                      onDelete={(id) => setEmploymentEntries(employmentEntries.filter(e => e.id !== id))}
+                    />
+                  </div>
+
+                  {/* Education History */}
+                  <div className="mt-6 pt-4 border-t">
+                    <EducationHistoryForm
+                      entries={educationEntries}
+                      onAdd={(entry) => setEducationEntries([...educationEntries, entry])}
+                      onUpdate={(entry) => {
+                        const idx = educationEntries.findIndex(e => e.id === entry.id);
+                        if (idx >= 0) {
+                          const updated = [...educationEntries];
+                          updated[idx] = entry;
+                          setEducationEntries(updated);
+                        }
+                      }}
+                      onDelete={(id) => setEducationEntries(educationEntries.filter(e => e.id !== id))}
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full mt-6" disabled={createMutation.isPending || updateMutation.isPending}>
                     {editingId ? "Update Expert" : "Create Expert"}
                   </Button>
                 </form>

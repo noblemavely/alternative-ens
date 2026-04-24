@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import ActivityTimeline from "@/components/ActivityTimeline";
 import DocumentViewer from "@/components/DocumentViewer";
+import { EmploymentHistoryForm } from "@/components/EmploymentHistoryForm";
+import { EducationHistoryForm } from "@/components/EducationHistoryForm";
 
 export default function AdminExpertDetail() {
   const [, params] = useRoute("/admin/experts/:id");
@@ -33,6 +35,10 @@ export default function AdminExpertDetail() {
   const [selectedCVFile, setSelectedCVFile] = useState<File | null>(null);
   const [editingShortlistId, setEditingShortlistId] = useState<number | null>(null);
   const [editingStatus, setEditingStatus] = useState<string>("");
+
+  // Employment and education state
+  const [employmentHistory, setEmploymentHistory] = useState<any[]>([]);
+  const [educationHistory, setEducationHistory] = useState<any[]>([]);
 
   // Fetch expert details
   const expertQuery = trpc.experts.getById.useQuery(
@@ -75,6 +81,17 @@ export default function AdminExpertDetail() {
   const projectActivityQuery = trpc.experts.getProjectActivityTimeline.useQuery(
     { expertId: expertId!, projectId: selectedProjectId || 0 },
     { enabled: !!expertId && !!selectedProjectId }
+  );
+
+  // Fetch employment and education history
+  const employmentQuery = trpc.expertEmployment.getByExpert.useQuery(
+    { expertId: expertId! },
+    { enabled: !!expertId }
+  );
+
+  const educationQuery = trpc.expertEducation.getByExpert.useQuery(
+    { expertId: expertId! },
+    { enabled: !!expertId }
   );
 
   // Fetch expert mappings
@@ -157,6 +174,68 @@ export default function AdminExpertDetail() {
     },
   });
 
+  // Employment mutations
+  const addEmploymentMutation = trpc.expertEmployment.add.useMutation({
+    onSuccess: () => {
+      toast.success("Employment added successfully");
+      employmentQuery.refetch();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to add employment");
+    },
+  });
+
+  const updateEmploymentMutation = trpc.expertEmployment.update.useMutation({
+    onSuccess: () => {
+      toast.success("Employment updated successfully");
+      employmentQuery.refetch();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to update employment");
+    },
+  });
+
+  const deleteEmploymentMutation = trpc.expertEmployment.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Employment deleted successfully");
+      employmentQuery.refetch();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to delete employment");
+    },
+  });
+
+  // Education mutations
+  const addEducationMutation = trpc.expertEducation.add.useMutation({
+    onSuccess: () => {
+      toast.success("Education added successfully");
+      educationQuery.refetch();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to add education");
+    },
+  });
+
+  const updateEducationMutation = trpc.expertEducation.update.useMutation({
+    onSuccess: () => {
+      toast.success("Education updated successfully");
+      educationQuery.refetch();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to update education");
+    },
+  });
+
+  const deleteEducationMutation = trpc.expertEducation.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Education deleted successfully");
+      educationQuery.refetch();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to delete education");
+    },
+  });
+
   // Initialize form data when expert data loads
   useEffect(() => {
     if (expertQuery.data) {
@@ -171,6 +250,19 @@ export default function AdminExpertDetail() {
       });
     }
   }, [expertQuery.data]);
+
+  // Initialize employment and education history
+  useEffect(() => {
+    if (employmentQuery.data) {
+      setEmploymentHistory(employmentQuery.data);
+    }
+  }, [employmentQuery.data]);
+
+  useEffect(() => {
+    if (educationQuery.data) {
+      setEducationHistory(educationQuery.data);
+    }
+  }, [educationQuery.data]);
 
   // Auto-select first project if available
   useEffect(() => {
@@ -260,6 +352,69 @@ export default function AdminExpertDetail() {
     updateShortlistMutation.mutate({
       id: shortlistId,
       status: newStatus as any,
+    });
+  };
+
+  // Employment handlers
+  const handleAddEmployment = (entry: any) => {
+    addEmploymentMutation.mutate({
+      expertId: expertId!,
+      companyName: entry.company,
+      position: entry.position,
+      startDate: entry.startDate,
+      endDate: entry.endDate || undefined,
+      isCurrent: entry.currentlyWorking,
+      description: entry.description || undefined,
+    });
+  };
+
+  const handleUpdateEmployment = (entry: any) => {
+    if (!entry.id) return;
+    updateEmploymentMutation.mutate({
+      id: entry.id,
+      company: entry.company,
+      position: entry.position,
+      startDate: entry.startDate,
+      endDate: entry.endDate,
+      currentlyWorking: entry.currentlyWorking,
+      description: entry.description,
+    });
+  };
+
+  const handleDeleteEmployment = (id: string) => {
+    deleteEmploymentMutation.mutate({
+      id: parseInt(id),
+    });
+  };
+
+  // Education handlers
+  const handleAddEducation = (entry: any) => {
+    addEducationMutation.mutate({
+      expertId: expertId!,
+      schoolName: entry.school,
+      degree: entry.degree,
+      fieldOfStudy: entry.field,
+      startDate: entry.startDate,
+      endDate: entry.endDate || undefined,
+      description: entry.description || undefined,
+    });
+  };
+
+  const handleUpdateEducation = (entry: any) => {
+    if (!entry.id) return;
+    updateEducationMutation.mutate({
+      id: entry.id,
+      school: entry.school,
+      degree: entry.degree,
+      fieldOfStudy: entry.field,
+      startDate: entry.startDate,
+      endDate: entry.endDate,
+    });
+  };
+
+  const handleDeleteEducation = (id: string) => {
+    deleteEducationMutation.mutate({
+      id: parseInt(id),
     });
   };
 
@@ -444,6 +599,56 @@ export default function AdminExpertDetail() {
               </CardContent>
             </Card>
 
+            {/* Employment History Section */}
+            {isEditing && (
+              <Card className="border-slate-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg">Employment History</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <EmploymentHistoryForm
+                    entries={employmentHistory.map((emp: any) => ({
+                      id: emp.id?.toString(),
+                      company: emp.companyName,
+                      position: emp.position,
+                      startDate: emp.startDate,
+                      endDate: emp.endDate,
+                      currentlyWorking: emp.isCurrent,
+                      description: emp.description,
+                    }))}
+                    onAdd={handleAddEmployment}
+                    onUpdate={handleUpdateEmployment}
+                    onDelete={handleDeleteEmployment}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Education History Section */}
+            {isEditing && (
+              <Card className="border-slate-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg">Education History</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <EducationHistoryForm
+                    entries={educationHistory.map((edu: any) => ({
+                      id: edu.id?.toString(),
+                      school: edu.schoolName,
+                      degree: edu.degree,
+                      field: edu.fieldOfStudy,
+                      startDate: edu.startDate,
+                      endDate: edu.endDate,
+                      description: edu.description,
+                    }))}
+                    onAdd={handleAddEducation}
+                    onUpdate={handleUpdateEducation}
+                    onDelete={handleDeleteEducation}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
             {/* CV Section */}
             {expertQuery.data?.cvUrl && (
               <>
@@ -482,6 +687,53 @@ export default function AdminExpertDetail() {
                   documentTitle={`${expertQuery.data.firstName} ${expertQuery.data.lastName} - Resume`}
                 />
               </>
+            )}
+
+            {/* Display Employment History (read-only when not editing) */}
+            {!isEditing && employmentHistory.length > 0 && (
+              <Card className="border-slate-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg">Employment History</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {employmentHistory.map((emp: any) => (
+                    <div key={emp.id} className="pb-3 border-b last:border-b-0 last:pb-0">
+                      <h4 className="font-semibold text-slate-900">{emp.position}</h4>
+                      <p className="text-sm text-slate-600">{emp.companyName}</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {emp.startDate} {emp.endDate && `- ${emp.endDate}`}
+                        {emp.isCurrent && " (Current)"}
+                      </p>
+                      {emp.description && (
+                        <p className="text-sm text-slate-700 mt-2">{emp.description}</p>
+                      )}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Display Education History (read-only when not editing) */}
+            {!isEditing && educationHistory.length > 0 && (
+              <Card className="border-slate-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg">Education History</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {educationHistory.map((edu: any) => (
+                    <div key={edu.id} className="pb-3 border-b last:border-b-0 last:pb-0">
+                      <h4 className="font-semibold text-slate-900">{edu.degree} in {edu.fieldOfStudy}</h4>
+                      <p className="text-sm text-slate-600">{edu.schoolName}</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {edu.startDate} {edu.endDate && `- ${edu.endDate}`}
+                      </p>
+                      {edu.description && (
+                        <p className="text-sm text-slate-700 mt-2">{edu.description}</p>
+                      )}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
             )}
 
             {/* Projects & Shortlisting Section */}
