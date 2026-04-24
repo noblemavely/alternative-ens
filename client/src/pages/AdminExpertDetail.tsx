@@ -187,26 +187,34 @@ export default function AdminExpertDetail() {
     // Upload CV if a file was selected
     if (selectedCVFile) {
       try {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          const base64Data = (e.target?.result as string).split(",")[1];
-          const uploadResult = await uploadCVMutation.mutateAsync({
-            fileName: selectedCVFile.name,
-            fileData: base64Data,
-            contentType: selectedCVFile.type || "application/pdf",
-          });
-          cvUrl = uploadResult.url;
+        // Wrap FileReader in a Promise to properly await it
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const result = (e.target?.result as string).split(",")[1];
+            resolve(result);
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(selectedCVFile);
+        });
 
-          // Now update the expert with the new CV URL
-          await updateExpertMutation.mutateAsync({
-            id: expertId,
-            ...formData,
-            cvUrl,
-          });
-        };
-        reader.readAsDataURL(selectedCVFile);
+        // Upload the CV file
+        const uploadResult = await uploadCVMutation.mutateAsync({
+          fileName: selectedCVFile.name,
+          fileData: base64Data,
+          contentType: selectedCVFile.type || "application/pdf",
+        });
+        cvUrl = uploadResult.url;
+
+        // Now update the expert with the new CV URL
+        await updateExpertMutation.mutateAsync({
+          id: expertId,
+          ...formData,
+          cvUrl,
+        });
       } catch (error) {
         console.error("Error uploading CV:", error);
+        toast.error("Failed to upload CV file");
         return;
       }
     } else {
