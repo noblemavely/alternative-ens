@@ -123,9 +123,14 @@ export default function AdminExperts() {
         await updateMutation.mutateAsync({ id: editingId, ...data });
         toast.success("Expert updated successfully");
       } else {
-        const result = await createMutation.mutateAsync(data);
-        expertId = result.id;
+        await createMutation.mutateAsync(data);
         toast.success("Expert created successfully");
+
+        // Fetch the newly created expert by email to get their ID
+        const createdExperts = (await expertsQuery.refetch()).data?.filter(e => e.email === data.email);
+        if (createdExperts && createdExperts.length > 0) {
+          expertId = createdExperts[0].id;
+        }
       }
 
       // Add employment entries if any
