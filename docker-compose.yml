@@ -29,7 +29,7 @@ services:
     env_file:
       - .env
     environment:
-      NODE_ENV: production
+      NODE_ENV: production-local
       DATABASE_URL: mysql://root:alternative_ens@db:3306/alternative_ens
       VITE_APP_ID: ${VITE_APP_ID:-default-app-id}
       JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
