@@ -58,6 +58,7 @@ services:
       - alternative-ens-network
     volumes:
       - ./dist:/app/dist
+      - ./uploads:/app/uploads
     restart: unless-stopped
 
 volumes:

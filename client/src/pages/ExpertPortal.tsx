@@ -335,7 +335,8 @@ export default function ExpertPortal() {
         } catch (error) {
           console.error("Error uploading CV:", error);
           toast.dismiss();
-          toast.error("Failed to upload CV file");
+          const errorMessage = error instanceof Error ? error.message : "Failed to upload CV file";
+          toast.error(`CV Upload Error: ${errorMessage}`);
           throw error;
         }
       }
