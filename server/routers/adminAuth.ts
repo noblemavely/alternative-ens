@@ -1,12 +1,54 @@
 import { router, publicProcedure, adminProcedure } from "../_core/trpc";
 import { z } from "zod";
-import { verifyAdminPassword, updateAdminLastLogin } from "../db.admin";
+import { verifyAdminPassword, updateAdminLastLogin, getAdminByEmail, createAdminUser } from "../db.admin";
 import { TRPCError } from "@trpc/server";
 import jwt from "jsonwebtoken";
 
 const ENV = process.env;
 
 export const adminAuthRouter = router({
+  // Initialize first admin user (only works if no admin exists)
+  initializeFirstAdmin: publicProcedure
+    .input(z.object({
+      email: z.string().email().default("admin@alternatives.nativeworld.com"),
+      password: z.string().min(6).default("admin123"),
+      name: z.string().default("Admin User"),
+    }).partial())
+    .mutation(async ({ input }) => {
+      try {
+        // Check if any admin user already exists
+        const existingAdmin = await getAdminByEmail(input.email || "admin@alternatives.nativeworld.com");
+
+        if (existingAdmin) {
+          return {
+            success: false,
+            message: "Admin user already exists",
+            adminId: existingAdmin.id,
+          };
+        }
+
+        // Create the first admin user
+        const result = await createAdminUser(
+          input.email || "admin@alternatives.nativeworld.com",
+          input.password || "admin123",
+          input.name || "Admin User",
+          "super_admin"
+        );
+
+        return {
+          success: true,
+          message: "Admin user created successfully",
+          email: input.email || "admin@alternatives.nativeworld.com",
+        };
+      } catch (error: any) {
+        console.error("[AdminAuth.initializeFirstAdmin] Error:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to initialize admin user: " + error.message,
+        });
+      }
+    }),
+
   login: publicProcedure
     .input(z.object({
       email: z.string().email(),
