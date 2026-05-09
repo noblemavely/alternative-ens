@@ -281,7 +281,7 @@ async function initializeSchema(pool: any) {
     // Create default admin user if none exists
     try {
       const [existingAdmins] = await connection.execute(
-        `SELECT id FROM admin_users WHERE email = 'admin@alternatives.nativeworld.com'`
+        `SELECT id FROM admin_users WHERE email = 'admin@alternative.com'`
       );
 
       if ((existingAdmins as any[]).length === 0) {
@@ -291,7 +291,7 @@ async function initializeSchema(pool: any) {
         await connection.execute(
           `INSERT INTO admin_users (email, password, name, role, isActive, createdAt, updatedAt)
            VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
-          ['admin@alternatives.nativeworld.com', hashedPassword, 'Admin User', 'super_admin', true]
+          ['admin@alternative.com', hashedPassword, 'Admin User', 'super_admin', true]
         );
         console.log("[Database] Default admin user created successfully");
       } else {

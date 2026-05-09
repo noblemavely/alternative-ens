@@ -247,6 +247,8 @@ export default function AdminExpertDetail() {
         sector: expertQuery.data.sector || "",
         function: expertQuery.data.function || "",
         biography: expertQuery.data.biography || "",
+        cvUrl: expertQuery.data.cvUrl || "",
+        cvKey: expertQuery.data.cvKey || "",
       });
     }
   }, [expertQuery.data]);
@@ -297,12 +299,14 @@ export default function AdminExpertDetail() {
           contentType: selectedCVFile.type || "application/pdf",
         });
         cvUrl = uploadResult.url;
+        const cvKey = uploadResult.key;
 
-        // Now update the expert with the new CV URL
+        // Now update the expert with the new CV URL and key
         await updateExpertMutation.mutateAsync({
           id: expertId,
           ...formData,
           cvUrl,
+          cvKey,
         });
       } catch (error) {
         console.error("Error uploading CV:", error);
@@ -575,27 +579,84 @@ export default function AdminExpertDetail() {
                   />
                 </div>
 
-                {isEditing && (
-                  <div>
-                    <Label className="text-xs font-semibold text-slate-600">Upload CV/Resume</Label>
-                    <div className="mt-2 flex items-center gap-4">
-                      <Input
-                        type="file"
-                        accept=".pdf,.doc,.docx"
-                        onChange={(e) => setSelectedCVFile(e.target.files?.[0] || null)}
-                        className="text-slate-900"
-                      />
-                      {selectedCVFile && (
-                        <span className="text-sm text-green-600 font-medium">
-                          ✓ {selectedCVFile.name}
-                        </span>
+                {/* CV/Resume Section */}
+                <div>
+                  <Label className="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                    <FileText size={14} />
+                    CV/Resume
+                  </Label>
+
+                  {!isEditing ? (
+                    // Display CV when not editing
+                    <div className="mt-2">
+                      {formData.cvUrl ? (
+                        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded border border-slate-200">
+                          <FileText size={18} className="text-blue-600" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-slate-900">CV Document</p>
+                            <p className="text-xs text-slate-500">{formData.cvKey || "Resume uploaded"}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              if (formData.cvUrl) {
+                                window.open(formData.cvUrl, "_blank");
+                              }
+                            }}
+                          >
+                            View
+                          </Button>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-slate-500 italic">No CV uploaded</p>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 mt-2">
-                      Supported formats: PDF, DOC, DOCX (Max 10MB)
-                    </p>
-                  </div>
-                )}
+                  ) : (
+                    // Upload CV when editing
+                    <div className="mt-2 space-y-3">
+                      {formData.cvUrl && (
+                        <div className="flex items-center gap-3 p-3 bg-blue-50 rounded border border-blue-200">
+                          <FileText size={18} className="text-blue-600" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-slate-900">Current CV</p>
+                            <p className="text-xs text-slate-500">{formData.cvKey || "Resume uploaded"}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              if (formData.cvUrl) {
+                                window.open(formData.cvUrl, "_blank");
+                              }
+                            }}
+                          >
+                            View
+                          </Button>
+                        </div>
+                      )}
+                      <div>
+                        <Label className="text-xs font-semibold text-slate-600">Upload New CV/Resume</Label>
+                        <div className="mt-2 flex items-center gap-4">
+                          <Input
+                            type="file"
+                            accept=".pdf,.doc,.docx"
+                            onChange={(e) => setSelectedCVFile(e.target.files?.[0] || null)}
+                            className="text-slate-900"
+                          />
+                          {selectedCVFile && (
+                            <span className="text-sm text-green-600 font-medium">
+                              ✓ {selectedCVFile.name}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-2">
+                          Supported formats: PDF, DOC, DOCX (Max 10MB)
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 

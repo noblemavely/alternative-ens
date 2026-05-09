@@ -2,7 +2,7 @@ import { z } from "zod";
 import { notifyOwner } from "./notification";
 import { adminProcedure, publicProcedure, router } from "./trpc";
 import { getDb, seedDatabase } from "../db";
-import { experts, clients, projects, shortlists, expertEmployment, expertEducation, expertVerification, screeningQuestions, users, expertClientMapping } from "../../drizzle/schema";
+import { experts, clients, projects, shortlists, expertEmployment, expertEducation, expertVerification, screeningQuestions, users, expertClientMapping, projectActivityTimeline, auditLog, clientContacts } from "../../drizzle/schema";
 
 export const systemRouter = router({
   health: publicProcedure
@@ -34,6 +34,9 @@ export const systemRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       // Delete in order of dependencies (reverse of creation order)
+      // First delete tables that reference others
+      await db.delete(projectActivityTimeline);
+      await db.delete(auditLog);
       await db.delete(expertClientMapping);
       await db.delete(shortlists);
       await db.delete(screeningQuestions);
@@ -42,6 +45,7 @@ export const systemRouter = router({
       await db.delete(expertVerification);
       await db.delete(experts);
       await db.delete(projects);
+      await db.delete(clientContacts);
       await db.delete(clients);
       await db.delete(users);
 

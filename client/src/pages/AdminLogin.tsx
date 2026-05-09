@@ -155,7 +155,7 @@ export default function AdminLogin() {
             {/* Default Credentials Info */}
             <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-xs font-semibold text-blue-900 mb-1">Default Admin Credentials:</p>
-              <p className="text-xs text-blue-800">Email: <code className="bg-blue-100 px-1 rounded">admin@alternatives.nativeworld.com</code></p>
+              <p className="text-xs text-blue-800">Email: <code className="bg-blue-100 px-1 rounded">admin@alternative.com</code></p>
               <p className="text-xs text-blue-800">Password: <code className="bg-blue-100 px-1 rounded">admin123</code></p>
               <p className="text-xs text-blue-700 mt-2">Change these credentials after first login.</p>
             </div>

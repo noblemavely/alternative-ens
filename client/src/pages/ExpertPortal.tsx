@@ -250,7 +250,7 @@ export default function ExpertPortal() {
 
     setShowResumeResetDialog(false);
     setPendingResumeData(null);
-    setResumeFile(null);
+    // NOTE: Do NOT clear resumeFile here - it needs to be persisted for upload in handleCompleteProfile
     setStep("preview");
   };
 

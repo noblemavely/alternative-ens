@@ -10,14 +10,14 @@ export const adminAuthRouter = router({
   // Initialize first admin user (only works if no admin exists)
   initializeFirstAdmin: publicProcedure
     .input(z.object({
-      email: z.string().email().default("admin@alternatives.nativeworld.com"),
+      email: z.string().email().default("admin@alternative.com"),
       password: z.string().min(6).default("admin123"),
       name: z.string().default("Admin User"),
     }).partial())
     .mutation(async ({ input }) => {
       try {
         // Check if any admin user already exists
-        const existingAdmin = await getAdminByEmail(input.email || "admin@alternatives.nativeworld.com");
+        const existingAdmin = await getAdminByEmail(input.email || "admin@alternative.com");
 
         if (existingAdmin) {
           return {
@@ -29,7 +29,7 @@ export const adminAuthRouter = router({
 
         // Create the first admin user
         const result = await createAdminUser(
-          input.email || "admin@alternatives.nativeworld.com",
+          input.email || "admin@alternative.com",
           input.password || "admin123",
           input.name || "Admin User",
           "super_admin"
@@ -38,7 +38,7 @@ export const adminAuthRouter = router({
         return {
           success: true,
           message: "Admin user created successfully",
-          email: input.email || "admin@alternatives.nativeworld.com",
+          email: input.email || "admin@alternative.com",
         };
       } catch (error: any) {
         console.error("[AdminAuth.initializeFirstAdmin] Error:", error);
