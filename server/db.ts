@@ -1,6 +1,7 @@
 import { eq, and, like, or, inArray, sql } from "drizzle-orm";
 import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import * as mysql from "mysql2/promise";
+import bcrypt from "bcryptjs";
 import * as schema from "../drizzle/schema";
 import type { Pool } from "mysql2/promise";
 import {
@@ -96,7 +97,7 @@ async function initializeSchema(pool: any) {
         INDEX idx_verified (isVerified)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-      `CREATE TABLE IF NOT EXISTS expertEmployment (
+      `CREATE TABLE IF NOT EXISTS expert_employment (
         id INT AUTO_INCREMENT PRIMARY KEY,
         expertId INT NOT NULL,
         companyName VARCHAR(255) NOT NULL,
@@ -111,7 +112,7 @@ async function initializeSchema(pool: any) {
         INDEX idx_expertId (expertId)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-      `CREATE TABLE IF NOT EXISTS expertEducation (
+      `CREATE TABLE IF NOT EXISTS expert_education (
         id INT AUTO_INCREMENT PRIMARY KEY,
         expertId INT NOT NULL,
         schoolName VARCHAR(255) NOT NULL,
@@ -126,7 +127,7 @@ async function initializeSchema(pool: any) {
         INDEX idx_expertId (expertId)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-      `CREATE TABLE IF NOT EXISTS expertVerification (
+      `CREATE TABLE IF NOT EXISTS expert_verification (
         id INT AUTO_INCREMENT PRIMARY KEY,
         expertId INT NOT NULL,
         token VARCHAR(255) NOT NULL UNIQUE,
@@ -137,7 +138,7 @@ async function initializeSchema(pool: any) {
         INDEX idx_expertId (expertId)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-      `CREATE TABLE IF NOT EXISTS adminUsers (
+      `CREATE TABLE IF NOT EXISTS admin_users (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL UNIQUE,
@@ -148,7 +149,7 @@ async function initializeSchema(pool: any) {
         INDEX idx_email (email)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-      `CREATE TABLE IF NOT EXISTS clientContacts (
+      `CREATE TABLE IF NOT EXISTS client_contacts (
         id INT AUTO_INCREMENT PRIMARY KEY,
         clientId INT NOT NULL,
         contactName VARCHAR(255) NOT NULL,
@@ -169,7 +170,7 @@ async function initializeSchema(pool: any) {
         clientContactId INT NOT NULL,
         name VARCHAR(255) NOT NULL,
         description LONGTEXT,
-        projectType ENUM('Call', 'Advisory', 'ID') NOT NULL,
+        project_type ENUM('Call', 'Advisory', 'ID') NOT NULL,
         targetCompanies TEXT,
         targetPersona TEXT,
         rate DECIMAL(10, 2),
@@ -177,11 +178,11 @@ async function initializeSchema(pool: any) {
         status ENUM('Active', 'On Hold', 'Closed') DEFAULT 'Active' NOT NULL,
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (clientContactId) REFERENCES clientContacts(id) ON DELETE CASCADE,
+        FOREIGN KEY (clientContactId) REFERENCES client_contacts(id) ON DELETE CASCADE,
         INDEX idx_clientContactId (clientContactId)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-      `CREATE TABLE IF NOT EXISTS screeningQuestions (
+      `CREATE TABLE IF NOT EXISTS screening_questions (
         id INT AUTO_INCREMENT PRIMARY KEY,
         projectId INT NOT NULL,
         question LONGTEXT NOT NULL,
@@ -206,7 +207,7 @@ async function initializeSchema(pool: any) {
         INDEX idx_expertId (expertId)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-      `CREATE TABLE IF NOT EXISTS expertClientMapping (
+      `CREATE TABLE IF NOT EXISTS expert_client_mapping (
         id INT AUTO_INCREMENT PRIMARY KEY,
         expertId INT NOT NULL,
         clientId INT NOT NULL,
@@ -218,6 +219,37 @@ async function initializeSchema(pool: any) {
         FOREIGN KEY (clientId) REFERENCES clients(id) ON DELETE CASCADE,
         INDEX idx_expertId (expertId),
         INDEX idx_clientId (clientId)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+      `CREATE TABLE IF NOT EXISTS audit_log (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        entityType ENUM('client', 'expert', 'project', 'admin_user', 'contact', 'shortlist') NOT NULL,
+        entity_id INT NOT NULL,
+        operationType ENUM('create', 'update', 'delete') NOT NULL,
+        adminId INT,
+        fieldChanged VARCHAR(255),
+        oldValue LONGTEXT,
+        newValue LONGTEXT,
+        reason TEXT,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        INDEX idx_entityType (entityType),
+        INDEX idx_entityId (entity_id),
+        INDEX idx_timestamp (timestamp)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+      `CREATE TABLE IF NOT EXISTS project_activity_timeline (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        projectId INT NOT NULL,
+        type ENUM('created', 'status_changed') NOT NULL,
+        fromStatus VARCHAR(50),
+        toStatus VARCHAR(50),
+        title VARCHAR(255) NOT NULL,
+        description LONGTEXT,
+        changedBy INT,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE,
+        INDEX idx_projectId (projectId),
+        INDEX idx_timestamp (timestamp)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
     ];
 
@@ -244,6 +276,29 @@ async function initializeSchema(pool: any) {
       );
     } catch (error: any) {
       console.log("[Database] Sectors already populated:", error?.message?.substring(0, 50));
+    }
+
+    // Create default admin user if none exists
+    try {
+      const [existingAdmins] = await connection.execute(
+        `SELECT id FROM admin_users WHERE email = 'admin@alternatives.nativeworld.com'`
+      );
+
+      if ((existingAdmins as any[]).length === 0) {
+        // Create hashed password for 'admin123'
+        const hashedPassword = await bcrypt.hash('admin123', 10);
+
+        await connection.execute(
+          `INSERT INTO admin_users (email, password, name, role, isActive, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+          ['admin@alternatives.nativeworld.com', hashedPassword, 'Admin User', 'super_admin', true]
+        );
+        console.log("[Database] Default admin user created successfully");
+      } else {
+        console.log("[Database] Admin user already exists");
+      }
+    } catch (error: any) {
+      console.warn("[Database] Admin user creation warning:", error?.message?.substring(0, 100));
     }
 
     connection.release();
@@ -1103,6 +1158,8 @@ export async function seedDatabase() {
         function: 'Chief Technology Officer',
         biography: 'Experienced CTO with 15+ years in cloud infrastructure and AI/ML solutions.',
         linkedinUrl: 'https://linkedin.com/in/rthompson',
+        cvUrl: '',
+        cvKey: '',
         isVerified: true,
       },
       {
@@ -1114,6 +1171,8 @@ export async function seedDatabase() {
         function: 'Chief Financial Officer',
         biography: 'CFO with expertise in financial strategy, M&A, and capital markets.',
         linkedinUrl: 'https://linkedin.com/in/jmartinez',
+        cvUrl: '',
+        cvKey: '',
         isVerified: true,
       },
       {
@@ -1125,6 +1184,8 @@ export async function seedDatabase() {
         function: 'Vice President',
         biography: 'VP of Operations in healthcare with focus on digital transformation.',
         linkedinUrl: 'https://linkedin.com/in/clee',
+        cvUrl: '',
+        cvKey: '',
         isVerified: true,
       },
       {
@@ -1136,6 +1197,8 @@ export async function seedDatabase() {
         function: 'Product Manager',
         biography: 'Product Manager specializing in SaaS platforms and user experience.',
         linkedinUrl: 'https://linkedin.com/in/awhite',
+        cvUrl: '',
+        cvKey: '',
         isVerified: false,
       },
       {
@@ -1147,6 +1210,8 @@ export async function seedDatabase() {
         function: 'Chief Executive Officer',
         biography: 'CEO with proven track record in e-commerce and omnichannel retail.',
         linkedinUrl: 'https://linkedin.com/in/dgarcia',
+        cvUrl: '',
+        cvKey: '',
         isVerified: true,
       },
     ];
