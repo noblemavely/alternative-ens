@@ -1,25 +1,6 @@
 version: '3.8'
 
 services:
-  # MySQL Database
-  db:
-    image: mysql:8.0
-    container_name: alternative-ens-db
-    environment:
-      MYSQL_ROOT_PASSWORD: alternative_ens
-      MYSQL_DATABASE: alternative_ens
-    ports:
-      - "3306:3306"
-    volumes:
-      - db_data:/var/lib/mysql
-      - ./db-init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - alternative-ens-network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
-
   # Application
   app:
     build:
@@ -29,8 +10,7 @@ services:
     env_file:
       - .env
     environment:
-      NODE_ENV: production-local
-      DATABASE_URL: mysql://root:alternative_ens@db:3306/alternative_ens
+      NODE_ENV: production
       VITE_APP_ID: ${VITE_APP_ID:-default-app-id}
       JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
       OAUTH_SERVER_URL: ${OAUTH_SERVER_URL:-}
@@ -51,18 +31,12 @@ services:
       AWS_S3_BUCKET: ${AWS_S3_BUCKET:-}
     ports:
       - "3000:3000"
-    depends_on:
-      db:
-        condition: service_healthy
     networks:
       - alternative-ens-network
     volumes:
       - ./dist:/app/dist
       - ./uploads:/app/uploads
     restart: unless-stopped
-
-volumes:
-  db_data:
 
 networks:
   alternative-ens-network:
