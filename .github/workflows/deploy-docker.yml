@@ -31,7 +31,7 @@ jobs:
       
       - name: Deploy to Digital Ocean
         env:
-          DO_HOST: 68.183.86.134
+          DO_HOST: 142.93.252.21
           DO_USER: root
           DO_PASSWORD: ${{ secrets.DO_PASSWORD }}
         run: |
