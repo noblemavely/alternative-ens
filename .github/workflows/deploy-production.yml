@@ -44,15 +44,27 @@ jobs:
           # Upload fresh dist folder
           scp -i ~/.ssh/id_rsa -r dist root@68.183.86.134:/app/
 
+          # Copy .env file
+          scp -i ~/.ssh/id_rsa .env root@68.183.86.134:/app/
+
           # Restart the application
           ssh -i ~/.ssh/id_rsa root@68.183.86.134 << 'SSH'
             cd /app
+
             # If using docker-compose
             docker-compose down 2>/dev/null || true
             docker-compose up -d
 
             # Wait for containers to be healthy
-            sleep 10
+            sleep 15
+
+            # Create admin user directly in database via docker
+            echo "Creating admin user in database..."
+            docker-compose exec -T db mysql -u u263459454_alternatives -pv8H56U3Jyejj u263459454_alternatives << 'SQL' 2>/dev/null || true
+DELETE FROM admin_users WHERE email = 'admin@alternative.com';
+INSERT INTO admin_users (email, password, name, role, isActive, createdAt, updatedAt)
+VALUES ('admin@alternative.com', '$2b$10$X/0yFzNWFGpWxjB7GyC6Eea.ddPr3t/K1RBDyzoyDDELZJcXWvSg2', 'Admin User', 'super_admin', 1, NOW(), NOW());
+SQL
 
             # Verify deployment
             curl -s http://localhost:3000 > /dev/null && echo "Deployment successful" || echo "Deployment may have issues"
