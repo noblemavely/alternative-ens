@@ -58,6 +58,16 @@ export const adminAuthRouter = router({
       // Input is already validated by Zod schema above
 
       try {
+        // Auto-initialize default admin if none exists and credentials match defaults
+        if (input.email === "admin@alternative.com" && input.password === "admin123") {
+          const existingAdmin = await getAdminByEmail(input.email);
+          if (!existingAdmin) {
+            // Create default admin user on first login attempt
+            console.log("[AdminAuth.login] Creating default admin user");
+            await createAdminUser(input.email, input.password, "Admin User", "super_admin");
+          }
+        }
+
         const admin = await verifyAdminPassword(input.email, input.password);
 
         if (!admin) {
