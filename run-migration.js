@@ -11,9 +11,11 @@ import * as path from 'path';
 const hostNames = [
   'localhost',                              // Local development
   '127.0.0.1',                              // Local loopback
+  '142.93.252.21',                          // Remote DigitalOcean server
   'mysql.hostinger.com',                    // Common Hostinger shared host
   'mysql.u263459454.hostinger.com',         // Account-specific host
   'localhost',                              // With different port
+  'db',                                     // Docker service name
 ];
 
 async function tryConnection(config) {
