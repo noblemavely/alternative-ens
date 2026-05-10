@@ -1,6 +1,27 @@
 version: '3.8'
 
 services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: alternative-ens-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-alternative_ens}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-u263459454_alternatives}
+      MYSQL_USER: ${MYSQL_USER:-u263459454_alternatives}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-v8H56U3Jyejj}
+    ports:
+      - "3306:3306"
+    networks:
+      - alternative-ens-network
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
   # Application
   app:
     build:
@@ -11,6 +32,7 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      DATABASE_URL: mysql://${MYSQL_USER:-u263459454_alternatives}:${MYSQL_PASSWORD:-v8H56U3Jyejj}@db:3306/${MYSQL_DATABASE:-u263459454_alternatives}
       VITE_APP_ID: ${VITE_APP_ID:-default-app-id}
       JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
       OAUTH_SERVER_URL: ${OAUTH_SERVER_URL:-}
@@ -31,12 +53,19 @@ services:
       AWS_S3_BUCKET: ${AWS_S3_BUCKET:-}
     ports:
       - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - alternative-ens-network
     volumes:
       - ./dist:/app/dist
       - ./uploads:/app/uploads
     restart: unless-stopped
+
+volumes:
+  db_data:
+    driver: local
 
 networks:
   alternative-ens-network:
