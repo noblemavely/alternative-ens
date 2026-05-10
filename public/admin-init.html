@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Initialization</title>
+</head>
+<body>
+    <h1>Admin Initialization</h1>
+    <p>Initializing admin user...</p>
+    <script>
+        fetch('/api/trpc/adminAuth.initializeFirstAdmin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        })
+        .then(r => r.json())
+        .then(data => {
+            console.log(data);
+            document.body.innerHTML = '<h1>Result:</h1><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            if (data.result?.data?.json?.success) {
+                document.body.innerHTML += '<p style="color: green;"><strong>✓ Admin user created successfully!</strong></p>';
+            } else if (data.error) {
+                document.body.innerHTML += '<p style="color: red;"><strong>✗ Error: ' + data.error.json.message + '</strong></p>';
+            }
+        })
+        .catch(e => {
+            document.body.innerHTML = '<h1>Error:</h1><pre>' + e.toString() + '</pre>';
+        });
+    </script>
+</body>
+</html>
