@@ -29,23 +29,22 @@ jobs:
       - name: Build application
         run: pnpm run build
       
-      - name: Install SSH Key
-        run: |
-          mkdir -p ~/.ssh
-          cat > ~/.ssh/id_rsa << 'EOF'
-          ${{ secrets.DO_SSH_KEY }}
-          EOF
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H 142.93.252.21 >> ~/.ssh/known_hosts 2>/dev/null || true
+      - name: Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.DO_SSH_KEY }}
 
       - name: Deploy to Digital Ocean
         run: |
+          # Add host key to known_hosts
+          ssh-keyscan -H 142.93.252.21 >> ~/.ssh/known_hosts 2>/dev/null || true
+
           # Copy dist folder to droplet
-          scp -i ~/.ssh/id_rsa -r dist root@142.93.252.21:/app/ && echo "✓ Dist uploaded" || echo "✗ Dist upload failed"
-          scp -i ~/.ssh/id_rsa package.json pnpm-lock.yaml root@142.93.252.21:/app/
+          scp -r dist root@142.93.252.21:/app/ && echo "✓ Dist uploaded" || echo "✗ Dist upload failed"
+          scp package.json pnpm-lock.yaml root@142.93.252.21:/app/
 
           # Rebuild and restart Docker containers
-          ssh -i ~/.ssh/id_rsa root@142.93.252.21 << 'SSHEOF'
+          ssh root@142.93.252.21 << 'SSHEOF'
             cd /app
             docker-compose down
             docker-compose build --no-cache
