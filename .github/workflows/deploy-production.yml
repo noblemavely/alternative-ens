@@ -38,11 +38,21 @@ jobs:
 
       - name: Deploy via SSH
         run: |
-          # Create deployment directory and upload files
-          ssh -i ~/.ssh/id_rsa root@68.183.86.134 "mkdir -p /app && cd /app && git pull origin main || git clone https://github.com/noblemavely/alternative-ens.git /app"
+          # Debug: Check dist folder
+          echo "=== Checking dist folder ==="
+          ls -lh dist/index.js || echo "ERROR: dist/index.js not found"
+          grep -c "initializeFirstAdmin" dist/index.js || echo "ERROR: initializeFirstAdmin not found in dist"
 
+          echo "=== Connecting to server ==="
+          # Create deployment directory and upload files
+          ssh -i ~/.ssh/id_rsa root@68.183.86.134 "mkdir -p /app && cd /app && (git pull origin main || git clone https://github.com/noblemavely/alternative-ens.git /app)"
+
+          echo "=== Uploading dist folder ==="
           # Upload fresh dist folder
-          scp -i ~/.ssh/id_rsa -r dist root@68.183.86.134:/app/
+          scp -i ~/.ssh/id_rsa -r dist root@68.183.86.134:/app/ && echo "✓ Upload successful" || echo "✗ Upload failed"
+
+          echo "=== Verifying upload ==="
+          ssh -i ~/.ssh/id_rsa root@68.183.86.134 "ls -lh /app/dist/index.js || echo 'ERROR: dist not found on server'"
 
           # Copy .env file
           scp -i ~/.ssh/id_rsa .env root@68.183.86.134:/app/
