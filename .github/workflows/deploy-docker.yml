@@ -37,20 +37,19 @@ jobs:
       - name: Deploy to Digital Ocean
         run: |
           # Add host key to known_hosts
-          ssh-keyscan -H 142.93.252.21 >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh-keyscan -H 174.138.46.88 >> ~/.ssh/known_hosts 2>/dev/null || true
 
           # Copy dist folder to droplet
-          scp -r dist root@142.93.252.21:/app/ && echo "✓ Dist uploaded" || echo "✗ Dist upload failed"
-          scp package.json pnpm-lock.yaml root@142.93.252.21:/app/
+          scp -r dist root@174.138.46.88:/app/ && echo "✓ Dist uploaded" || echo "✗ Dist upload failed"
+          scp package.json pnpm-lock.yaml root@174.138.46.88:/app/
 
-          # Rebuild and restart Docker containers
-          ssh root@142.93.252.21 << 'SSHEOF'
+          # Rebuild and restart application
+          ssh root@174.138.46.88 << 'SSHEOF'
             cd /app
-            docker-compose down
-            docker-compose build --no-cache
-            docker-compose up -d
+            pnpm run build
+            pm2 restart ecosystem.config.cjs
             sleep 5
-            docker-compose logs app --tail=20
+            pm2 logs alternative-ens --lines 5
           SSHEOF
 
   notify:

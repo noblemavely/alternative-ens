@@ -35,42 +35,45 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.DO_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H 68.183.86.134 >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh-keyscan -H 174.138.46.88 >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Deploy via SSH
         run: |
           # Debug: Check dist folder
           echo "=== Checking dist folder ==="
           ls -lh dist/index.js || echo "ERROR: dist/index.js not found"
-          grep -c "initializeFirstAdmin" dist/index.js || echo "ERROR: initializeFirstAdmin not found in dist"
 
           echo "=== Connecting to server ==="
-          # Create deployment directory and upload files
-          ssh -i ~/.ssh/id_rsa root@142.93.252.21 "mkdir -p /app && cd /app && (git pull origin main || git clone https://github.com/noblemavely/alternative-ens.git /app)"
+          # Verify connection
+          ssh -i ~/.ssh/id_rsa root@174.138.46.88 "echo '✓ SSH connection successful'"
 
           echo "=== Uploading dist folder ==="
           # Upload fresh dist folder
-          scp -i ~/.ssh/id_rsa -r dist root@142.93.252.21:/app/ && echo "✓ Upload successful" || echo "✗ Upload failed"
+          scp -i ~/.ssh/id_rsa -r dist root@174.138.46.88:/app/ && echo "✓ Dist uploaded" || echo "✗ Upload failed"
 
-          echo "=== Verifying upload ==="
-          ssh -i ~/.ssh/id_rsa root@142.93.252.21 "ls -lh /app/dist/index.js || echo 'ERROR: dist not found on server'"
-
+          echo "=== Uploading .env ==="
           # Copy .env file
-          scp -i ~/.ssh/id_rsa .env root@142.93.252.21:/app/
+          scp -i ~/.ssh/id_rsa .env root@174.138.46.88:/app/.env.new || echo "⚠ No .env file to upload"
 
-          # Restart the application
-          ssh -i ~/.ssh/id_rsa root@142.93.252.21 << 'SSH'
+          echo "=== Rebuilding application ==="
+          # Rebuild and restart on server
+          ssh -i ~/.ssh/id_rsa root@174.138.46.88 << 'SSH'
             cd /app
 
-            # If using docker-compose
-            docker-compose down 2>/dev/null || true
-            docker-compose up -d
+            # Use new .env if uploaded
+            [ -f .env.new ] && mv .env.new .env
 
-            # Wait for containers to be healthy
-            sleep 15
+            # Rebuild application
+            pnpm run build
+
+            # Restart PM2
+            pm2 restart ecosystem.config.cjs
+
+            # Wait for restart
+            sleep 5
 
             # Verify deployment
-            curl -s http://localhost:3000 > /dev/null && echo "✓ Deployment successful" || echo "⚠ Deployment may have issues"
+            curl -s http://localhost:3000 > /dev/null && echo "✓ Deployment successful" || echo "⚠ May have issues"
           SSH
 
       - name: Verify Deployment
