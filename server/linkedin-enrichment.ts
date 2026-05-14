@@ -23,7 +23,7 @@ export interface LinkedInEnrichmentResult {
   message?: string;
 }
 
-const LINKFINDER_API_KEY = "5bZ57Z69Z50Z7aZ71Z81Z37Z69Z75Z4eZ79Z60Z71Z56Z3f";
+const LINKFINDER_API_KEY = "72Z4cZ5fZ71Z55Z7bZ6dZ3bZ6dZ3aZ55Z37Z60Z68Z7eZ54";
 const LINKFINDER_API_URL = "https://api.linkfinderai.com";
 
 /**

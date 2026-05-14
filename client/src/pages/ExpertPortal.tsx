@@ -284,7 +284,7 @@ export default function ExpertPortal() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer 5bZ57Z69Z50Z7aZ71Z81Z37Z69Z75Z4eZ79Z60Z71Z56Z3f",
+          "Authorization": "Bearer 72Z4cZ5fZ71Z55Z7bZ6dZ3bZ6dZ3aZ55Z37Z60Z68Z7eZ54",
         },
         body: JSON.stringify({
           type: "linkedin_profile_to_linkedin_info",
