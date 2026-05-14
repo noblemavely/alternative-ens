@@ -301,17 +301,17 @@ Every push to `main`:
 pnpm build
 
 # Upload
-scp -i ~/.ssh/oracle_instance_key -r dist root@143.244.143.71:/app/
+scp -i ~/.ssh/id_ed25519 -r dist root@143.244.143.71:/app/
 
 # Restart
-ssh -i ~/.ssh/oracle_instance_key root@143.244.143.71 "cd /app && pm2 restart ecosystem.config.cjs --update-env"
+ssh -i ~/.ssh/id_ed25519 root@143.244.143.71 "cd /app && pm2 restart ecosystem.config.cjs --update-env"
 ```
 
 ### Server management
 
 ```bash
 # SSH in
-ssh -i ~/.ssh/oracle_instance_key root@143.244.143.71
+ssh -i ~/.ssh/id_ed25519 root@143.244.143.71
 
 # PM2 commands
 pm2 status
@@ -366,7 +366,7 @@ GitHub Actions (`deploy-production.yml`) will:
 ### App not responding after deploy
 
 ```bash
-ssh -i ~/.ssh/oracle_instance_key root@143.244.143.71
+ssh -i ~/.ssh/id_ed25519 root@143.244.143.71
 pm2 logs alternative-ens --lines 30
 pm2 restart alternative-ens
 ```
