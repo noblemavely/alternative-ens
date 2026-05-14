@@ -119,12 +119,12 @@ export default function AdminClients() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Clients</h1>
-            <p className="text-muted-foreground mt-2">Manage your client network</p>
+            <h1 className="text-xl font-bold text-foreground">Clients</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Manage your client network</p>
           </div>
         </div>
 
@@ -162,15 +162,17 @@ export default function AdminClients() {
         </div>
 
         {/* Clients Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>All Clients</CardTitle>
-            <CardDescription>
-              {filteredClients.length} client{filteredClients.length !== 1 ? "s" : ""} found
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {filteredClients.length === 0 ? (
+        <div className="bg-white rounded border border-border overflow-hidden" style={{ boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }}>
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">All Clients</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {filteredClients.length} client{filteredClients.length !== 1 ? "s" : ""} found
+              </p>
+            </div>
+          </div>
+          {filteredClients.length === 0 ? (
+            <div className="px-5 py-8">
               <EmptyState
                 icon={Users}
                 title="No clients yet"
@@ -178,31 +180,33 @@ export default function AdminClients() {
                 actionLabel={!searchTerm && !sectorFilter ? "Add Client" : undefined}
                 onAction={!searchTerm && !sectorFilter ? () => setOpen(true) : undefined}
               />
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Client Name</th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Sector</th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Projects</th>
-                      <th className="text-right py-3 px-4 font-semibold text-foreground">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredClients.map((client: any) => {
-                      const clientContactIds = contactsQuery.data?.filter((c: any) => c.clientId === client.id).map((c: any) => c.id) || [];
-                      const projectCount = projectsQuery.data?.filter((p: any) => clientContactIds.includes(p.clientContactId)).length || 0;
-                      return (
-                        <tr
-                          key={client.id}
-                          className="border-b hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() => navigate(`/admin/clients/${client.id}`)}
-                        >
-                          <td className="py-3 px-4 font-medium">{client.name}</td>
-                          <td className="py-3 px-4 text-muted-foreground">{client.sector || "-"}</td>
-                          <td className="py-3 px-4 text-muted-foreground">{projectCount}</td>
-                          <td className="py-3 px-4 text-right space-x-2">
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="sf-table">
+                <thead>
+                  <tr>
+                    <th>Client Name</th>
+                    <th>Sector</th>
+                    <th>Projects</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredClients.map((client: any) => {
+                    const clientContactIds = contactsQuery.data?.filter((c: any) => c.clientId === client.id).map((c: any) => c.id) || [];
+                    const projectCount = projectsQuery.data?.filter((p: any) => clientContactIds.includes(p.clientContactId)).length || 0;
+                    return (
+                      <tr
+                        key={client.id}
+                        className="cursor-pointer"
+                        onClick={() => navigate(`/admin/clients/${client.id}`)}
+                      >
+                        <td className="font-medium text-[#0176D3] hover:underline">{client.name}</td>
+                        <td className="muted">{client.sector || "—"}</td>
+                        <td className="muted">{projectCount}</td>
+                        <td className="text-right">
+                          <div className="flex items-center justify-end gap-1">
                             <ButtonWithTooltip
                               size="sm"
                               variant="ghost"
@@ -212,7 +216,7 @@ export default function AdminClients() {
                                 navigate(`/admin/clients/${client.id}`);
                               }}
                             >
-                              <Edit2 size={16} />
+                              <Edit2 size={14} />
                             </ButtonWithTooltip>
                             <ButtonWithTooltip
                               size="sm"
@@ -223,18 +227,18 @@ export default function AdminClients() {
                                 handleDelete(client.id, client.name);
                               }}
                             >
-                              <Trash2 size={16} />
+                              <Trash2 size={14} className="text-destructive" />
                             </ButtonWithTooltip>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
 
       <DeleteConfirmDialog

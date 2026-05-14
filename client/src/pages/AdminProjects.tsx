@@ -1,7 +1,6 @@
 import { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
@@ -72,137 +71,130 @@ export default function AdminProjects() {
     return shortlistsQuery.data?.filter((s: any) => s.projectId === projectId).length || 0;
   };
 
-  const getStatusBadgeStyle = (status: string) => {
+  const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case "Active":
-        return "bg-green-100 text-green-700";
-      case "On Hold":
-        return "bg-amber-100 text-amber-700";
-      case "Closed":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-gray-100 text-gray-700";
+      case "Active":   return "badge-success";
+      case "On Hold":  return "badge-warning";
+      case "Closed":   return "badge-error";
+      default:         return "badge-neutral";
     }
   };
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Projects</h1>
-          <Button className="gap-2" onClick={() => navigate("/admin/add-project")}>
-            <Plus className="w-4 h-4" />
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Projects</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Active and archived projects</p>
+          </div>
+          <Button className="gap-2 h-8 text-sm" onClick={() => navigate("/admin/add-project")}>
+            <Plus className="w-3.5 h-3.5" />
             Add Project
           </Button>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>All Projects</CardTitle>
-            <CardDescription>Active and archived projects</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex gap-4">
-                <Input
-                  placeholder="Search by project name or description..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    updateUrl(e.target.value, projectTypeFilter);
-                  }}
-                  className="flex-1"
-                />
-                <Select value={projectTypeFilter} onValueChange={(value) => {
-                  setProjectTypeFilter(value);
-                  updateUrl(searchTerm, value);
-                }}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="Call">Call</SelectItem>
-                    <SelectItem value="Advisory">Advisory</SelectItem>
-                    <SelectItem value="ID">ID</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+        {/* Filters */}
+        <div className="flex gap-3">
+          <Input
+            placeholder="Search by project name or description…"
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); updateUrl(e.target.value, projectTypeFilter); }}
+            className="flex-1 h-8 text-sm"
+          />
+          <Select value={projectTypeFilter} onValueChange={(value) => { setProjectTypeFilter(value); updateUrl(searchTerm, value); }}>
+            <SelectTrigger className="w-36 h-8 text-sm">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="Call">Call</SelectItem>
+              <SelectItem value="Advisory">Advisory</SelectItem>
+              <SelectItem value="ID">ID</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-              {filteredProjects.length === 0 ? (
-                <EmptyState
-                  icon={Briefcase}
-                  title="No projects yet"
-                  description={searchTerm || projectTypeFilter !== "all" ? "No projects match your filters. Try adjusting your search or filters." : "Add your first project to get started"}
-                  actionLabel={!searchTerm && projectTypeFilter === "all" ? "Add Project" : undefined}
-                  onAction={!searchTerm && projectTypeFilter === "all" ? () => navigate("/admin/add-project") : undefined}
-                />
-              ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Project Name</th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Client Contact</th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Type</th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Status</th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Rate</th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Experts</th>
-                      <th className="text-right py-3 px-4 font-semibold text-foreground">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredProjects.map((project: any) => (
-                      <tr
-                        key={project.id}
-                        className="border-b hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/admin/projects/${project.id}`)}
-                      >
-                        <td className="py-3 px-4 font-medium">{project.name}</td>
-                        <td className="py-3 px-4 text-muted-foreground">{getClientContactName(project.clientContactId)}</td>
-                        <td className="py-3 px-4 text-muted-foreground">{project.projectType}</td>
-                        <td className="py-3 px-4">
-                          <span className={`text-xs px-2 py-1 rounded font-medium ${getStatusBadgeStyle(project.status || "Active")}`}>
-                            {project.status || "Active"}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-muted-foreground">
-                          {project.rate ? formatCurrency(project.rate, project.currency || "USD") : "$-"}
-                        </td>
-                        <td className="py-3 px-4 text-muted-foreground">{getExpertCountForProject(project.id)}</td>
-                        <td className="py-3 px-4 text-right space-x-2">
+        <div className="bg-white rounded border border-border overflow-hidden" style={{ boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }}>
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">All Projects</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {filteredProjects.length} project{filteredProjects.length !== 1 ? "s" : ""} found
+              </p>
+            </div>
+          </div>
+
+          {filteredProjects.length === 0 ? (
+            <div className="px-5 py-8">
+              <EmptyState
+                icon={Briefcase}
+                title="No projects yet"
+                description={searchTerm || projectTypeFilter !== "all" ? "No projects match your filters." : "Add your first project to get started"}
+                actionLabel={!searchTerm && projectTypeFilter === "all" ? "Add Project" : undefined}
+                onAction={!searchTerm && projectTypeFilter === "all" ? () => navigate("/admin/add-project") : undefined}
+              />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="sf-table">
+                <thead>
+                  <tr>
+                    <th>Project Name</th>
+                    <th>Client Contact</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Rate</th>
+                    <th>Experts</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProjects.map((project: any) => (
+                    <tr
+                      key={project.id}
+                      className="cursor-pointer"
+                      onClick={() => navigate(`/admin/projects/${project.id}`)}
+                    >
+                      <td className="font-medium text-[#0176D3] hover:underline">{project.name}</td>
+                      <td className="muted">{getClientContactName(project.clientContactId)}</td>
+                      <td className="muted">{project.projectType}</td>
+                      <td>
+                        <span className={getStatusBadgeClass(project.status || "Active")}>
+                          {project.status || "Active"}
+                        </span>
+                      </td>
+                      <td className="muted">
+                        {project.rate ? formatCurrency(project.rate, project.currency || "USD") : "—"}
+                      </td>
+                      <td className="muted">{getExpertCountForProject(project.id)}</td>
+                      <td className="text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1">
                           <ButtonWithTooltip
                             variant="ghost"
                             size="sm"
                             tooltip="Edit this project"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/admin/projects/${project.id}`);
-                            }}
+                            onClick={(e) => { e.stopPropagation(); navigate(`/admin/projects/${project.id}`); }}
                           >
-                            <Edit2 className="w-4 h-4" />
+                            <Edit2 className="w-3.5 h-3.5" />
                           </ButtonWithTooltip>
                           <ButtonWithTooltip
                             variant="ghost"
                             size="sm"
                             tooltip="Delete this project"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(project.id, project.name);
-                            }}
+                            onClick={(e) => { e.stopPropagation(); handleDelete(project.id, project.name); }}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
                           </ButtonWithTooltip>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       </div>
 
       <DeleteConfirmDialog

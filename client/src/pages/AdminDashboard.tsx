@@ -1,130 +1,204 @@
 import React from "react";
 import AdminLayout from "@/components/AdminLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { Users, Briefcase, FileText } from "lucide-react";
-import { toast } from "sonner";
+import { Users, Briefcase, UserCircle2, ArrowRight, TrendingUp, Building2 } from "lucide-react";
+import { useLocation } from "wouter";
+
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  iconBg,
+  iconColor,
+  href,
+  navigate,
+}: {
+  label: string;
+  value: number | string;
+  icon: React.ElementType;
+  iconBg: string;
+  iconColor: string;
+  href: string;
+  navigate: (path: string) => void;
+}) {
+  return (
+    <div
+      className="stat-card cursor-pointer group"
+      onClick={() => navigate(href)}
+    >
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="stat-card-label">{label}</p>
+          <p className="stat-card-value">{value}</p>
+        </div>
+        <div className="stat-card-icon flex-shrink-0" style={{ background: iconBg }}>
+          <Icon size={20} style={{ color: iconColor }} />
+        </div>
+      </div>
+      <div className="mt-4 flex items-center gap-1 text-xs font-medium text-[#0176D3] opacity-0 group-hover:opacity-100 transition-opacity">
+        <span>View all</span>
+        <ArrowRight size={12} />
+      </div>
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
+  const [, navigate] = useLocation();
   const clientsQuery = trpc.clients.list.useQuery();
   const expertsQuery = trpc.experts.list.useQuery();
   const projectsQuery = trpc.projects.list.useQuery();
 
-  const stats = [
-    {
-      title: "Total Experts",
-      value: expertsQuery.data?.length || 0,
-      icon: Users,
-      color: "text-green-600",
-    },
-    {
-      title: "Active Projects",
-      value: projectsQuery.data?.length || 0,
-      icon: Briefcase,
-      color: "text-purple-600",
-    },
-    {
-      title: "Total Clients",
-      value: clientsQuery.data?.length || 0,
-      icon: Users,
-      color: "text-blue-600",
-    },
-  ];
+  const totalClients  = clientsQuery.data?.length ?? 0;
+  const totalExperts  = expertsQuery.data?.length ?? 0;
+  const totalProjects = projectsQuery.data?.length ?? 0;
+  const verified      = expertsQuery.data?.filter((e) => e.isVerified).length ?? 0;
+
+  const recentClients = clientsQuery.data?.slice(-5).reverse() ?? [];
+  const recentExperts = expertsQuery.data?.slice(-5).reverse() ?? [];
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Welcome to Alternative</h1>
-          <p className="text-muted-foreground mt-2">Manage your expert network with elegance and precision</p>
+      {/* ── Page Header ── */}
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Overview of your expert network
+        </p>
+      </div>
+
+      {/* ── Stat Row ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard
+          label="Total Clients"
+          value={totalClients}
+          icon={Building2}
+          iconBg="#E8F4FD"
+          iconColor="#0176D3"
+          href="/admin/clients"
+          navigate={navigate}
+        />
+        <StatCard
+          label="Total Experts"
+          value={totalExperts}
+          icon={UserCircle2}
+          iconBg="#EFF7EE"
+          iconColor="#2E844A"
+          href="/admin/experts"
+          navigate={navigate}
+        />
+        <StatCard
+          label="Active Projects"
+          value={totalProjects}
+          icon={Briefcase}
+          iconBg="#FEF6E6"
+          iconColor="#DD7A01"
+          href="/admin/projects"
+          navigate={navigate}
+        />
+        <StatCard
+          label="Verified Experts"
+          value={verified}
+          icon={TrendingUp}
+          iconBg="#F3F2FF"
+          iconColor="#5867E8"
+          href="/admin/experts"
+          navigate={navigate}
+        />
+      </div>
+
+      {/* ── Two-column panels ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Recent Clients */}
+        <div className="bg-white rounded border border-border" style={{ boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }}>
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Recent Clients</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Latest additions to your network</p>
+            </div>
+            <button
+              onClick={() => navigate("/admin/clients")}
+              className="text-xs font-medium text-[#0176D3] hover:underline flex items-center gap-1"
+            >
+              View all <ArrowRight size={12} />
+            </button>
+          </div>
+          <div className="divide-y divide-border">
+            {clientsQuery.isLoading ? (
+              <div className="py-10 text-center text-sm text-muted-foreground">Loading…</div>
+            ) : recentClients.length === 0 ? (
+              <div className="py-10 text-center text-sm text-muted-foreground">No clients yet</div>
+            ) : (
+              recentClients.map((client) => (
+                <div
+                  key={client.id}
+                  className="flex items-center gap-3 px-5 py-3 hover:bg-[#F3F8FE] cursor-pointer transition-colors"
+                  onClick={() => navigate(`/admin/clients/${client.id}`)}
+                >
+                  <div className="w-8 h-8 rounded bg-[#E8F4FD] flex items-center justify-center flex-shrink-0">
+                    <Building2 size={14} className="text-[#0176D3]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground truncate">{client.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {client.sector || client.companyName || "—"}
+                    </p>
+                  </div>
+                  <ArrowRight size={14} className="text-muted-foreground flex-shrink-0" />
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-            const handleClick = () => {
-              if (stat.title === "Total Clients") window.location.href = "/admin/clients";
-              if (stat.title === "Total Experts") window.location.href = "/admin/experts";
-              if (stat.title === "Active Projects") window.location.href = "/admin/projects";
-            };
-            return (
-              <Card 
-                key={stat.title} 
-                className="card-elegant cursor-pointer hover:shadow-lg transition-all hover:border-primary/50"
-                onClick={handleClick}
-              >
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                  <Icon className={`h-4 w-4 ${stat.color}`} />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Click to view</p>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="card-elegant">
-            <CardHeader>
-              <CardTitle>Recent Clients</CardTitle>
-              <CardDescription>Latest added clients to your network</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {clientsQuery.isLoading ? (
-                <div className="text-center py-8 text-muted-foreground">Loading...</div>
-              ) : clientsQuery.data && clientsQuery.data.length > 0 ? (
-                <div className="space-y-3">
-                  {clientsQuery.data.slice(0, 5).map((client) => (
-                    <div key={client.id} className="flex items-center justify-between p-2 rounded hover:bg-muted transition-colors">
-                      <div>
-                        <p className="font-medium text-sm">{client.name}</p>
-                        <p className="text-xs text-muted-foreground">{client.sector || client.companyName || "No sector"}</p>
-                      </div>
+        {/* Recent Experts */}
+        <div className="bg-white rounded border border-border" style={{ boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }}>
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Recent Experts</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Latest expert registrations</p>
+            </div>
+            <button
+              onClick={() => navigate("/admin/experts")}
+              className="text-xs font-medium text-[#0176D3] hover:underline flex items-center gap-1"
+            >
+              View all <ArrowRight size={12} />
+            </button>
+          </div>
+          <div className="divide-y divide-border">
+            {expertsQuery.isLoading ? (
+              <div className="py-10 text-center text-sm text-muted-foreground">Loading…</div>
+            ) : recentExperts.length === 0 ? (
+              <div className="py-10 text-center text-sm text-muted-foreground">No experts yet</div>
+            ) : (
+              recentExperts.map((expert) => {
+                const name = `${expert.firstName || ""} ${expert.lastName || ""}`.trim() || expert.email;
+                const initials = (expert.firstName?.[0] ?? "") + (expert.lastName?.[0] ?? "") || "E";
+                return (
+                  <div
+                    key={expert.id}
+                    className="flex items-center gap-3 px-5 py-3 hover:bg-[#F3F8FE] cursor-pointer transition-colors"
+                    onClick={() => navigate(`/admin/experts/${expert.id}`)}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#EFF7EE] flex items-center justify-center flex-shrink-0 text-xs font-bold text-[#2E844A]">
+                      {initials.toUpperCase()}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">No clients yet</div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="card-elegant">
-            <CardHeader>
-              <CardTitle>Recent Experts</CardTitle>
-              <CardDescription>Latest added experts to your network</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {expertsQuery.isLoading ? (
-                <div className="text-center py-8 text-muted-foreground">Loading...</div>
-              ) : expertsQuery.data && expertsQuery.data.length > 0 ? (
-                <div className="space-y-3">
-                  {expertsQuery.data.slice(0, 5).map((expert) => (
-                    <div key={expert.id} className="flex items-center justify-between p-2 rounded hover:bg-muted transition-colors">
-                      <div>
-                        <p className="font-medium text-sm">
-                          {expert.firstName} {expert.lastName}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{expert.sector || "No sector"}</p>
-                      </div>
-                      <span className={`text-xs px-2 py-1 rounded ${expert.isVerified ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
-                        {expert.isVerified ? "Verified" : "Pending"}
-                      </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground truncate">{name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {expert.sector || "No sector"}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">No experts yet</div>
-              )}
-            </CardContent>
-          </Card>
+                    <span
+                      className={expert.isVerified ? "badge-success" : "badge-warning"}
+                    >
+                      {expert.isVerified ? "Verified" : "Pending"}
+                    </span>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
     </AdminLayout>

@@ -1,91 +1,118 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Loader2, Lock } from "lucide-react";
+import { Loader2, Lock, Eye, EyeOff } from "lucide-react";
 import { useLocation } from "wouter";
 
 const loginSchema = z.object({
   email: z.string().email("Valid email required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  rememberMe: z.boolean().optional(),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function AdminLogin() {
   const [, navigate] = useLocation();
+  const [showPassword, setShowPassword] = useState(false);
   const loginMutation = trpc.adminAuth.login.useMutation();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      rememberMe: false,
-    },
+    defaultValues: { email: "", password: "" },
   });
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      const result = await loginMutation.mutateAsync({
-        email: data.email,
-        password: data.password,
-      });
-
+      const result = await loginMutation.mutateAsync({ email: data.email, password: data.password });
       if (result.success) {
         toast.success("Login successful");
-        // Always store token and admin info for authentication
         localStorage.setItem("adminToken", result.token);
         localStorage.setItem("adminUser", JSON.stringify(result.admin));
-        // Redirect to admin dashboard
         navigate("/admin");
       } else {
         toast.error("Login failed");
       }
     } catch (error: any) {
-      console.error("Login error:", error);
-      const errorMessage = error?.data?.zodError ?
-        JSON.stringify(error.data.zodError) :
-        error?.message ||
-        "Failed to login";
-      console.error("Detailed error:", errorMessage);
-      toast.error(`Error: ${errorMessage}`);
+      const msg = error?.data?.zodError
+        ? "Invalid credentials"
+        : error?.message || "Failed to login";
+      toast.error(msg);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo Section */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
+    <div className="min-h-screen flex" style={{ background: "#F3F3F3" }}>
+      {/* ── Left brand panel ── */}
+      <div
+        className="hidden lg:flex flex-col justify-between w-[420px] flex-shrink-0 p-10"
+        style={{ background: "#032D60" }}
+      >
+        <div>
+          <img
+            src="https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/Alternative_Logo_White_Background-removebg-preview_9d4821e4.png"
+            alt="AlterNatives"
+            className="h-9 w-auto object-contain brightness-0 invert"
+          />
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-3xl font-bold text-white leading-tight">
+            Connect the right experts<br />to the right opportunities
+          </h2>
+          <p className="text-[#9FB6CD] text-sm leading-relaxed">
+            The expert network management platform for modern advisory businesses.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          {[
+            { label: "Expert profiles", value: "Managed" },
+            { label: "Client projects",  value: "Tracked"  },
+            { label: "Onboarding",       value: "Automated" },
+            { label: "Shortlisting",     value: "13 stages" },
+          ].map((item) => (
+            <div key={item.label} className="bg-white/[0.08] rounded p-3">
+              <p className="text-white text-sm font-semibold">{item.value}</p>
+              <p className="text-[#9FB6CD] text-xs mt-0.5">{item.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Right form panel ── */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-[400px]">
+          {/* Mobile logo */}
+          <div className="lg:hidden text-center mb-8">
             <img
               src="https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/Alternative_Logo_White_Background-removebg-preview_9d4821e4.png"
               alt="AlterNatives"
-              className="h-12 w-auto object-contain"
+              className="h-9 w-auto object-contain mx-auto"
             />
           </div>
-          <p className="text-slate-600">Admin Portal</p>
-        </div>
 
-        {/* Login Card */}
-        <Card className="border-slate-200 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock size={20} className="text-blue-600" />
-              Admin Login
-            </CardTitle>
-            <CardDescription>Enter your credentials to access the admin dashboard</CardDescription>
-          </CardHeader>
-          <CardContent>
+          {/* Card */}
+          <div
+            className="bg-white rounded border border-border p-8"
+            style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}
+          >
+            {/* Header */}
+            <div className="mb-6">
+              <div className="w-10 h-10 rounded bg-[#E8F4FD] flex items-center justify-center mb-4">
+                <Lock size={18} className="text-[#0176D3]" />
+              </div>
+              <h1 className="text-lg font-bold text-foreground">Sign in to your account</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Admin portal — authorised users only
+              </p>
+            </div>
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
@@ -93,13 +120,15 @@ export default function AdminLogin() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email Address</FormLabel>
+                      <FormLabel className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Email Address
+                      </FormLabel>
                       <FormControl>
-                        <Input 
-                          type="email" 
-                          placeholder="admin@example.com" 
+                        <Input
+                          type="email"
+                          placeholder="admin@example.com"
                           {...field}
-                          className="border-slate-200"
+                          className="h-9 text-sm"
                         />
                       </FormControl>
                       <FormMessage />
@@ -112,55 +141,65 @@ export default function AdminLogin() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Password
+                      </FormLabel>
                       <FormControl>
-                        <Input 
-                          type="password" 
-                          placeholder="••••••••" 
-                          {...field}
-                          className="border-slate-200"
-                        />
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            {...field}
+                            className="h-9 text-sm pr-9"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="checkbox" 
-                    id="rememberMe"
-                    className="w-4 h-4 rounded border-slate-300"
-                  />
-                  <label htmlFor="rememberMe" className="text-sm font-medium">Remember me</label>
-                </div>
-
-                <Button 
-                  type="submit" 
-                  className="w-full bg-blue-600 hover:bg-blue-700"
+                <Button
+                  type="submit"
+                  className="w-full h-9 text-sm font-semibold"
+                  style={{ background: "#0176D3" }}
                   disabled={loginMutation.isPending}
                 >
                   {loginMutation.isPending ? (
                     <>
-                      <Loader2 className="mr-2 animate-spin" size={16} />
-                      Logging in...
+                      <Loader2 className="mr-2 animate-spin" size={14} />
+                      Signing in…
                     </>
                   ) : (
-                    "Login"
+                    "Sign In"
                   )}
                 </Button>
               </form>
             </Form>
 
-            {/* Default Credentials Info */}
-            <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-xs font-semibold text-blue-900 mb-1">Default Admin Credentials:</p>
-              <p className="text-xs text-blue-800">Email: <code className="bg-blue-100 px-1 rounded">admin@alternative.com</code></p>
-              <p className="text-xs text-blue-800">Password: <code className="bg-blue-100 px-1 rounded">admin123</code></p>
-              <p className="text-xs text-blue-700 mt-2">Change these credentials after first login.</p>
+            {/* Credentials hint */}
+            <div className="mt-5 p-3 rounded bg-[#F3F3F3] border border-border">
+              <p className="text-xs font-semibold text-foreground mb-1">Default credentials</p>
+              <p className="text-xs text-muted-foreground">
+                Email: <code className="bg-white px-1 py-0.5 rounded border border-border text-[11px]">admin@alternative.com</code>
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Password: <code className="bg-white px-1 py-0.5 rounded border border-border text-[11px]">admin123</code>
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          <p className="text-center text-xs text-muted-foreground mt-4">
+            © {new Date().getFullYear()} AlterNatives · Expert Network Platform
+          </p>
+        </div>
       </div>
     </div>
   );
