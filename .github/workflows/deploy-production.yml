@@ -1,17 +1,23 @@
-name: Deploy Production
+name: Deploy to Production
 
 on:
   push:
     branches:
       - main
-      - production
   workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history needed to scan commit messages for issue refs
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -30,53 +36,137 @@ jobs:
       - name: Build application
         run: pnpm build
 
-      - name: Install SSH Key
+      - name: Install SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.DO_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H 174.138.46.88 >> ~/.ssh/known_hosts 2>/dev/null || true
+          echo "${{ secrets.DO_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ vars.SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
-      - name: Deploy via SSH
+      - name: Upload dist folder
         run: |
-          # Debug: Check dist folder
-          echo "=== Checking dist folder ==="
-          ls -lh dist/index.js || echo "ERROR: dist/index.js not found"
+          scp -i ~/.ssh/deploy_key -r dist ${{ vars.SERVER_USER }}@${{ vars.SERVER_IP }}:${{ vars.APP_PATH }}/
+          echo "✓ dist uploaded"
 
-          echo "=== Connecting to server ==="
-          # Verify connection
-          ssh -i ~/.ssh/id_rsa root@174.138.46.88 "echo '✓ SSH connection successful'"
-
-          echo "=== Uploading dist folder ==="
-          # Upload fresh dist folder
-          scp -i ~/.ssh/id_rsa -r dist root@174.138.46.88:/app/ && echo "✓ Dist uploaded" || echo "✗ Upload failed"
-
-          echo "=== Uploading .env ==="
-          # Copy .env file
-          scp -i ~/.ssh/id_rsa .env root@174.138.46.88:/app/.env.new || echo "⚠ No .env file to upload"
-
-          echo "=== Rebuilding application ==="
-          # Rebuild and restart on server
-          ssh -i ~/.ssh/id_rsa root@174.138.46.88 << 'SSH'
-            cd /app
-
-            # Use new .env if uploaded
-            [ -f .env.new ] && mv .env.new .env
-
-            # Rebuild application
-            pnpm run build
-
-            # Restart PM2
-            pm2 restart ecosystem.config.cjs
-
-            # Wait for restart
-            sleep 5
-
-            # Verify deployment
-            curl -s http://localhost:3000 > /dev/null && echo "✓ Deployment successful" || echo "⚠ May have issues"
-          SSH
-
-      - name: Verify Deployment
+      - name: Update ecosystem config
         run: |
-          echo "✓ Deployment completed"
-          echo "Application URL: https://alternatives.nativeworld.com"
+          ssh -i ~/.ssh/deploy_key ${{ vars.SERVER_USER }}@${{ vars.SERVER_IP }} bash << 'SSHEOF'
+            cat > /app/ecosystem.config.cjs << 'ECOEOF'
+          module.exports = {
+            apps: [{
+              name: 'alternative-ens',
+              script: '/app/dist/index.js',
+              cwd: '/app',
+              instances: 1,
+              autorestart: true,
+              watch: false,
+              max_memory_restart: '500M',
+              env: {
+                NODE_ENV: 'production',
+                PORT: '3000',
+                DATABASE_URL: 'DATABASE_URL_PLACEHOLDER',
+                JWT_SECRET: 'JWT_SECRET_PLACEHOLDER',
+                APP_ORIGIN: 'APP_ORIGIN_PLACEHOLDER',
+                VITE_APP_ID: 'production',
+                LINKEDIN_CLIENT_ID: 'LINKEDIN_CLIENT_ID_PLACEHOLDER',
+                LINKEDIN_CLIENT_SECRET: 'LINKEDIN_CLIENT_SECRET_PLACEHOLDER',
+                BREVO_API_KEY: 'BREVO_API_KEY_PLACEHOLDER',
+                SMTP_FROM_EMAIL: 'SMTP_FROM_EMAIL_PLACEHOLDER',
+                SMTP_FROM_NAME: 'SMTP_FROM_NAME_PLACEHOLDER',
+                CLAUDE_API_KEY: '',
+                APOLLO_API_KEY: ''
+              }
+            }]
+          };
+          ECOEOF
+          SSHEOF
+
+          ssh -i ~/.ssh/deploy_key ${{ vars.SERVER_USER }}@${{ vars.SERVER_IP }} \
+            "sed -i \
+              -e 's|DATABASE_URL_PLACEHOLDER|${{ secrets.DATABASE_URL }}|g' \
+              -e 's|JWT_SECRET_PLACEHOLDER|${{ secrets.JWT_SECRET }}|g' \
+              -e 's|APP_ORIGIN_PLACEHOLDER|${{ secrets.APP_ORIGIN }}|g' \
+              -e 's|LINKEDIN_CLIENT_ID_PLACEHOLDER|${{ secrets.LINKEDIN_CLIENT_ID }}|g' \
+              -e 's|LINKEDIN_CLIENT_SECRET_PLACEHOLDER|${{ secrets.LINKEDIN_CLIENT_SECRET }}|g' \
+              -e 's|BREVO_API_KEY_PLACEHOLDER|${{ secrets.BREVO_API_KEY }}|g' \
+              -e 's|SMTP_FROM_EMAIL_PLACEHOLDER|${{ secrets.SMTP_FROM_EMAIL }}|g' \
+              -e 's|SMTP_FROM_NAME_PLACEHOLDER|${{ secrets.SMTP_FROM_NAME }}|g' \
+              /app/ecosystem.config.cjs"
+
+          echo "✓ ecosystem.config.cjs updated"
+
+      - name: Restart PM2
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ vars.SERVER_USER }}@${{ vars.SERVER_IP }} \
+            "cd /app && pm2 restart ecosystem.config.cjs --update-env && sleep 3 && pm2 status"
+
+      - name: Verify deployment
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ vars.SERVER_USER }}@${{ vars.SERVER_IP }} \
+            "curl -sf http://localhost:3000 > /dev/null && echo '✓ App responding' || (echo '✗ App not responding' && exit 1)"
+          echo "✓ Deployed to https://${{ vars.DOMAIN }}"
+
+      # Close any issues referenced in commits that triggered this deployment
+      - name: Close referenced issues
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+
+            // Get all commit messages in this push
+            let commits;
+            try {
+              const before = context.payload.before || 'HEAD~1';
+              const after = context.payload.after || 'HEAD';
+              const log = execSync(`git log --format="%s %b" ${before}..${after} 2>/dev/null || git log --format="%s %b" -10`).toString();
+              commits = log;
+            } catch (e) {
+              commits = context.payload.head_commit?.message || '';
+            }
+
+            // Extract issue numbers from Closes/Fixes/Resolves references
+            const issueRefs = [...commits.matchAll(/(?:closes?|fixes?|resolves?)\s+#(\d+)/gi)];
+            const issueNumbers = [...new Set(issueRefs.map(m => parseInt(m[1])))];
+
+            if (issueNumbers.length === 0) {
+              console.log('No issue references found in commits.');
+              return;
+            }
+
+            console.log(`Found issue references: ${issueNumbers.join(', ')}`);
+
+            for (const num of issueNumbers) {
+              try {
+                // Add a deployment comment
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: num,
+                  body: `🚀 **Deployed to production** — https://${{ vars.DOMAIN }}\n\nThis issue was resolved in commit \`${context.sha.substring(0,7)}\` and is now live.`
+                });
+
+                // Close the issue
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: num,
+                  state: 'closed',
+                  state_reason: 'completed'
+                });
+
+                // Add deployed label
+                try {
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: num,
+                    labels: ['deployed']
+                  });
+                } catch (_) {}
+
+                console.log(`✓ Closed issue #${num}`);
+              } catch (err) {
+                console.log(`Could not close issue #${num}: ${err.message}`);
+              }
+            }

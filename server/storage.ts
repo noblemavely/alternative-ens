@@ -15,23 +15,17 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 type StorageConfig = { baseUrl?: string; apiKey?: string };
-const isDevelopment = !ENV.isProduction;
+
+// Use local filesystem if not in production OR if Forge credentials are not configured
+const forgeApiUrl = ENV.forgeApiUrl;
+const forgeApiKey = ENV.forgeApiKey;
+const useLocalStorage = !ENV.isProduction || !forgeApiUrl || !forgeApiKey;
 
 function getStorageConfig(): StorageConfig {
-  if (isDevelopment) {
+  if (useLocalStorage) {
     return { baseUrl: undefined, apiKey: undefined };
   }
-
-  const baseUrl = ENV.forgeApiUrl;
-  const apiKey = ENV.forgeApiKey;
-
-  if (!baseUrl || !apiKey) {
-    throw new Error(
-      "Storage proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
-    );
-  }
-
-  return { baseUrl: baseUrl.replace(/\/+$/, ""), apiKey };
+  return { baseUrl: forgeApiUrl!.replace(/\/+$/, ""), apiKey: forgeApiKey! };
 }
 
 function buildUploadUrl(baseUrl: string, relKey: string): URL {
@@ -90,8 +84,8 @@ export async function storagePut(
 ): Promise<{ key: string; url: string }> {
   const key = normalizeKey(relKey);
 
-  if (isDevelopment) {
-    // Local file system storage for development
+  if (useLocalStorage) {
+    // Local file system storage
     const filePath = path.join(uploadsDir, key);
     const fileDir = path.dirname(filePath);
 
@@ -110,7 +104,7 @@ export async function storagePut(
     return { key, url };
   }
 
-  // Production: Use S3-compatible storage
+  // Use S3-compatible storage via Forge API
   const { baseUrl, apiKey } = getStorageConfig();
   const uploadUrl = buildUploadUrl(baseUrl!, key);
   const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
@@ -133,8 +127,8 @@ export async function storagePut(
 export async function storageGet(relKey: string): Promise<{ key: string; url: string; }> {
   const key = normalizeKey(relKey);
 
-  if (isDevelopment) {
-    // Local file system storage for development
+  if (useLocalStorage) {
+    // Local file system storage
     const filePath = path.join(uploadsDir, key);
 
     if (!fs.existsSync(filePath)) {
@@ -147,7 +141,7 @@ export async function storageGet(relKey: string): Promise<{ key: string; url: st
     return { key, url };
   }
 
-  // Production: Use S3-compatible storage
+  // Use S3-compatible storage via Forge API
   const { baseUrl, apiKey } = getStorageConfig();
   return {
     key,

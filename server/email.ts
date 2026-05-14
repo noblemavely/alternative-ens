@@ -156,12 +156,7 @@ export function getVerificationEmailContent(
 
           <p>Thank you for registering with Alternatives! To complete your registration, please verify your email address.</p>
 
-          <p>Click the button below to verify your email:</p>
-          <div style="text-align: center;">
-            <a href="${verificationUrl}" class="button">Verify Email</a>
-          </div>
-
-          <p>Or enter this code on the verification page:</p>
+          <p>Enter this code on the verification page:</p>
           <div class="code-box">${verificationCode}</div>
 
           <p>This code will expire in 24 hours.</p>
@@ -182,8 +177,6 @@ Welcome to Alternatives!
 Thank you for registering. To complete your registration, please verify your email address.
 
 Your verification code is: ${verificationCode}
-
-Or visit this link to verify: ${verificationUrl}
 
 This code will expire in 24 hours.
 

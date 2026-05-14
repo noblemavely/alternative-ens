@@ -5,8 +5,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Trash2, Edit2 } from "lucide-react";
 import { toast } from "sonner";
-import { Autocomplete } from "@/components/Autocomplete";
-import { COMMON_UNIVERSITIES, COMMON_DEGREES, COMMON_FIELDS_OF_STUDY } from "@/lib/suggestions";
 
 interface EducationEntry {
   id?: string;
@@ -43,7 +41,7 @@ export function EducationHistoryForm({
   });
 
   const handleSubmit = () => {
-    if (!formData.school.trim() || !formData.degree.trim() || !formData.field.trim() || !formData.startDate) {
+    if (!formData.school.trim() || !formData.degree.trim() || !formData.startDate) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -97,37 +95,24 @@ export function EducationHistoryForm({
               <label className="block text-sm font-medium text-slate-900 mb-1">
                 School/University *
               </label>
-              <Autocomplete
+              <Input
+                placeholder="e.g., Harvard University, IIT Bombay"
                 value={formData.school}
-                onChange={(value) => setFormData({ ...formData, school: value })}
-                options={COMMON_UNIVERSITIES}
-                placeholder="Select or type university name..."
+                onChange={(e) => setFormData({ ...formData, school: e.target.value })}
+                className="border-slate-300"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-900 mb-1">
-                  Degree *
-                </label>
-                <Autocomplete
-                  value={formData.degree}
-                  onChange={(value) => setFormData({ ...formData, degree: value })}
-                  options={COMMON_DEGREES}
-                  placeholder="Select degree..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-900 mb-1">
-                  Field of Study *
-                </label>
-                <Autocomplete
-                  value={formData.field}
-                  onChange={(value) => setFormData({ ...formData, field: value })}
-                  options={COMMON_FIELDS_OF_STUDY}
-                  placeholder="Select field of study..."
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-900 mb-1">
+                Degree *
+              </label>
+              <Input
+                placeholder="e.g., B.Tech, MBA, M.Sc, PhD"
+                value={formData.degree}
+                onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
+                className="border-slate-300"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -205,7 +190,7 @@ export function EducationHistoryForm({
               <CardContent className="pt-4">
                 <div className="flex justify-between items-start gap-4">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-slate-900">{entry.degree} in {entry.field}</h4>
+                    <h4 className="font-semibold text-slate-900">{entry.degree}</h4>
                     <p className="text-sm text-slate-600">{entry.school}</p>
                     <p className="text-xs text-slate-500 mt-1">
                       {entry.startDate} {entry.endDate && `- ${entry.endDate}`}

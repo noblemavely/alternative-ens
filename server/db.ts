@@ -1092,8 +1092,8 @@ export async function seedDatabase() {
     // Seed Clients
     const clientData = [
       {
-        name: 'John Smith',
-        email: 'john.smith@techcorp.com',
+        name: 'TechCorp Inc',
+        email: 'contact@techcorp.com',
         phone: '+1-555-0101',
         companyName: 'TechCorp Inc',
         companyWebsite: 'https://techcorp.com',
@@ -1101,8 +1101,8 @@ export async function seedDatabase() {
         sector: 'Technology',
       },
       {
-        name: 'Sarah Johnson',
-        email: 'sarah.johnson@financeplus.com',
+        name: 'FinancePlus LLC',
+        email: 'contact@financeplus.com',
         phone: '+1-555-0102',
         companyName: 'FinancePlus LLC',
         companyWebsite: 'https://financeplus.com',
@@ -1110,8 +1110,8 @@ export async function seedDatabase() {
         sector: 'Finance',
       },
       {
-        name: 'Michael Chen',
-        email: 'michael.chen@healthcare.com',
+        name: 'HealthCare Solutions',
+        email: 'contact@healthcaresolutions.com',
         phone: '+1-555-0103',
         companyName: 'HealthCare Solutions',
         companyWebsite: 'https://healthcaresolutions.com',

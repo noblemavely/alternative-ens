@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -126,6 +126,16 @@ export default function ExpertPortal() {
       }
     }
   }, [profileForm]);
+
+  // Sync current step to URL so each step has its own URL
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return; // Don't overwrite URL with "email" on first render (preserves linkedin_profile params)
+    }
+    window.history.pushState({}, "", `/expert/register?step=${step}`);
+  }, [step]);
 
   const handleSendVerification = async (data: EmailVerificationData) => {
     try {
@@ -260,38 +270,122 @@ export default function ExpertPortal() {
       toast.error("Please enter a LinkedIn URL");
       return;
     }
+
+    // Validate LinkedIn URL format
+    if (!url.match(/linkedin\.com\/in\/([a-z0-9\-]+)\/?/i)) {
+      toast.error("Please enter a valid LinkedIn profile URL (e.g. https://www.linkedin.com/in/yourname)");
+      return;
+    }
+
     setParsingLinkedin(true);
     try {
-      // Use Apollo.io enrichment endpoint for LinkedIn profiles
-      const result = await enrichLinkedinMutation.mutateAsync({ linkedinUrl: url });
+      // Call LinkFinderAI directly from browser to avoid server IP blocks
+      const response = await fetch("https://api.linkfinderai.com", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer 5bZ57Z69Z50Z7aZ71Z81Z37Z69Z75Z4eZ79Z60Z71Z56Z3f",
+        },
+        body: JSON.stringify({
+          type: "linkedin_profile_to_linkedin_info",
+          input_data: url,
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
 
-      if (!result.success) {
-        toast.error(result.message || "Failed to fetch LinkedIn profile");
+      if (!response.ok) {
+        const errText = await response.text().catch(() => "");
+        console.warn("LinkFinderAI error:", response.status, errText);
+        toast.error("Could not fetch LinkedIn profile. Please fill in your details manually.");
         setParsingLinkedin(false);
         return;
       }
 
-      // Populate form fields from enriched data
-      if (result.firstName) profileForm.setValue("firstName", result.firstName);
-      if (result.lastName) profileForm.setValue("lastName", result.lastName);
-      if (result.headline) profileForm.setValue("sector", result.headline);
-      if (result.email) profileForm.setValue("email", result.email);
+      const data = await response.json() as any;
 
-      // Auto-populate Function/Role from headline if available
-      if (result.headline) {
-        profileForm.setValue("function", result.headline);
+      if (data.error || data.status === "error") {
+        toast.error(data.message || "Profile not found. Please fill in your details manually.");
+        setParsingLinkedin(false);
+        return;
+      }
+
+      // Parse name into first/last
+      const fullName = data.name || "";
+      const nameParts = fullName.trim().split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      // Populate personal info fields
+      if (firstName) profileForm.setValue("firstName", firstName);
+      if (lastName) profileForm.setValue("lastName", lastName);
+      if (data.email) profileForm.setValue("email", data.email);
+      if (data.headline) {
+        profileForm.setValue("sector", data.headline);
+        profileForm.setValue("function", data.headline);
+      }
+
+      // Helper to format date strings
+      const formatDate = (dateStr: string | null): string => {
+        if (!dateStr || dateStr === "Present") return "";
+        if (/^\d{4}-\d{2}/.test(dateStr)) return dateStr.substring(0, 7);
+        if (/^\d{4}$/.test(dateStr)) return dateStr;
+        try {
+          const d = new Date(dateStr);
+          if (!isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        } catch (_) { /* ignore */ }
+        return dateStr;
+      };
+
+      // Map experiences → employment history
+      const experiences: any[] = data.experiences || [];
+      if (experiences.length > 0) {
+        const mappedEmployment = experiences
+          .filter((exp: any) => exp.title || exp.companyName)
+          .map((exp: any, idx: number) => ({
+            id: `linkedin-emp-${idx}`,
+            company: exp.companyName || "",
+            position: exp.title || "",
+            startDate: exp.jobStartedOn ? formatDate(exp.jobStartedOn) : "",
+            endDate: exp.jobStillWorking ? "" : (exp.jobEndedOn && exp.jobEndedOn !== "Present" ? formatDate(exp.jobEndedOn) : ""),
+            currentlyWorking: exp.jobStillWorking === true || exp.jobEndedOn === "Present",
+            description: exp.jobDescription || "",
+          }));
+        setEmploymentHistory(mappedEmployment);
+      }
+
+      // Map education history
+      const educations: any[] = data.education || data.educations || [];
+      if (educations.length > 0) {
+        const mappedEducation = educations
+          .filter((edu: any) => edu.schoolName || edu.school)
+          .map((edu: any, idx: number) => ({
+            id: `linkedin-edu-${idx}`,
+            school: edu.schoolName || edu.school || "",
+            degree: edu.degree || edu.degreeName || "",
+            field: edu.fieldOfStudy || edu.field || "",
+            startDate: edu.startDate ? formatDate(edu.startDate) : "",
+            endDate: edu.endDate ? formatDate(edu.endDate) : "",
+            description: "",
+          }));
+        setEducationHistory(mappedEducation);
       }
 
       setLinkedinProfileFetched(true);
-      toast.success("LinkedIn profile fetched successfully!");
+      const empCount = experiences.filter((e: any) => e.title || e.companyName).length;
+      const eduCount = educations.filter((e: any) => e.schoolName || e.school).length;
+      toast.success(`LinkedIn profile fetched! ${empCount} job${empCount !== 1 ? "s" : ""} and ${eduCount} education record${eduCount !== 1 ? "s" : ""} imported.`);
 
       // Auto-navigate to experience step after brief delay
       setTimeout(() => {
         setStep("experience");
       }, 1500);
-    } catch (error) {
+    } catch (error: any) {
       console.error("LinkedIn enrichment error:", error);
-      toast.error("Failed to fetch LinkedIn profile. Make sure the URL is valid and the API is configured.");
+      if (error?.name === "TimeoutError" || error?.name === "AbortError") {
+        toast.error("LinkedIn profile fetch timed out. Please try again.");
+      } else {
+        toast.error("Failed to fetch LinkedIn profile. Make sure the URL is valid.");
+      }
     } finally {
       setParsingLinkedin(false);
     }
@@ -712,6 +806,7 @@ export default function ExpertPortal() {
               <CardContent className="space-y-4">
                 <ResumeParserForm
                   onParsed={handleResumeParsed}
+                  onFileSelected={(file) => setResumeFile(file)}
                   onSkip={() => setStep("preview")}
                 />
                 <Button

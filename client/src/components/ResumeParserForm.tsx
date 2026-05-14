@@ -27,11 +27,12 @@ interface ParsedData {
 
 interface ResumeParserFormProps {
   onParsed: (data: ParsedData, file?: File) => void;
+  onFileSelected?: (file: File) => void;
   onSkip?: () => void;
   isLoading?: boolean;
 }
 
-export default function ResumeParserForm({ onParsed, onSkip, isLoading = false }: ResumeParserFormProps) {
+export default function ResumeParserForm({ onParsed, onFileSelected, onSkip, isLoading = false }: ResumeParserFormProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [parsedData, setParsedData] = useState<ParsedData | null>(null);
@@ -55,6 +56,7 @@ export default function ResumeParserForm({ onParsed, onSkip, isLoading = false }
     }
 
     setFile(selectedFile);
+    onFileSelected?.(selectedFile); // Notify parent immediately so the file is saved even if "Apply Data" is never clicked
     await parseFile(selectedFile);
   };
 

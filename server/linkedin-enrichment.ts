@@ -1,5 +1,3 @@
-import { ENV } from "./_core/env";
-
 export interface LinkedInEnrichmentResult {
   success: boolean;
   firstName?: string;
@@ -25,21 +23,19 @@ export interface LinkedInEnrichmentResult {
   message?: string;
 }
 
+const LINKFINDER_API_KEY = "5bZ57Z69Z50Z7aZ71Z81Z37Z69Z75Z4eZ79Z60Z71Z56Z3f";
+const LINKFINDER_API_URL = "https://api.linkfinderai.com";
+
 /**
- * Enrich LinkedIn profile using Apollo.io API
- * Apollo.io provides access to LinkedIn data without requiring Partner Program approval
- *
- * Free tier: ~50 API calls/month
- * Paid: $49+/month
+ * Enrich LinkedIn profile using LinkFinderAI API
+ * Docs: https://linkfinderai.com/api-documentation
  */
 export async function enrichLinkedInProfile(
   linkedinUrl: string
 ): Promise<LinkedInEnrichmentResult> {
   try {
-    // Validate LinkedIn URL format first
-    const urlMatch = linkedinUrl.match(
-      /linkedin\.com\/in\/([a-z0-9\-]+)\/?/i
-    );
+    // Validate LinkedIn URL format
+    const urlMatch = linkedinUrl.match(/linkedin\.com\/in\/([a-z0-9\-]+)\/?/i);
     if (!urlMatch) {
       return {
         success: false,
@@ -47,160 +43,115 @@ export async function enrichLinkedInProfile(
       };
     }
 
-    // Try Apollo.io enrichment first (if configured)
-    if (ENV.apolloApiKey) {
-      console.log("[LinkedIn Enrichment] Attempting Apollo.io enrichment");
-      const apolloResult = await tryApolloEnrichment(linkedinUrl);
-      if (apolloResult.success) {
-        return apolloResult;
-      }
-      console.warn("[LinkedIn Enrichment] Apollo.io enrichment failed:", apolloResult.message);
-    } else {
-      console.warn("[LinkedIn Enrichment] Apollo API key not configured");
-    }
+    console.log("[LinkedIn Enrichment] Fetching profile via LinkFinderAI:", linkedinUrl);
 
-    // Fallback: Return basic success with profile URL extracted from LinkedIn
-    // In production, this could fall back to LinkedIn OAuth or other enrichment services
-    console.log("[LinkedIn Enrichment] Using fallback: basic profile parsing");
-    return {
-      success: true,
-      profileUrl: linkedinUrl,
-      message: "Profile URL accepted. Please fill in additional details manually.",
-    };
-  } catch (error) {
-    console.error("[LinkedIn Enrichment] Unexpected error:", error);
-    return {
-      success: false,
-      message: "An unexpected error occurred while fetching your LinkedIn profile. Please try again.",
-    };
-  }
-}
-
-/**
- * Try to enrich using Apollo.io API
- */
-async function tryApolloEnrichment(
-  linkedinUrl: string
-): Promise<LinkedInEnrichmentResult> {
-  try {
-    // Call Apollo.io API
-    // Documentation: https://apolloio.com/api
-    const response = await fetch("https://api.apollo.io/v1/people/search", {
+    const response = await fetch(LINKFINDER_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "no-cache",
-        "X-Api-Key": ENV.apolloApiKey || "",
+        "Authorization": `Bearer ${LINKFINDER_API_KEY}`,
       },
       body: JSON.stringify({
-        linkedin_url: linkedinUrl,
-        reveal_personal_emails: true,
+        type: "linkedin_profile_to_linkedin_info",
+        input_data: linkedinUrl,
       }),
+      signal: AbortSignal.timeout(30000), // 30 second timeout
     });
 
     if (!response.ok) {
-      console.warn(
-        `[LinkedIn Enrichment] Apollo.io API error: ${response.status} ${response.statusText}`
-      );
+      const errorText = await response.text();
+      console.warn(`[LinkedIn Enrichment] LinkFinderAI error ${response.status}: ${errorText}`);
       return {
         success: false,
-        message: `Apollo.io API error: ${response.statusText}`,
+        message: `Could not fetch LinkedIn profile. Please fill in details manually.`,
       };
     }
 
     const data = await response.json() as any;
+    console.log("[LinkedIn Enrichment] Response received, status:", data.status);
 
-    // Apollo.io returns data in 'person' field or 'people' array
-    const person = data.person || (data.people && data.people[0]);
-
-    if (!person) {
+    if (data.error || data.status === "error") {
       return {
         success: false,
-        message: "Profile not found in Apollo.io database",
+        message: data.message || "Profile not found. Please fill in details manually.",
       };
     }
 
-    // Parse employment history
-    const employment = (person.employment_history || [])
-      .filter((emp: any) => emp.title && emp.company)
-      .map((emp: any) => ({
-        companyName: emp.company || "",
-        position: emp.title || "",
-        startDate: emp.start_date ? formatDate(emp.start_date) : "",
-        endDate: emp.end_date ? formatDate(emp.end_date) : "",
-        isCurrent: !emp.end_date,
-        description: emp.description || "",
+    // Parse full name into first/last
+    const fullName = data.name || "";
+    const nameParts = fullName.trim().split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+
+    // Parse experiences array
+    const employment = (data.experiences || [])
+      .filter((exp: any) => exp.title || exp.companyName)
+      .map((exp: any) => ({
+        companyName: exp.companyName || "",
+        position: exp.title || "",
+        startDate: exp.jobStartedOn ? formatDate(exp.jobStartedOn) : "",
+        endDate: exp.jobStillWorking ? "" : (exp.jobEndedOn && exp.jobEndedOn !== "Present" ? formatDate(exp.jobEndedOn) : ""),
+        isCurrent: exp.jobStillWorking === true || exp.jobEndedOn === "Present",
+        description: exp.jobDescription || "",
       }));
 
-    // Parse education history
-    const education = (person.education || [])
-      .filter((edu: any) => edu.school_name)
+    // Parse education if available
+    const education = (data.education || data.educations || [])
+      .filter((edu: any) => edu.schoolName || edu.school)
       .map((edu: any) => ({
-        schoolName: edu.school_name || "",
-        degree: edu.degree || "",
-        fieldOfStudy: edu.field_of_study || "",
-        startDate: edu.start_date ? formatDate(edu.start_date) : "",
-        endDate: edu.end_date ? formatDate(edu.end_date) : "",
+        schoolName: edu.schoolName || edu.school || "",
+        degree: edu.degree || edu.degreeName || "",
+        fieldOfStudy: edu.fieldOfStudy || edu.field || "",
+        startDate: edu.startDate ? formatDate(edu.startDate) : "",
+        endDate: edu.endDate ? formatDate(edu.endDate) : "",
       }));
 
     return {
       success: true,
-      firstName: person.first_name,
-      lastName: person.last_name,
-      email: person.email,
-      headline: person.headline,
+      firstName,
+      lastName,
+      email: data.email || undefined,
+      headline: data.headline || data.jobTitle || undefined,
       profileUrl: linkedinUrl,
-      employment:
-        employment.length > 0
-          ? employment
-          : undefined,
-      education:
-        education.length > 0
-          ? education
-          : undefined,
+      employment: employment.length > 0 ? employment : undefined,
+      education: education.length > 0 ? education : undefined,
     };
-  } catch (error) {
-    console.error("[LinkedIn Enrichment] Apollo.io error:", error);
+  } catch (error: any) {
+    // Handle timeout specifically
+    if (error?.name === "TimeoutError" || error?.name === "AbortError") {
+      console.error("[LinkedIn Enrichment] Request timed out");
+      return {
+        success: false,
+        message: "LinkedIn profile fetch timed out. Please try again.",
+      };
+    }
+    console.error("[LinkedIn Enrichment] Unexpected error:", error);
     return {
       success: false,
-      message: "Failed to fetch from Apollo.io",
+      message: "An unexpected error occurred. Please try again.",
     };
   }
 }
 
 /**
- * Format date from various formats to YYYY-MM
+ * Format date — handles year-only strings like "2000" or "2015"
  */
 function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "";
-
-  // Try to parse the date
+  if (!dateStr || dateStr === "Present") return "";
   try {
-    // If it's already in YYYY-MM format, return as-is
-    if (/^\d{4}-\d{2}/.test(dateStr)) {
-      return dateStr.substring(0, 7);
-    }
-
-    // If it's YYYY-MM-DD format
-    if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
-      return dateStr.substring(0, 7);
-    }
-
-    // Try parsing as Date
+    // Already YYYY-MM
+    if (/^\d{4}-\d{2}/.test(dateStr)) return dateStr.substring(0, 7);
+    // YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return dateStr.substring(0, 7);
+    // Just a year: "2000"
+    if (/^\d{4}$/.test(dateStr)) return dateStr;
+    // Try parsing as a full date
     const date = new Date(dateStr);
     if (!isNaN(date.getTime())) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      return `${year}-${month}`;
-    }
-
-    // If it's just a year
-    if (/^\d{4}$/.test(dateStr)) {
-      return dateStr;
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
     }
   } catch (e) {
-    // Ignore parsing errors
+    // ignore
   }
-
   return dateStr;
 }

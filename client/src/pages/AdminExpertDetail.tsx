@@ -819,19 +819,41 @@ export default function AdminExpertDetail() {
                     </DialogHeader>
                     <div className="space-y-4">
                       <div>
+                        <Label htmlFor="client" className="text-sm font-medium">
+                          Select Client *
+                        </Label>
+                        <Select value={selectedClient} onValueChange={(val) => { setSelectedClient(val); setSelectedProject(""); }}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a client..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {clientsQuery.data?.map((client: any) => (
+                              <SelectItem key={client.id} value={client.id.toString()}>
+                                {client.companyName || client.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
                         <Label htmlFor="project" className="text-sm font-medium">
                           Select Project *
                         </Label>
-                        <Select value={selectedProject} onValueChange={setSelectedProject}>
+                        <Select value={selectedProject} onValueChange={setSelectedProject} disabled={!selectedClient}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Choose a project..." />
+                            <SelectValue placeholder={selectedClient ? "Choose a project..." : "Select a client first..."} />
                           </SelectTrigger>
                           <SelectContent>
-                            {projectsQuery.data?.map((project) => (
-                              <SelectItem key={project.id} value={project.id.toString()}>
-                                {project.name}
-                              </SelectItem>
-                            ))}
+                            {projectsQuery.data
+                              ?.filter((project: any) => {
+                                const contact = contactsQuery.data?.find((c: any) => c.id === project.clientContactId);
+                                return contact?.clientId?.toString() === selectedClient;
+                              })
+                              .map((project: any) => (
+                                <SelectItem key={project.id} value={project.id.toString()}>
+                                  {project.name}
+                                </SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
                       </div>
