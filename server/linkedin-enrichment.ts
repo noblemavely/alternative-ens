@@ -23,19 +23,21 @@ export interface LinkedInEnrichmentResult {
   message?: string;
 }
 
-const LINKFINDER_API_KEY = "72Z4cZ5fZ71Z55Z7bZ6dZ3bZ6dZ3aZ55Z37Z60Z68Z7eZ54";
-const LINKFINDER_API_URL = "https://api.linkfinderai.com";
+const BRIGHTDATA_API_KEY = "15337476-ed0a-4b1d-aa7c-acb35a5622b7";
+const BRIGHTDATA_DATASET_ID = "gd_l1viktl72bvl7bjuj0";
+const BRIGHTDATA_BASE_URL = "https://api.brightdata.com/datasets/v3";
+const POLL_MAX_RETRIES = 20;
+const POLL_INTERVAL_MS = 3000;
 
 /**
- * Enrich LinkedIn profile using LinkFinderAI API
- * Docs: https://linkfinderai.com/api-documentation
+ * Enrich LinkedIn profile using BrightData API (async trigger + poll).
  */
 export async function enrichLinkedInProfile(
   linkedinUrl: string
 ): Promise<LinkedInEnrichmentResult> {
   try {
     // Validate LinkedIn URL format
-    const urlMatch = linkedinUrl.match(/linkedin\.com\/in\/([a-z0-9\-]+)\/?/i);
+    const urlMatch = linkedinUrl.match(/linkedin\.com\/in\/([a-z0-9\-_%]+)\/?/i);
     if (!urlMatch) {
       return {
         success: false,
@@ -43,81 +45,132 @@ export async function enrichLinkedInProfile(
       };
     }
 
-    console.log("[LinkedIn Enrichment] Fetching profile via LinkFinderAI:", linkedinUrl);
+    console.log("[LinkedIn Enrichment] Triggering BrightData snapshot for:", linkedinUrl);
 
-    const response = await fetch(LINKFINDER_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${LINKFINDER_API_KEY}`,
-      },
-      body: JSON.stringify({
-        type: "linkedin_profile_to_linkedin_info",
-        input_data: linkedinUrl,
-      }),
-      signal: AbortSignal.timeout(30000), // 30 second timeout
-    });
+    // Step 1: Trigger the dataset collection
+    const triggerRes = await fetch(
+      `${BRIGHTDATA_BASE_URL}/trigger?dataset_id=${BRIGHTDATA_DATASET_ID}&include_errors=true`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${BRIGHTDATA_API_KEY}`,
+        },
+        body: JSON.stringify([{ url: linkedinUrl }]),
+        signal: AbortSignal.timeout(30000),
+      }
+    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.warn(`[LinkedIn Enrichment] LinkFinderAI error ${response.status}: ${errorText}`);
+    if (!triggerRes.ok) {
+      const errText = await triggerRes.text().catch(() => "");
+      console.warn(`[LinkedIn Enrichment] BrightData trigger error ${triggerRes.status}: ${errText}`);
       return {
         success: false,
-        message: `Could not fetch LinkedIn profile. Please fill in details manually.`,
+        message: "Could not initiate LinkedIn profile fetch. Please fill in details manually.",
       };
     }
 
-    const data = await response.json() as any;
-    console.log("[LinkedIn Enrichment] Response received, status:", data.status);
+    const triggerData = await triggerRes.json() as any;
+    const snapshotId = triggerData?.snapshot_id;
 
-    if (data.error || data.status === "error") {
+    if (!snapshotId) {
+      console.warn("[LinkedIn Enrichment] No snapshot_id returned:", triggerData);
       return {
         success: false,
-        message: data.message || "Profile not found. Please fill in details manually.",
+        message: "LinkedIn profile fetch failed. Please fill in details manually.",
       };
     }
 
-    // Parse full name into first/last
-    const fullName = data.name || "";
+    console.log("[LinkedIn Enrichment] Snapshot triggered:", snapshotId, "— polling for results…");
+
+    // Step 2: Poll until snapshot is ready (200) or give up
+    let profileData: any = null;
+    for (let attempt = 0; attempt < POLL_MAX_RETRIES; attempt++) {
+      // Wait before polling (even on first attempt — BrightData needs a moment to start)
+      await sleep(POLL_INTERVAL_MS);
+
+      const pollRes = await fetch(
+        `${BRIGHTDATA_BASE_URL}/snapshot/${snapshotId}?format=json`,
+        {
+          headers: {
+            "Authorization": `Bearer ${BRIGHTDATA_API_KEY}`,
+          },
+          signal: AbortSignal.timeout(30000),
+        }
+      );
+
+      if (pollRes.status === 200) {
+        const rows = await pollRes.json() as any[];
+        if (Array.isArray(rows) && rows.length > 0) {
+          profileData = rows[0];
+          console.log("[LinkedIn Enrichment] Snapshot ready after", attempt + 1, "poll(s)");
+          break;
+        }
+      } else if (pollRes.status === 202) {
+        // Still processing
+        console.log(`[LinkedIn Enrichment] Still processing (attempt ${attempt + 1}/${POLL_MAX_RETRIES})…`);
+        continue;
+      } else {
+        const errText = await pollRes.text().catch(() => "");
+        console.warn(`[LinkedIn Enrichment] Poll error ${pollRes.status}: ${errText}`);
+        return {
+          success: false,
+          message: "LinkedIn profile fetch failed. Please fill in details manually.",
+        };
+      }
+    }
+
+    if (!profileData) {
+      console.warn("[LinkedIn Enrichment] Snapshot timed out after max retries");
+      return {
+        success: false,
+        message: "LinkedIn profile fetch timed out. Please fill in details manually.",
+      };
+    }
+
+    // Parse full name
+    const fullName = profileData.name || "";
     const nameParts = fullName.trim().split(" ");
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "";
 
-    // Parse experiences array
-    const employment = (data.experiences || [])
-      .filter((exp: any) => exp.title || exp.companyName)
-      .map((exp: any) => ({
-        companyName: exp.companyName || "",
-        position: exp.title || "",
-        startDate: exp.jobStartedOn ? formatDate(exp.jobStartedOn) : "",
-        endDate: exp.jobStillWorking ? "" : (exp.jobEndedOn && exp.jobEndedOn !== "Present" ? formatDate(exp.jobEndedOn) : ""),
-        isCurrent: exp.jobStillWorking === true || exp.jobEndedOn === "Present",
-        description: exp.jobDescription || "",
-      }));
+    // Map experience[] → employment
+    const employment = (profileData.experience || [])
+      .filter((exp: any) => exp.company || exp.title)
+      .map((exp: any) => {
+        const isCurrent = !exp.end_date || exp.end_date === "Present";
+        return {
+          companyName: exp.company || "",
+          position: exp.title || "",
+          startDate: exp.start_date ? parseBrightDataDate(exp.start_date) : "",
+          endDate: isCurrent ? "" : (exp.end_date ? parseBrightDataDate(exp.end_date) : ""),
+          isCurrent,
+          description: exp.description || "",
+        };
+      });
 
-    // Parse education if available
-    const education = (data.education || data.educations || [])
-      .filter((edu: any) => edu.schoolName || edu.school)
+    // Map education[] → education
+    const education = (profileData.education || [])
+      .filter((edu: any) => edu.title || edu.degree)
       .map((edu: any) => ({
-        schoolName: edu.schoolName || edu.school || "",
-        degree: edu.degree || edu.degreeName || "",
-        fieldOfStudy: edu.fieldOfStudy || edu.field || "",
-        startDate: edu.startDate ? formatDate(edu.startDate) : "",
-        endDate: edu.endDate ? formatDate(edu.endDate) : "",
+        schoolName: edu.title || "",   // BrightData: "title" = school name
+        degree: edu.degree || "",
+        fieldOfStudy: edu.field || "",
+        startDate: edu.start_year ? String(edu.start_year) : "",
+        endDate: edu.end_year ? String(edu.end_year) : "",
       }));
 
     return {
       success: true,
       firstName,
       lastName,
-      email: data.email || undefined,
-      headline: data.headline || data.jobTitle || undefined,
+      email: profileData.email || undefined,
+      headline: profileData.headline || profileData.position || undefined,
       profileUrl: linkedinUrl,
       employment: employment.length > 0 ? employment : undefined,
       education: education.length > 0 ? education : undefined,
     };
   } catch (error: any) {
-    // Handle timeout specifically
     if (error?.name === "TimeoutError" || error?.name === "AbortError") {
       console.error("[LinkedIn Enrichment] Request timed out");
       return {
@@ -134,24 +187,29 @@ export async function enrichLinkedInProfile(
 }
 
 /**
- * Format date — handles year-only strings like "2000" or "2015"
+ * Parse BrightData date strings like "Jul 2022", "2022-07", "2022", or year numbers.
  */
-function formatDate(dateStr: string | null): string {
+function parseBrightDataDate(dateStr: string | number | null): string {
   if (!dateStr || dateStr === "Present") return "";
+  const s = String(dateStr).trim();
+
+  // Year only: "2022" or 2022
+  if (/^\d{4}$/.test(s)) return s;
+
+  // YYYY-MM or YYYY-MM-DD
+  if (/^\d{4}-\d{2}/.test(s)) return s.substring(0, 7);
+
+  // "Jul 2022" / "January 2022" etc.
   try {
-    // Already YYYY-MM
-    if (/^\d{4}-\d{2}/.test(dateStr)) return dateStr.substring(0, 7);
-    // YYYY-MM-DD
-    if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return dateStr.substring(0, 7);
-    // Just a year: "2000"
-    if (/^\d{4}$/.test(dateStr)) return dateStr;
-    // Try parsing as a full date
-    const date = new Date(dateStr);
-    if (!isNaN(date.getTime())) {
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     }
-  } catch (e) {
-    // ignore
-  }
-  return dateStr;
+  } catch (_) { /* ignore */ }
+
+  return s;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
