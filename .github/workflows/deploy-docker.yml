@@ -43,13 +43,11 @@ jobs:
           scp -r dist root@143.244.143.71:/app/ && echo "✓ Dist uploaded" || echo "✗ Dist upload failed"
           scp package.json pnpm-lock.yaml root@143.244.143.71:/app/
 
-          # Rebuild and restart application
+          # Restart application (dist was already built and uploaded by CI)
           ssh root@143.244.143.71 << 'SSHEOF'
-            cd /app
-            pnpm run build
             pm2 restart ecosystem.config.cjs
-            sleep 5
-            pm2 logs alternative-ens --lines 5
+            sleep 3
+            pm2 list
           SSHEOF
 
   notify:
