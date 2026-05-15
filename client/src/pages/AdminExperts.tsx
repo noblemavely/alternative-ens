@@ -488,7 +488,7 @@ export default function AdminExperts() {
                 <tbody>
                   {filteredExperts.map((expert) => (
                     <tr key={expert.id} className="cursor-pointer" onClick={() => navigate(`/admin/experts/${expert.id}`)}>
-                      <td className="font-medium text-[#0176D3] hover:underline">
+                      <td className="font-medium text-primary hover:underline">
                         {expert.firstName} {expert.lastName}
                       </td>
                       <td className="muted">{expert.email}</td>

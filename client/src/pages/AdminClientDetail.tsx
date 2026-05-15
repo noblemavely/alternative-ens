@@ -107,8 +107,8 @@ export default function AdminClientDetail() {
       {/* Page Header */}
       <div className="flex items-start justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded bg-[#E8F4FD] flex items-center justify-center flex-shrink-0">
-            <Building2 size={22} className="text-[#0176D3]" />
+          <div className="w-12 h-12 rounded bg-blue-50 flex items-center justify-center flex-shrink-0">
+            <Building2 size={22} className="text-primary" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-foreground leading-tight">{formData.name}</h1>
@@ -127,7 +127,7 @@ export default function AdminClientDetail() {
             size="sm"
             onClick={() => isEditing ? handleSaveClient() : setIsEditing(true)}
             disabled={updateClientMutation.isPending}
-            style={isEditing ? { background: "#0176D3" } : undefined}
+            style={isEditing ? { background: "var(--primary)" } : undefined}
           >
             {isEditing ? (
               <><Save size={14} className="mr-1.5" />{updateClientMutation.isPending ? "Saving…" : "Save Changes"}</>
@@ -223,7 +223,7 @@ export default function AdminClientDetail() {
                       <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Phone</Label>
                       <Input className="mt-1.5 h-8 text-sm" placeholder="+1 (555) 123-4567" value={contactForm.phone} onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })} />
                     </div>
-                    <Button onClick={handleAddContact} disabled={createContactMutation.isPending} className="w-full" style={{ background: "#0176D3" }}>
+                    <Button onClick={handleAddContact} disabled={createContactMutation.isPending} className="w-full" style={{ background: "var(--primary)" }}>
                       {createContactMutation.isPending ? "Adding…" : "Add Contact"}
                     </Button>
                   </div>
@@ -300,9 +300,9 @@ export default function AdminClientDetail() {
                     <button
                       key={p.id}
                       onClick={() => navigate(`/admin/projects/${p.id}`)}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-[#F3F8FE] transition-colors"
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:hover:bg-primary/5 transition-colors"
                     >
-                      <span className="text-sm text-[#0176D3] hover:underline font-medium">{p.name}</span>
+                      <span className="text-sm text-primary hover:underline font-medium">{p.name}</span>
                     </button>
                   ))}
               </div>

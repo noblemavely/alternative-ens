@@ -156,7 +156,7 @@ export default function AdminProjects() {
                       className="cursor-pointer"
                       onClick={() => navigate(`/admin/projects/${project.id}`)}
                     >
-                      <td className="font-medium text-[#0176D3] hover:underline">{project.name}</td>
+                      <td className="font-medium text-primary hover:underline">{project.name}</td>
                       <td className="muted">{getClientContactName(project.clientContactId)}</td>
                       <td className="muted">{project.projectType}</td>
                       <td>

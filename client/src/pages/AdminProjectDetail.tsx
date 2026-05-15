@@ -116,8 +116,8 @@ export default function AdminProjectDetail() {
       {/* Page Header */}
       <div className="flex items-start justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded bg-[#FEF6E6] flex items-center justify-center flex-shrink-0">
-            <Briefcase size={22} className="text-[#DD7A01]" />
+          <div className="w-12 h-12 rounded bg-amber-50 flex items-center justify-center flex-shrink-0">
+            <Briefcase size={22} className="text-amber-600" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-foreground leading-tight">{project.name}</h1>
@@ -147,7 +147,7 @@ export default function AdminProjectDetail() {
               }
             }}
             disabled={updateProjectMutation.isPending}
-            style={isEditing ? { background: "#0176D3" } : undefined}
+            style={isEditing ? { background: "var(--primary)" } : undefined}
           >
             {isEditing ? (
               <><Save size={14} className="mr-1.5" />{updateProjectMutation.isPending ? "Saving…" : "Save Changes"}</>
@@ -253,7 +253,7 @@ export default function AdminProjectDetail() {
                     {shortlistedExperts.map((shortlist: any) => (
                       <tr key={shortlist.id}>
                         <td>
-                          <button onClick={() => navigate(`/admin/experts/${shortlist.expertId}`)} className="text-[#0176D3] hover:underline font-medium text-sm">
+                          <button onClick={() => navigate(`/admin/experts/${shortlist.expertId}`)} className="text-primary hover:underline font-medium text-sm">
                             {shortlist.expert?.firstName} {shortlist.expert?.lastName}
                           </button>
                         </td>
@@ -299,8 +299,8 @@ export default function AdminProjectDetail() {
                 {activityTimeline.map((event: any) => (
                   <div key={event.id} className="flex gap-3 px-5 py-4">
                     <div className="flex-shrink-0 mt-0.5">
-                      <div className="w-7 h-7 rounded-full bg-[#E8F4FD] flex items-center justify-center">
-                        <Calendar size={12} className="text-[#0176D3]" />
+                      <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center">
+                        <Calendar size={12} className="text-primary" />
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">

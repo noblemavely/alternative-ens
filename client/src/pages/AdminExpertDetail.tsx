@@ -162,7 +162,7 @@ export default function AdminExpertDetail() {
       {/* Page Header */}
       <div className="flex items-start justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-[#EFF7EE] flex items-center justify-center flex-shrink-0 text-base font-bold text-[#2E844A]">
+          <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0 text-base font-bold text-emerald-700">
             {initials}
           </div>
           <div>
@@ -182,7 +182,7 @@ export default function AdminExpertDetail() {
             size="sm"
             onClick={() => isEditing ? handleSaveExpert() : setIsEditing(true)}
             disabled={updateExpertMutation.isPending}
-            style={isEditing ? { background: "#0176D3" } : undefined}
+            style={isEditing ? { background: "var(--primary)" } : undefined}
           >
             {isEditing ? (
               <><Save size={14} className="mr-1.5" />{updateExpertMutation.isPending ? "Saving…" : "Save Changes"}</>
@@ -246,8 +246,8 @@ export default function AdminExpertDetail() {
               </Label>
               {!isEditing ? (
                 formData.cvUrl ? (
-                  <div className="flex items-center gap-3 p-3 bg-[#E8F4FD] rounded border border-[#B3D9F7]">
-                    <FileText size={18} className="text-[#0176D3] flex-shrink-0" />
+                  <div className="flex items-center gap-3 p-3 bg-blue-50 rounded border border-[#B3D9F7]">
+                    <FileText size={18} className="text-primary flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground">CV Document</p>
                       <p className="text-xs text-muted-foreground truncate">{formData.cvKey || "Resume uploaded"}</p>
@@ -262,8 +262,8 @@ export default function AdminExpertDetail() {
               ) : (
                 <div className="space-y-3">
                   {formData.cvUrl && (
-                    <div className="flex items-center gap-3 p-3 bg-[#E8F4FD] rounded border border-[#B3D9F7]">
-                      <FileText size={18} className="text-[#0176D3]" />
+                    <div className="flex items-center gap-3 p-3 bg-blue-50 rounded border border-[#B3D9F7]">
+                      <FileText size={18} className="text-primary" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium">Current CV</p>
                         <p className="text-xs text-muted-foreground truncate">{formData.cvKey}</p>
@@ -272,7 +272,7 @@ export default function AdminExpertDetail() {
                     </div>
                   )}
                   <Input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setSelectedCVFile(e.target.files?.[0] || null)} className="h-8 text-sm" />
-                  {selectedCVFile && <p className="text-xs text-[#2E844A] font-medium">✓ {selectedCVFile.name} selected</p>}
+                  {selectedCVFile && <p className="text-xs text-emerald-700 font-medium">✓ {selectedCVFile.name} selected</p>}
                   <p className="text-xs text-muted-foreground">PDF, DOC, DOCX · Max 10 MB</p>
                 </div>
               )}
@@ -295,8 +295,8 @@ export default function AdminExpertDetail() {
                 {employmentHistory.map((emp: any) => (
                   <div key={emp.id} className="px-5 py-3.5">
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded bg-[#FEF6E6] flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Briefcase size={14} className="text-[#DD7A01]" />
+                      <div className="w-8 h-8 rounded bg-amber-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Briefcase size={14} className="text-amber-600" />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-foreground">{emp.position}</p>
@@ -330,7 +330,7 @@ export default function AdminExpertDetail() {
                   <div key={edu.id} className="px-5 py-3.5">
                     <div className="flex items-start gap-3">
                       <div className="w-8 h-8 rounded bg-[#F3F2FF] flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <GraduationCap size={14} className="text-[#5867E8]" />
+                        <GraduationCap size={14} className="text-violet-600" />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-foreground">{edu.degree}{edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ""}</p>
@@ -384,7 +384,7 @@ export default function AdminExpertDetail() {
                       <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Notes (Optional)</Label>
                       <Textarea className="mt-1.5 text-sm resize-none" placeholder="Notes for this project…" value={shortlistNotes} onChange={(e) => setShortlistNotes(e.target.value)} rows={3} />
                     </div>
-                    <Button onClick={handleShortlist} disabled={shortlistMutation.isPending || !selectedProject} className="w-full" style={{ background: "#0176D3" }}>
+                    <Button onClick={handleShortlist} disabled={shortlistMutation.isPending || !selectedProject} className="w-full" style={{ background: "var(--primary)" }}>
                       {shortlistMutation.isPending ? <><Loader2 size={14} className="animate-spin mr-2" />Shortlisting…</> : "Shortlist Expert"}
                     </Button>
                   </div>
@@ -402,10 +402,10 @@ export default function AdminExpertDetail() {
                   const isEditingThis = editingShortlistId === shortlist.id;
 
                   return (
-                    <div key={shortlist.id} className="px-5 py-4 hover:bg-[#F3F8FE] transition-colors">
+                    <div key={shortlist.id} className="px-5 py-4 hover:hover:bg-primary/5 transition-colors">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                          <button onClick={() => setLocation(`/admin/projects/${project?.id}`)} className="text-sm font-semibold text-[#0176D3] hover:underline">
+                          <button onClick={() => setLocation(`/admin/projects/${project?.id}`)} className="text-sm font-semibold text-primary hover:underline">
                             {project?.name}
                           </button>
                           <p className="text-xs text-muted-foreground mt-0.5">Client: {client?.name || "Unknown"}</p>
@@ -416,7 +416,7 @@ export default function AdminExpertDetail() {
                                   <SelectTrigger className="w-44 h-7 text-xs"><SelectValue /></SelectTrigger>
                                   <SelectContent>{SHORTLIST_STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                                 </Select>
-                                <Button size="sm" className="h-7 text-xs" style={{ background: "#0176D3" }} onClick={() => handleStatusChange(shortlist.id, editingStatus)} disabled={updateShortlistMutation.isPending}>
+                                <Button size="sm" className="h-7 text-xs" style={{ background: "var(--primary)" }} onClick={() => handleStatusChange(shortlist.id, editingStatus)} disabled={updateShortlistMutation.isPending}>
                                   {updateShortlistMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : "Save"}
                                 </Button>
                                 <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setEditingShortlistId(null); setEditingStatus(""); }}>Cancel</Button>
@@ -507,7 +507,7 @@ export default function AdminExpertDetail() {
               {expertQuery.data?.linkedinUrl && (
                 <div className="flex items-center gap-2 text-sm">
                   <Link2 size={13} className="text-muted-foreground flex-shrink-0" />
-                  <a href={expertQuery.data.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-[#0176D3] hover:underline truncate">
+                  <a href={expertQuery.data.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">
                     LinkedIn Profile
                   </a>
                 </div>
@@ -521,10 +521,10 @@ export default function AdminExpertDetail() {
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Resume / CV</h3>
               <button
                 onClick={() => setDocumentViewerOpen(true)}
-                className="w-full flex items-center gap-2 p-3 rounded bg-[#E8F4FD] border border-[#B3D9F7] hover:bg-[#D1EBFA] transition-colors"
+                className="w-full flex items-center gap-2 p-3 rounded bg-blue-50 border border-[#B3D9F7] hover:bg-[#D1EBFA] transition-colors"
               >
-                <FileText size={16} className="text-[#0176D3] flex-shrink-0" />
-                <span className="text-sm font-medium text-[#0176D3]">View CV</span>
+                <FileText size={16} className="text-primary flex-shrink-0" />
+                <span className="text-sm font-medium text-primary">View CV</span>
               </button>
             </div>
           )}
