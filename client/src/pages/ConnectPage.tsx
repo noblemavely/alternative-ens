@@ -248,14 +248,7 @@ export default function ConnectPage() {
           }}
         />
 
-        {/* Logo (inverted for dark bg) */}
-        <div className="relative">
-          <img
-            src={LOGO}
-            alt="AlterNatives"
-            className="h-8 w-auto object-contain brightness-0 invert opacity-80"
-          />
-        </div>
+        <div />
 
         {/* Main copy */}
         <div className="relative space-y-6">
@@ -313,7 +306,7 @@ export default function ConnectPage() {
         </div>
 
         {/* Quote */}
-        <div className="relative">
+        <div className="relative mt-4">
           <p className="text-white/30 text-xs italic leading-relaxed border-l-2 border-white/10 pl-3">
             "The right people are out there. The problem is — by the time you find them, the moment has passed."
           </p>
