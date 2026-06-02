@@ -119,7 +119,7 @@ export default function ConnectPage() {
                           Full Name <span className="text-red-400">*</span>
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Jane Smith" {...field} className="h-9 rounded-lg" />
+                          <Input placeholder="Priya Sharma" {...field} className="h-9 rounded-lg" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -134,7 +134,7 @@ export default function ConnectPage() {
                           Organization
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Acme Corp" {...field} className="h-9 rounded-lg" />
+                          <Input placeholder="Reliance Industries" {...field} className="h-9 rounded-lg" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -151,7 +151,7 @@ export default function ConnectPage() {
                         Email Address <span className="text-red-400">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="jane@company.com" {...field} className="h-9 rounded-lg" />
+                        <Input type="email" placeholder="priya@relianceindustries.com" {...field} className="h-9 rounded-lg" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
