@@ -295,3 +295,19 @@ export const projectActivityTimeline = mysqlTable("project_activity_timeline", {
 
 export type ProjectActivityTimeline = typeof projectActivityTimeline.$inferSelect;
 export type InsertProjectActivityTimeline = typeof projectActivityTimeline.$inferInsert;
+
+/**
+ * Leads table — public connect form submissions
+ */
+export const leads = mysqlTable("leads", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  organization: varchar("organization", { length: 255 }),
+  email: varchar("email", { length: 255 }).notNull(),
+  queryType: mysqlEnum("queryType", ["client", "advisor", "other"]).notNull(),
+  otherQuery: text("otherQuery"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Lead = typeof leads.$inferSelect;
+export type InsertLead = typeof leads.$inferInsert;

@@ -213,6 +213,25 @@ export default function AdminLogin() {
             </form>
           </Form>
 
+          {/* Credentials hint */}
+          <div className="mt-6 p-4 rounded-xl bg-secondary border border-border">
+            <p className="text-xs font-semibold text-foreground mb-2">Default credentials</p>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">
+                Email:{" "}
+                <code className="bg-white px-1.5 py-0.5 rounded-md border border-border text-[11px] font-mono text-foreground">
+                  admin@alternative.com
+                </code>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Password:{" "}
+                <code className="bg-white px-1.5 py-0.5 rounded-md border border-border text-[11px] font-mono text-foreground">
+                  admin123
+                </code>
+              </p>
+            </div>
+          </div>
+
           <p className="text-center text-xs text-muted-foreground mt-6">
             © {new Date().getFullYear()} AlterNatives · Expert Network Platform
           </p>

@@ -23,6 +23,8 @@ import EditAdminUser from "./pages/EditAdminUser";
 import ExpertPortal from "./pages/ExpertPortal";
 import ExpertProfileView from "./pages/ExpertProfileView";
 import AdminLogin from "./pages/AdminLogin";
+import AdminLeads from "./pages/AdminLeads";
+import ConnectPage from "./pages/ConnectPage";
 import TestPDF from "./pages/test-pdf";
 
 function Router() {
@@ -44,6 +46,8 @@ function Router() {
       <Route path={"/admin/add-client"} component={AddClient} />
       <Route path={"/admin/add-expert"} component={AddExpert} />
       <Route path={"/admin/add-project"} component={AddProject} />
+      <Route path={"/connect"} component={ConnectPage} />
+      <Route path={"/admin/leads"} component={AdminLeads} />
       <Route path={"/expert/register"} component={ExpertPortal} />
       <Route path={"/expert/profile/:id"} component={ExpertProfileView} />
       <Route path={"/test-pdf"} component={TestPDF} />

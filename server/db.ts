@@ -21,6 +21,9 @@ import {
   functions,
   adminUsers,
   projectActivityTimeline,
+  leads,
+  type Lead,
+  type InsertLead,
   type Client,
   type ClientContact,
   type Expert,
@@ -252,6 +255,18 @@ async function initializeSchema(pool: any) {
         FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE,
         INDEX idx_projectId (projectId),
         INDEX idx_timestamp (timestamp)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+      `CREATE TABLE IF NOT EXISTS leads (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        organization VARCHAR(255),
+        email VARCHAR(255) NOT NULL,
+        queryType ENUM('client', 'advisor', 'other') NOT NULL,
+        otherQuery TEXT,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        INDEX idx_email (email),
+        INDEX idx_createdAt (createdAt)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
     ];
 
@@ -1585,4 +1600,17 @@ export async function getProjectActivityTimeline(projectId: number): Promise<Act
   }));
 
   return events.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+}
+
+// ─── Leads ───────────────────────────────────────────────────────────────────
+
+export async function createLead(data: InsertLead): Promise<number> {
+  const db = await getDb();
+  const result = await db.insert(leads).values(data);
+  return (result[0] as any).insertId;
+}
+
+export async function listLeads(): Promise<Lead[]> {
+  const db = await getDb();
+  return db.select().from(leads).orderBy(leads.createdAt);
 }

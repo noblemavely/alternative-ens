@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
+  Inbox,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
   { label: "Clients",   icon: Users,           href: "/admin/clients" },
   { label: "Experts",   icon: UserCircle2,     href: "/admin/experts" },
   { label: "Projects",  icon: Briefcase,       href: "/admin/projects" },
+  { label: "Leads",     icon: Inbox,           href: "/admin/leads" },
 ];
 
 function getPageTitle(pathname: string): string {
@@ -36,6 +38,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith("/admin/experts"))  return "Experts";
   if (pathname.startsWith("/admin/projects")) return "Projects";
   if (pathname.startsWith("/admin/settings")) return "Settings";
+  if (pathname.startsWith("/admin/leads"))    return "Leads";
   return "Admin";
 }
 
