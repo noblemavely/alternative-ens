@@ -1,6 +1,6 @@
 import AdminLayout from "@/components/AdminLayout";
 import { trpc } from "@/lib/trpc";
-import { Inbox, Mail, Building2, Calendar, Tag } from "lucide-react";
+import { Inbox, Mail, Building2, Calendar } from "lucide-react";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 
 const QUERY_COLORS: Record<string, string> = {
@@ -62,6 +62,8 @@ export default function AdminLeads() {
                     <th>Organization</th>
                     <th>Query Type</th>
                     <th>Details</th>
+                    <th>Source</th>
+                    <th>Campaign</th>
                     <th>Submitted</th>
                   </tr>
                 </thead>
@@ -94,6 +96,22 @@ export default function AdminLeads() {
                           <span className="text-muted-foreground text-xs">—</span>
                         )}
                       </td>
+                      <td>
+                        {lead.utmSource ? (
+                          <div className="space-y-0.5">
+                            <span className="badge-info text-[10px]">{lead.utmSource}</span>
+                            {lead.utmMedium && <p className="text-[10px] text-muted-foreground">{lead.utmMedium}</p>}
+                          </div>
+                        ) : <span className="text-muted-foreground text-xs">—</span>}
+                      </td>
+                      <td>
+                        {lead.utmCampaign ? (
+                          <div className="space-y-0.5">
+                            <p className="text-xs font-medium text-foreground">{lead.utmCampaign}</p>
+                            {lead.utmTerm && <p className="text-[10px] text-muted-foreground">{lead.utmTerm}</p>}
+                          </div>
+                        ) : <span className="text-muted-foreground text-xs">—</span>}
+                      </td>
                       <td className="muted text-xs whitespace-nowrap">{formatDate(lead.createdAt)}</td>
                     </tr>
                   ))}
@@ -123,6 +141,14 @@ export default function AdminLeads() {
                   </a>
                   {lead.queryType === "other" && lead.otherQuery && (
                     <p className="text-xs text-muted-foreground bg-secondary rounded-lg p-3">{lead.otherQuery}</p>
+                  )}
+                  {(lead.utmSource || lead.utmCampaign) && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {lead.utmSource   && <span className="badge-info">{lead.utmSource}</span>}
+                      {lead.utmMedium   && <span className="badge-neutral">{lead.utmMedium}</span>}
+                      {lead.utmCampaign && <span className="badge-purple">{lead.utmCampaign}</span>}
+                      {lead.utmTerm     && <span className="badge-neutral">{lead.utmTerm}</span>}
+                    </div>
                   )}
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <Calendar size={11} /> {formatDate(lead.createdAt)}

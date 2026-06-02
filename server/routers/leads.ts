@@ -19,6 +19,11 @@ export const leadsRouter = router({
         email: z.string().email("Valid email required"),
         queryType: z.enum(["client", "advisor", "other"]),
         otherQuery: z.string().optional(),
+        utmSource:   z.string().optional(),
+        utmMedium:   z.string().optional(),
+        utmCampaign: z.string().optional(),
+        utmContent:  z.string().optional(),
+        utmTerm:     z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -29,6 +34,11 @@ export const leadsRouter = router({
         email: input.email,
         queryType: input.queryType,
         otherQuery: input.otherQuery || null,
+        utmSource:   input.utmSource   || null,
+        utmMedium:   input.utmMedium   || null,
+        utmCampaign: input.utmCampaign || null,
+        utmContent:  input.utmContent  || null,
+        utmTerm:     input.utmTerm     || null,
       });
 
       // Send notification email
@@ -92,6 +102,18 @@ export const leadsRouter = router({
         <div class="label">Query Details</div>
         <div class="other-box">${input.otherQuery}</div>
       </div>
+      ` : ""}
+
+      ${(input.utmSource || input.utmMedium || input.utmCampaign || input.utmContent || input.utmTerm) ? `
+      <hr class="divider">
+      <div class="label" style="margin-bottom:12px">UTM Attribution</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        ${input.utmSource   ? `<tr><td style="color:#64748B;padding:4px 0;width:120px">utm_source</td><td style="color:#1E293B;font-weight:500">${input.utmSource}</td></tr>`   : ""}
+        ${input.utmMedium   ? `<tr><td style="color:#64748B;padding:4px 0">utm_medium</td><td style="color:#1E293B;font-weight:500">${input.utmMedium}</td></tr>`   : ""}
+        ${input.utmCampaign ? `<tr><td style="color:#64748B;padding:4px 0">utm_campaign</td><td style="color:#1E293B;font-weight:500">${input.utmCampaign}</td></tr>` : ""}
+        ${input.utmContent  ? `<tr><td style="color:#64748B;padding:4px 0">utm_content</td><td style="color:#1E293B;font-weight:500">${input.utmContent}</td></tr>`  : ""}
+        ${input.utmTerm     ? `<tr><td style="color:#64748B;padding:4px 0">utm_term</td><td style="color:#1E293B;font-weight:500">${input.utmTerm}</td></tr>`     : ""}
+      </table>
       ` : ""}
     </div>
     <div class="footer">

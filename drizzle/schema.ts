@@ -306,6 +306,11 @@ export const leads = mysqlTable("leads", {
   email: varchar("email", { length: 255 }).notNull(),
   queryType: mysqlEnum("queryType", ["client", "advisor", "other"]).notNull(),
   otherQuery: text("otherQuery"),
+  utmSource:   varchar("utm_source",   { length: 255 }),
+  utmMedium:   varchar("utm_medium",   { length: 255 }),
+  utmCampaign: varchar("utm_campaign", { length: 255 }),
+  utmContent:  varchar("utm_content",  { length: 255 }),
+  utmTerm:     varchar("utm_term",     { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

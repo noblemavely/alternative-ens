@@ -264,10 +264,25 @@ async function initializeSchema(pool: any) {
         email VARCHAR(255) NOT NULL,
         queryType ENUM('client', 'advisor', 'other') NOT NULL,
         otherQuery TEXT,
+        utm_source   VARCHAR(255),
+        utm_medium   VARCHAR(255),
+        utm_campaign VARCHAR(255),
+        utm_content  VARCHAR(255),
+        utm_term     VARCHAR(255),
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
         INDEX idx_email (email),
-        INDEX idx_createdAt (createdAt)
+        INDEX idx_createdAt (createdAt),
+        INDEX idx_utm_campaign (utm_campaign),
+        INDEX idx_utm_source (utm_source)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+      /* Add UTM columns to existing leads table (safe — IF NOT EXISTS via IGNORE) */
+      `ALTER TABLE leads
+        ADD COLUMN IF NOT EXISTS utm_source   VARCHAR(255) AFTER otherQuery,
+        ADD COLUMN IF NOT EXISTS utm_medium   VARCHAR(255) AFTER utm_source,
+        ADD COLUMN IF NOT EXISTS utm_campaign VARCHAR(255) AFTER utm_medium,
+        ADD COLUMN IF NOT EXISTS utm_content  VARCHAR(255) AFTER utm_campaign,
+        ADD COLUMN IF NOT EXISTS utm_term     VARCHAR(255) AFTER utm_content`,
     ];
 
     // Execute all table creation statements
