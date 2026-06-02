@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,7 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, ArrowRight, Loader2, Clock } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
+import { useLocation } from "wouter";
+
+declare function gtag(...args: any[]): void;
 
 const schema = z.object({
   name:         z.string().min(1, "Name is required"),
@@ -47,7 +49,7 @@ function useUtmParams() {
 }
 
 export default function ConnectPage() {
-  const [submitted, setSubmitted] = useState(false);
+  const [, navigate] = useLocation();
   const submitMutation = trpc.leads.submit.useMutation();
   const utm = useUtmParams();
 
@@ -68,7 +70,16 @@ export default function ConnectPage() {
         otherQuery: data.queryType === "other" ? data.otherQuery : undefined,
         ...utm,
       });
-      setSubmitted(true);
+      // Fire GA4 conversion event
+      if (typeof gtag !== "undefined") {
+        gtag("event", "generate_lead", {
+          event_category: "Lead Generation",
+          event_label: "Connect Form Submission",
+          value: 1,
+        });
+      }
+      // Navigate to dedicated thank-you URL for GA conversion tracking
+      navigate("/connect/thank-you");
     } catch (e: any) {
       toast.error(e.message || "Something went wrong. Please try again.");
     }
@@ -89,23 +100,7 @@ export default function ConnectPage() {
           />
         </div>
 
-        {submitted ? (
-          /* Success */
-          <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
-            <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center mb-5">
-              <CheckCircle2 size={28} className="text-emerald-600" />
-            </div>
-            <h2 className="text-xl font-bold text-foreground mb-2 tracking-tight">We'll be in touch soon</h2>
-            <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed">
-              Thanks for reaching out. Our team typically responds within one business day.
-            </p>
-            <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
-              <Clock size={12} />
-              <span>Usually within 24 hours</span>
-            </div>
-          </div>
-        ) : (
-          <div className="flex-1">
+        <div className="flex-1">
             <div className="mb-6">
               <h1 className="text-2xl font-bold text-foreground tracking-tight mb-1">Connect with us</h1>
               <p className="text-sm text-muted-foreground">Tell us a bit about yourself and what you're looking for.</p>
@@ -229,8 +224,7 @@ export default function ConnectPage() {
                 </p>
               </form>
             </Form>
-          </div>
-        )}
+        </div>
 
         {/* Footer */}
         <p className="mt-8 text-[11px] text-muted-foreground">
