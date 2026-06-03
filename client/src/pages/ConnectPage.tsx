@@ -173,7 +173,12 @@ export default function ConnectPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="client">Become an AlterNatives Client</SelectItem>
+                          <SelectItem value="client">
+                            <div className="py-0.5">
+                              <p>Become an AlterNatives Client</p>
+                              <p className="text-[11px] text-muted-foreground mt-0.5 font-normal">Our advisor will reach out to you.</p>
+                            </div>
+                          </SelectItem>
                           <SelectItem value="advisor">Become an Advisor on AlterNatives</SelectItem>
                           <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
