@@ -174,7 +174,7 @@ export default function ConnectPage() {
                         </FormControl>
                         <SelectContent className="w-[var(--radix-select-trigger-width)]">
                           <SelectItem value="client">Engage with an Advisor via AlterNatives</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
+                          <SelectItem value="other">Any other query</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
