@@ -168,11 +168,11 @@ export default function ConnectPage() {
                       </FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger className="h-9 rounded-lg">
+                          <SelectTrigger className="h-9 rounded-lg w-full min-w-0">
                             <SelectValue placeholder="Select an option…" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="w-[var(--radix-select-trigger-width)]">
                           <SelectItem value="client">
                             <div className="py-0.5">
                               <p>Become an AlterNatives Client</p>
