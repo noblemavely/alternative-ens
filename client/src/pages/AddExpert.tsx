@@ -10,9 +10,8 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
+import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import { EmploymentHistoryForm } from "@/components/EmploymentHistoryForm";
-import { EducationHistoryForm } from "@/components/EducationHistoryForm";
 import ResumeParserForm from "@/components/ResumeParserForm";
 
 const expertSchema = z.object({
@@ -30,9 +29,7 @@ type ExpertFormData = z.infer<typeof expertSchema>;
 
 export default function AddExpert() {
   const [, navigate] = useLocation();
-  const [employmentHistory, setEmploymentHistory] = require("react").useState<any[]>([]);
-  const [educationHistory, setEducationHistory] = require("react").useState<any[]>([]);
-  const [resumeFile, setResumeFile] = require("react").useState<File | null>(null);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
 
   const createMutation = trpc.experts.create.useMutation();
   const sectorsQuery = trpc.sectors.list.useQuery();
@@ -63,8 +60,6 @@ export default function AddExpert() {
         sector: data.sector,
         function: data.function,
         biography: data.biography,
-        employment: employmentHistory,
-        education: educationHistory,
       });
       toast.success("Expert created successfully");
       navigate("/admin/experts");
@@ -239,30 +234,10 @@ export default function AddExpert() {
                 />
 
                 <div className="pt-6 border-t border-slate-200">
-                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Employment History</h3>
-                  <EmploymentHistoryForm
-                    value={employmentHistory}
-                    onChange={setEmploymentHistory}
-                  />
-                </div>
-
-                <div className="pt-6 border-t border-slate-200">
-                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Education History</h3>
-                  <EducationHistoryForm
-                    value={educationHistory}
-                    onChange={setEducationHistory}
-                  />
-                </div>
-
-                <div className="pt-6 border-t border-slate-200">
                   <h3 className="text-lg font-semibold text-slate-900 mb-4">Resume/CV (Optional)</h3>
                   <ResumeParserForm
-                    onParsed={(data, resetForm) => {
-                      if (resetForm) {
-                        setEmploymentHistory(data.employment || []);
-                        setEducationHistory(data.education || []);
-                      }
-                      setResumeFile(data.file || null);
+                    onParsed={(data, file) => {
+                      setResumeFile(file || null);
                     }}
                     onSkip={() => setResumeFile(null)}
                   />

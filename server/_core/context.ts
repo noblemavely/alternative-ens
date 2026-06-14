@@ -26,8 +26,10 @@ export async function createContext(
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
-      adminUser = decoded;
-      console.log("[Context] Admin user verified:", decoded.email);
+      if (typeof decoded === "object" && decoded !== null) {
+        adminUser = decoded;
+        console.log("[Context] Admin user verified:", (decoded as any).email);
+      }
     } catch (error) {
       console.log("[Context] Token verification failed:", (error as Error).message);
     }

@@ -285,7 +285,7 @@ export default function AdminExpertDetail() {
               <EmploymentHistoryForm
                 entries={employmentHistory.map((emp: any) => ({ id: emp.id?.toString(), company: emp.companyName, position: emp.position, startDate: emp.startDate, endDate: emp.endDate, currentlyWorking: emp.isCurrent, description: emp.description }))}
                 onAdd={(e) => addEmploymentMutation.mutate({ expertId: expertId!, companyName: e.company, position: e.position, startDate: e.startDate, endDate: e.endDate || undefined, isCurrent: e.currentlyWorking, description: e.description || undefined })}
-                onUpdate={(e) => { if (e.id) updateEmploymentMutation.mutate({ id: e.id, company: e.company, position: e.position, startDate: e.startDate, endDate: e.endDate, currentlyWorking: e.currentlyWorking, description: e.description }); }}
+                onUpdate={(e) => { if (e.id) updateEmploymentMutation.mutate({ id: parseInt(e.id), company: e.company, position: e.position, startDate: e.startDate, endDate: e.endDate, currentlyWorking: e.currentlyWorking, description: e.description }); }}
                 onDelete={(id) => deleteEmploymentMutation.mutate({ id: parseInt(id) })}
               />
             </SectionCard>
@@ -319,7 +319,7 @@ export default function AdminExpertDetail() {
               <EducationHistoryForm
                 entries={educationHistory.map((edu: any) => ({ id: edu.id?.toString(), school: edu.schoolName, degree: edu.degree, field: edu.fieldOfStudy, startDate: edu.startDate, endDate: edu.endDate, description: edu.description }))}
                 onAdd={(e) => addEducationMutation.mutate({ expertId: expertId!, schoolName: e.school, degree: e.degree, fieldOfStudy: e.field, startDate: e.startDate, endDate: e.endDate || undefined, description: e.description || undefined })}
-                onUpdate={(e) => { if (e.id) updateEducationMutation.mutate({ id: e.id, school: e.school, degree: e.degree, fieldOfStudy: e.field, startDate: e.startDate, endDate: e.endDate }); }}
+                onUpdate={(e) => { if (e.id) updateEducationMutation.mutate({ id: parseInt(e.id), school: e.school, degree: e.degree, fieldOfStudy: e.field, startDate: e.startDate, endDate: e.endDate }); }}
                 onDelete={(id) => deleteEducationMutation.mutate({ id: parseInt(id) })}
               />
             </SectionCard>

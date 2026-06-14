@@ -13,9 +13,13 @@ import { useLocation } from "wouter";
 
 const clientSchema = z.object({
   name: z.string().min(1, "Client name is required"),
+  email: z.string().email("Valid email required"),
   phone: z.string().optional(),
+  companyName: z.string().optional(),
   companyWebsite: z.string().optional(),
+  contactPerson: z.string().optional(),
   sector: z.string().optional(),
+  industry: z.string().optional(),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
@@ -29,9 +33,13 @@ export default function AddClient() {
     resolver: zodResolver(clientSchema),
     defaultValues: {
       name: "",
+      email: "",
       phone: "",
+      companyName: "",
       companyWebsite: "",
+      contactPerson: "",
       sector: "",
+      industry: "",
     },
   });
 
@@ -39,9 +47,13 @@ export default function AddClient() {
     try {
       await createMutation.mutateAsync({
         name: data.name,
+        email: data.email,
         phone: data.phone,
+        companyName: data.companyName,
         companyWebsite: data.companyWebsite,
+        contactPerson: data.contactPerson,
         sector: data.sector,
+        industry: data.industry,
       });
       toast.success("Client created successfully");
       navigate("/admin/clients");

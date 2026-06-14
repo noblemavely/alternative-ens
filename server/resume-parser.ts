@@ -37,10 +37,8 @@ export interface ParsedResumeData {
  */
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
-    const parser = new pdfParse({ data: buffer });
-    await parser.load();
-    const textResult = await parser.getText();
-    const text = textResult.text || '';
+    const data = await (pdfParse as any)(buffer);
+    const text = data.text || '';
     console.log('[Resume Parser] Successfully extracted text from PDF, length:', text.length);
     return text;
   } catch (error) {

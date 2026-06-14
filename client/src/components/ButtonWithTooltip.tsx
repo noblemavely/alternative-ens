@@ -1,4 +1,5 @@
-import { Button, ButtonProps } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { VariantProps } from "class-variance-authority";
 import {
   Tooltip,
   TooltipContent,
@@ -7,7 +8,9 @@ import {
 } from "@/components/ui/tooltip";
 import { ReactNode } from "react";
 
-interface ButtonWithTooltipProps extends ButtonProps {
+interface ButtonWithTooltipProps
+  extends React.ComponentPropsWithoutRef<"button">,
+    VariantProps<typeof buttonVariants> {
   tooltip: string;
   children: ReactNode;
 }
@@ -15,13 +18,15 @@ interface ButtonWithTooltipProps extends ButtonProps {
 export function ButtonWithTooltip({
   tooltip,
   children,
+  variant,
+  size,
   ...props
 }: ButtonWithTooltipProps) {
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button {...props}>{children}</Button>
+          <Button variant={variant} size={size} {...props}>{children}</Button>
         </TooltipTrigger>
         <TooltipContent>
           <p>{tooltip}</p>

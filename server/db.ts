@@ -36,6 +36,8 @@ import {
   type Function,
   type AdminUser,
   type ProjectActivityTimeline,
+  type ExpertVerification,
+  type InsertExpertVerification,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -822,11 +824,18 @@ export async function deleteExpertEducation(id: number) {
 
 // ============ EXPERT VERIFICATION FUNCTIONS ============
 
-export async function createExpertVerification(data: Omit<typeof expertVerification.$inferInsert, "id" | "createdAt">) {
+export async function createExpertVerification(data: { expertId: number; token: string; expiresAt: Date; createdAt?: Date }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return db.insert(expertVerification).values(data);
+  const insertData = {
+    expertId: data.expertId,
+    token: data.token,
+    expiresAt: data.expiresAt,
+    createdAt: data.createdAt || new Date(),
+  };
+
+  return db.insert(expertVerification).values(insertData);
 }
 
 export async function getVerificationByToken(token: string) {
@@ -1621,11 +1630,13 @@ export async function getProjectActivityTimeline(projectId: number): Promise<Act
 
 export async function createLead(data: InsertLead): Promise<number> {
   const db = await getDb();
+  if (!db) throw new Error("Database not available");
   const result = await db.insert(leads).values(data);
   return (result[0] as any).insertId;
 }
 
 export async function listLeads(): Promise<Lead[]> {
   const db = await getDb();
+  if (!db) throw new Error("Database not available");
   return db.select().from(leads).orderBy(leads.createdAt);
 }

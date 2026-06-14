@@ -216,21 +216,25 @@ export const appRouter = router({
       .input(
         z.object({
           name: z.string(),
+          email: z.string().email(),
           phone: z.string().optional(),
           companyName: z.string().optional(),
           companyWebsite: z.string().optional(),
           contactPerson: z.string().optional(),
           sector: z.string().optional(),
+          industry: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
         const clientData = {
           name: input.name,
+          email: input.email,
           phone: input.phone ?? null,
           companyName: input.companyName ?? null,
           companyWebsite: input.companyWebsite ?? null,
           contactPerson: input.contactPerson ?? null,
           sector: input.sector ?? null,
+          industry: input.industry ?? null,
         };
         const client = await createClient(clientData);
         return client;
@@ -560,6 +564,7 @@ export const appRouter = router({
           targetPersona: input.targetPersona ?? null,
           rate: input.rate ? input.rate.toString() : null,
           currency: input.currency || "USD",
+          status: "Active" as const,
         };
         const project = await createProject(projectData);
         return project;
@@ -1081,19 +1086,19 @@ export const appRouter = router({
     create: protectedProcedure
       .input(z.object({ name: z.string(), description: z.string().optional() }))
       .mutation(async ({ input, ctx }) => {
-        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        if (!ctx.user || ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
         return createSector(input.name, input.description);
       }),
     update: protectedProcedure
       .input(z.object({ id: z.number(), name: z.string(), description: z.string().optional() }))
       .mutation(async ({ input, ctx }) => {
-        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        if (!ctx.user || ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
         await updateSector(input.id, input.name, input.description);
       }),
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input, ctx }) => {
-        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        if (!ctx.user || ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
         await deleteSector(input.id);
       }),
   }),
@@ -1105,19 +1110,19 @@ export const appRouter = router({
     create: protectedProcedure
       .input(z.object({ name: z.string(), description: z.string().optional() }))
       .mutation(async ({ input, ctx }) => {
-        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        if (!ctx.user || ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
         return createFunction(input.name, input.description);
       }),
     update: protectedProcedure
       .input(z.object({ id: z.number(), name: z.string(), description: z.string().optional() }))
       .mutation(async ({ input, ctx }) => {
-        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        if (!ctx.user || ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
         await updateFunction(input.id, input.name, input.description);
       }),
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input, ctx }) => {
-        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        if (!ctx.user || ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
         await deleteFunction(input.id);
       }),
   }),
