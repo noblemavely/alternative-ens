@@ -88,6 +88,9 @@ export default function AdminClients() {
       setOpen(false);
       setEditingId(null);
       clientsQuery.refetch();
+      // Also refetch contacts and projects to update project counts
+      contactsQuery.refetch();
+      projectsQuery.refetch();
     } catch (error) {
       toast.error("Failed to save client");
     }
@@ -110,6 +113,9 @@ export default function AdminClients() {
       await deleteMutation.mutateAsync({ id: clientToDelete.id });
       toast.success("Client deleted successfully");
       clientsQuery.refetch();
+      // Also refetch contacts and projects to update project counts
+      contactsQuery.refetch();
+      projectsQuery.refetch();
       setDeleteDialogOpen(false);
       setClientToDelete(null);
     } catch (error) {
@@ -193,47 +199,55 @@ export default function AdminClients() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredClients.map((client: any) => {
-                    const clientContactIds = contactsQuery.data?.filter((c: any) => c.clientId === client.id).map((c: any) => c.id) || [];
-                    const projectCount = projectsQuery.data?.filter((p: any) => clientContactIds.includes(p.clientContactId)).length || 0;
-                    return (
-                      <tr
-                        key={client.id}
-                        className="cursor-pointer"
-                        onClick={() => navigate(`/admin/clients/${client.id}`)}
-                      >
-                        <td className="font-medium text-primary hover:underline">{client.name}</td>
-                        <td className="muted">{client.sector || "—"}</td>
-                        <td className="muted">{projectCount}</td>
-                        <td className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <ButtonWithTooltip
-                              size="sm"
-                              variant="ghost"
-                              tooltip="Edit this client"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/admin/clients/${client.id}`);
-                              }}
-                            >
-                              <Edit2 size={14} />
-                            </ButtonWithTooltip>
-                            <ButtonWithTooltip
-                              size="sm"
-                              variant="ghost"
-                              tooltip="Delete this client"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(client.id, client.name);
-                              }}
-                            >
-                              <Trash2 size={14} className="text-destructive" />
-                            </ButtonWithTooltip>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {contactsQuery.isLoading || projectsQuery.isLoading ? (
+                    <>
+                      <TableRowSkeleton columns={4} />
+                      <TableRowSkeleton columns={4} />
+                      <TableRowSkeleton columns={4} />
+                    </>
+                  ) : (
+                    filteredClients.map((client: any) => {
+                      const clientContactIds = contactsQuery.data?.filter((c: any) => c.clientId === client.id).map((c: any) => c.id) || [];
+                      const projectCount = projectsQuery.data?.filter((p: any) => clientContactIds.includes(p.clientContactId)).length || 0;
+                      return (
+                        <tr
+                          key={client.id}
+                          className="cursor-pointer"
+                          onClick={() => navigate(`/admin/clients/${client.id}`)}
+                        >
+                          <td className="font-medium text-primary hover:underline">{client.name}</td>
+                          <td className="muted">{client.sector || "—"}</td>
+                          <td className="muted">{projectCount}</td>
+                          <td className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <ButtonWithTooltip
+                                size="sm"
+                                variant="ghost"
+                                tooltip="Edit this client"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/admin/clients/${client.id}`);
+                                }}
+                              >
+                                <Edit2 size={14} />
+                              </ButtonWithTooltip>
+                              <ButtonWithTooltip
+                                size="sm"
+                                variant="ghost"
+                                tooltip="Delete this client"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(client.id, client.name);
+                                }}
+                              >
+                                <Trash2 size={14} className="text-destructive" />
+                              </ButtonWithTooltip>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
