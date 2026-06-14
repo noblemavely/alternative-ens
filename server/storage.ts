@@ -7,7 +7,8 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadsDir = path.join(__dirname, '../uploads');
+// Use consistent path: resolve from process.cwd() to work correctly in both dev and production
+const uploadsDir = path.join(process.cwd(), 'uploads');
 
 // Ensure uploads directory exists
 if (!fs.existsSync(uploadsDir)) {
