@@ -27,6 +27,7 @@ import AdminLeads from "./pages/AdminLeads";
 import ConnectPage from "./pages/ConnectPage";
 import ConnectThankYou from "./pages/ConnectThankYou";
 import TestPDF from "./pages/test-pdf";
+import VerifyEmail from "./pages/VerifyEmail";
 
 function Router() {
   return (
@@ -50,6 +51,7 @@ function Router() {
       <Route path={"/connect"} component={ConnectPage} />
       <Route path={"/connect/thank-you"} component={ConnectThankYou} />
       <Route path={"/admin/leads"} component={AdminLeads} />
+      <Route path={"/verify-email"} component={VerifyEmail} />
       <Route path={"/expert/register"} component={ExpertPortal} />
       <Route path={"/expert/profile/:id"} component={ExpertProfileView} />
       <Route path={"/test-pdf"} component={TestPDF} />
