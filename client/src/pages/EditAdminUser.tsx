@@ -8,6 +8,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import AdminLayout from "@/components/AdminLayout";
 
 export default function EditAdminUser() {
   const [, params] = useRoute("/admin/users/:id/edit");
@@ -62,8 +63,9 @@ export default function EditAdminUser() {
   if (!userQuery.data) return <div className="p-6">Admin user not found</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <AdminLayout>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
+        <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/users")}>
             <ArrowLeft size={20} />
@@ -113,7 +115,8 @@ export default function EditAdminUser() {
             </Button>
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }

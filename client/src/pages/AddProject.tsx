@@ -12,6 +12,7 @@ import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
 import { POPULAR_CURRENCIES } from "@/shared/currencies";
+import AdminLayout from "@/components/AdminLayout";
 
 const projectSchema = z.object({
   name: z.string().min(1, "Project name is required"),
@@ -60,8 +61,9 @@ export default function AddProject() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <AdminLayout>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
+        <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/projects")}>
@@ -215,7 +217,8 @@ export default function AddProject() {
             </Form>
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }

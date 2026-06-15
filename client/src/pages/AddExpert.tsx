@@ -15,6 +15,7 @@ import { useState } from "react";
 import { EmploymentHistoryForm } from "@/components/EmploymentHistoryForm";
 import { EducationHistoryForm } from "@/components/EducationHistoryForm";
 import ResumeParserForm from "@/components/ResumeParserForm";
+import AdminLayout from "@/components/AdminLayout";
 
 const expertSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -93,8 +94,9 @@ export default function AddExpert() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <AdminLayout>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
+        <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/experts")}>
@@ -323,7 +325,8 @@ export default function AddExpert() {
             </Form>
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
