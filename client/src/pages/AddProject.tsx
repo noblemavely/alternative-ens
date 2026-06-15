@@ -19,7 +19,7 @@ const projectSchema = z.object({
   clientId: z.string().min(1, "Client is required"),
   clientContactId: z.string().min(1, "Client contact is required"),
   projectType: z.string().min(1, "Project type is required"),
-  hourlyRate: z.string().optional(),
+  rate: z.string().optional(),
 });
 
 type ProjectFormData = z.infer<typeof projectSchema>;
@@ -39,7 +39,7 @@ export default function AddProject() {
       clientId: "",
       clientContactId: "",
       projectType: "",
-      hourlyRate: "",
+      rate: "",
     },
   });
 
@@ -50,7 +50,7 @@ export default function AddProject() {
         description: data.description,
         clientContactId: parseInt(data.clientContactId),
         projectType: data.projectType as "Call" | "Advisory" | "ID",
-        hourlyRate: data.hourlyRate ? parseFloat(data.hourlyRate) : undefined,
+        rate: data.rate ? parseFloat(data.rate) : undefined,
       });
       toast.success("Project created successfully");
       navigate("/admin/projects");
@@ -177,10 +177,10 @@ export default function AddProject() {
 
                 <FormField
                   control={form.control}
-                  name="hourlyRate"
+                  name="rate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Hourly Rate</FormLabel>
+                      <FormLabel>Rate</FormLabel>
                       <FormControl>
                         <Input type="text" placeholder="100" {...field} />
                       </FormControl>

@@ -174,7 +174,7 @@ export default function AdminProjects() {
                             variant="ghost"
                             size="sm"
                             tooltip="Edit this project"
-                            onClick={(e) => { e.stopPropagation(); navigate(`/admin/projects/${project.id}`); }}
+                            onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); navigate(`/admin/projects/${project.id}`); }}
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </ButtonWithTooltip>
@@ -182,7 +182,7 @@ export default function AdminProjects() {
                             variant="ghost"
                             size="sm"
                             tooltip="Delete this project"
-                            onClick={(e) => { e.stopPropagation(); handleDelete(project.id, project.name); }}
+                            onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); handleDelete(project.id, project.name); }}
                           >
                             <Trash2 className="w-3.5 h-3.5 text-destructive" />
                           </ButtonWithTooltip>

@@ -17,7 +17,7 @@ const schema = z.object({
   name:         z.string().min(1, "Name is required"),
   organization: z.string().optional(),
   email:        z.string().email("Please enter a valid email"),
-  queryType:    z.enum(["client", "advisor", "other"], { required_error: "Please select a query type" }),
+  queryType:    z.enum(["client", "advisor", "other"]),
   otherQuery:   z.string().optional(),
 });
 type FormData = z.infer<typeof schema>;

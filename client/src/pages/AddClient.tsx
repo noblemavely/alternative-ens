@@ -13,6 +13,7 @@ import { useLocation } from "wouter";
 
 const clientSchema = z.object({
   name: z.string().min(1, "Client name is required"),
+  email: z.string().email("Valid email required"),
   phone: z.string().optional(),
   companyWebsite: z.string().optional(),
   sector: z.string().optional(),
@@ -29,6 +30,7 @@ export default function AddClient() {
     resolver: zodResolver(clientSchema),
     defaultValues: {
       name: "",
+      email: "",
       phone: "",
       companyWebsite: "",
       sector: "",
@@ -39,6 +41,7 @@ export default function AddClient() {
     try {
       await createMutation.mutateAsync({
         name: data.name,
+        email: data.email,
         phone: data.phone,
         companyWebsite: data.companyWebsite,
         sector: data.sector,
@@ -81,6 +84,20 @@ export default function AddClient() {
                       <FormLabel>Client Name *</FormLabel>
                       <FormControl>
                         <Input placeholder="TechCorp Inc" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email *</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="contact@techcorp.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

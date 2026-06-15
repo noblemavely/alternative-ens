@@ -1,4 +1,5 @@
-import { Button, ButtonProps } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import type { VariantProps } from "class-variance-authority";
 import {
   Tooltip,
   TooltipContent,
@@ -6,6 +7,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ReactNode } from "react";
+
+type ButtonProps = React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean;
+  };
 
 interface ButtonWithTooltipProps extends ButtonProps {
   tooltip: string;
