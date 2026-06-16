@@ -22,6 +22,7 @@ import {
   getExperts,
   getExpertById,
   getExpertByEmail,
+  getExpertByEmailOrPhone,
   updateExpert,
   deleteExpert,
   searchExperts,
@@ -363,10 +364,20 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         try {
-          const existing = await getExpertByEmail(input.email);
           const { phone, firstName, lastName, sector, function: fn, biography, linkedinUrl, cvUrl, cvKey } = input;
-          
+
+          // Check for duplicate by email or phone
+          const existing = await getExpertByEmailOrPhone(input.email, phone);
+
           if (existing) {
+            // Check if this is the same expert (by email) or a different one
+            if (existing.email !== input.email) {
+              // Different expert with same phone
+              throw new TRPCError({
+                code: "CONFLICT",
+                message: "An expert with this phone number already exists. Please use a different phone number.",
+              });
+            }
             // Update existing expert (from email verification flow)
             console.log(`[submitProfile] Updating expert ${existing.id}`);
             await updateExpert(existing.id, {
@@ -428,8 +439,14 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const existing = await getExpertByEmail(input.email);
-        if (existing) throw new TRPCError({ code: "CONFLICT", message: "Expert already exists" });
+        const existing = await getExpertByEmailOrPhone(input.email, input.phone);
+        if (existing) {
+          if (existing.email === input.email) {
+            throw new TRPCError({ code: "CONFLICT", message: "Expert with this email already exists" });
+          } else {
+            throw new TRPCError({ code: "CONFLICT", message: "Expert with this phone number already exists" });
+          }
+        }
         const { phone, firstName, lastName, sector, function: fn, biography, linkedinUrl, cvUrl, cvKey } = input;
         await createExpert({
           email: input.email,

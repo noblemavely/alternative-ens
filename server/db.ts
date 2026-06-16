@@ -530,6 +530,19 @@ export async function getExpertByEmail(email: string) {
   return result.length > 0 ? result[0] : null;
 }
 
+export async function getExpertByEmailOrPhone(email: string, phone?: string | null) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const conditions = [eq(experts.email, email)];
+  if (phone) {
+    conditions.push(eq(experts.phone, phone));
+  }
+
+  const result = await db.select().from(experts).where(or(...conditions)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
 export async function updateExpert(id: number, data: Partial<Omit<Expert, "id" | "createdAt" | "updatedAt">>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
