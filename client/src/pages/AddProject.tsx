@@ -12,6 +12,7 @@ import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
 import { POPULAR_CURRENCIES } from "@/shared/currencies";
+import AdminLayout from "@/components/AdminLayout";
 
 const projectSchema = z.object({
   name: z.string().min(1, "Project name is required"),
@@ -19,7 +20,7 @@ const projectSchema = z.object({
   clientId: z.string().min(1, "Client is required"),
   clientContactId: z.string().min(1, "Client contact is required"),
   projectType: z.string().min(1, "Project type is required"),
-  hourlyRate: z.string().optional(),
+  rate: z.string().optional(),
 });
 
 type ProjectFormData = z.infer<typeof projectSchema>;
@@ -39,7 +40,7 @@ export default function AddProject() {
       clientId: "",
       clientContactId: "",
       projectType: "",
-      hourlyRate: "",
+      rate: "",
     },
   });
 
@@ -50,7 +51,7 @@ export default function AddProject() {
         description: data.description,
         clientContactId: parseInt(data.clientContactId),
         projectType: data.projectType as "Call" | "Advisory" | "ID",
-        hourlyRate: data.hourlyRate ? parseFloat(data.hourlyRate) : undefined,
+        rate: data.rate ? parseFloat(data.rate) : undefined,
       });
       toast.success("Project created successfully");
       navigate("/admin/projects");
@@ -60,8 +61,9 @@ export default function AddProject() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <AdminLayout>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
+        <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/projects")}>
@@ -177,10 +179,10 @@ export default function AddProject() {
 
                 <FormField
                   control={form.control}
-                  name="hourlyRate"
+                  name="rate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Hourly Rate</FormLabel>
+                      <FormLabel>Rate</FormLabel>
                       <FormControl>
                         <Input type="text" placeholder="100" {...field} />
                       </FormControl>
@@ -215,7 +217,8 @@ export default function AddProject() {
             </Form>
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }

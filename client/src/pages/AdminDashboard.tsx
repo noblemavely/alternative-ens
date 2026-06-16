@@ -99,8 +99,8 @@ export default function AdminDashboard() {
   const totalProjects = projectsQuery.data?.length ?? 0;
   const verified      = expertsQuery.data?.filter((e) => e.isVerified).length ?? 0;
 
-  const recentClients = clientsQuery.data?.slice(-6).reverse() ?? [];
   const recentExperts = expertsQuery.data?.slice(-6).reverse() ?? [];
+  const recentProjects = projectsQuery.data?.slice(-6).reverse() ?? [];
 
   return (
     <AdminLayout>
@@ -153,44 +153,6 @@ export default function AdminDashboard() {
       {/* Two-column panels */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-        {/* Recent Clients */}
-        <SectionCard
-          title="Recent Clients"
-          subtitle="Latest additions to your network"
-          action="View all"
-          onAction={() => navigate("/admin/clients")}
-        >
-          <div>
-            {clientsQuery.isLoading ? (
-              <div className="py-12 text-center text-sm text-muted-foreground">Loading…</div>
-            ) : recentClients.length === 0 ? (
-              <div className="py-12 text-center text-sm text-muted-foreground">No clients yet</div>
-            ) : (
-              recentClients.map((client, i) => (
-                <div
-                  key={client.id}
-                  className="flex items-center gap-3 px-5 py-3 hover:bg-secondary/60 cursor-pointer transition-colors group"
-                  style={{ borderTop: i > 0 ? "1px solid var(--border)" : undefined }}
-                  onClick={() => navigate(`/admin/clients/${client.id}`)}
-                >
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                    <Building2 size={14} className="text-blue-600" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                      {client.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {client.sector || client.companyName || "No sector"}
-                    </p>
-                  </div>
-                  <ArrowRight size={13} className="text-muted-foreground/40 group-hover:text-primary/60 transition-colors flex-shrink-0" />
-                </div>
-              ))
-            )}
-          </div>
-        </SectionCard>
-
         {/* Recent Experts */}
         <SectionCard
           title="Recent Experts"
@@ -231,6 +193,44 @@ export default function AdminDashboard() {
                   </div>
                 );
               })
+            )}
+          </div>
+        </SectionCard>
+
+        {/* Recent Projects */}
+        <SectionCard
+          title="Recent Projects"
+          subtitle="Latest projects created"
+          action="View all"
+          onAction={() => navigate("/admin/projects")}
+        >
+          <div>
+            {projectsQuery.isLoading ? (
+              <div className="py-12 text-center text-sm text-muted-foreground">Loading…</div>
+            ) : recentProjects.length === 0 ? (
+              <div className="py-12 text-center text-sm text-muted-foreground">No projects yet</div>
+            ) : (
+              recentProjects.map((project, i) => (
+                <div
+                  key={project.id}
+                  className="flex items-center gap-3 px-5 py-3 hover:bg-secondary/60 cursor-pointer transition-colors group"
+                  style={{ borderTop: i > 0 ? "1px solid var(--border)" : undefined }}
+                  onClick={() => navigate(`/admin/projects/${project.id}`)}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+                    <Briefcase size={14} className="text-amber-600" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                      {project.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {project.projectType || "No type specified"}
+                    </p>
+                  </div>
+                  <ArrowRight size={13} className="text-muted-foreground/40 group-hover:text-primary/60 transition-colors flex-shrink-0" />
+                </div>
+              ))
             )}
           </div>
         </SectionCard>

@@ -132,12 +132,27 @@ export function getVerificationEmailContent(
           }
           .button {
             display: inline-block;
-            padding: 10px 20px;
-            background-color: #007bff;
+            padding: 12px 30px;
+            background-color: #2563eb;
             color: white;
             text-decoration: none;
             border-radius: 5px;
             margin: 20px 0;
+            font-weight: bold;
+            text-align: center;
+          }
+          .button:hover {
+            background-color: #1d4ed8;
+          }
+          .button-container {
+            text-align: center;
+            margin: 25px 0;
+          }
+          .divider {
+            text-align: center;
+            color: #999;
+            margin: 25px 0;
+            font-size: 14px;
           }
           .footer {
             text-align: center;
@@ -155,6 +170,12 @@ export function getVerificationEmailContent(
           </div>
 
           <p>Thank you for registering with Alternatives! To complete your registration, please verify your email address.</p>
+
+          <div class="button-container">
+            <a href="${verificationUrl}" class="button">Verify Email</a>
+          </div>
+
+          <div class="divider">--- OR ---</div>
 
           <p>Enter this code on the verification page:</p>
           <div class="code-box">${verificationCode}</div>
@@ -176,7 +197,9 @@ Welcome to Alternatives!
 
 Thank you for registering. To complete your registration, please verify your email address.
 
-Your verification code is: ${verificationCode}
+Click here to verify: ${verificationUrl}
+
+OR enter this code on the verification page: ${verificationCode}
 
 This code will expire in 24 hours.
 

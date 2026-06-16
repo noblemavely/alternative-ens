@@ -23,7 +23,7 @@ interface EnvVariables {
 }
 
 export const ENV = new Proxy({}, {
-  get: (target, prop: string) => {
+  get: (target: any, prop: string) => {
     switch (prop) {
       case "appId":
         return process.env.VITE_APP_ID ?? "";

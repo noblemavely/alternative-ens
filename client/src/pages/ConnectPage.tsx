@@ -17,7 +17,7 @@ const schema = z.object({
   name:         z.string().min(1, "Name is required"),
   organization: z.string().optional(),
   email:        z.string().email("Please enter a valid email"),
-  queryType:    z.enum(["client", "advisor", "other"], { required_error: "Please select a query type" }),
+  queryType:    z.enum(["client", "advisor", "other"]),
   otherQuery:   z.string().optional(),
 });
 type FormData = z.infer<typeof schema>;
@@ -25,14 +25,14 @@ type FormData = z.infer<typeof schema>;
 const LOGO = "https://d2xsxph8kpxj0f.cloudfront.net/310519663387762142/GGrdr6YE4DiKCgcDQKRagu/Alternative_Logo_White_Background-removebg-preview_9d4821e4.png";
 
 const STATS = [
-  { value: "48h",   label: "First expert call" },
+  { value: "24h",   label: "First expert call" },
   { value: "500+",  label: "Vetted experts" },
   { value: "96%",   label: "Match satisfaction" },
   { value: "12+",   label: "Consumer categories" },
 ];
 
 const FEATURES = [
-  "48-hour turnaround from brief to call",
+  "24-hour turnaround from brief to call",
   "Consumer, FMCG & B2B specialists",
   "Confidential, project-based engagements",
 ];
@@ -279,7 +279,7 @@ export default function ConnectPage() {
             <div className="grid grid-cols-2">
               <div className="p-4" style={{ borderRight: "1px solid rgba(255,255,255,0.06)" }}>
                 <p className="text-white/40 text-[9px] font-bold tracking-widest uppercase mb-1.5">With AlterNatives</p>
-                <p className="text-white font-bold text-3xl tracking-tight">48h</p>
+                <p className="text-white font-bold text-3xl tracking-tight">24h</p>
                 <p className="text-white/40 text-xs mt-1 leading-tight">First message to expert call</p>
               </div>
               <div className="p-4">

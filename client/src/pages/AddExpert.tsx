@@ -11,9 +11,11 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
 import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
 import { EmploymentHistoryForm } from "@/components/EmploymentHistoryForm";
 import { EducationHistoryForm } from "@/components/EducationHistoryForm";
 import ResumeParserForm from "@/components/ResumeParserForm";
+import AdminLayout from "@/components/AdminLayout";
 
 const expertSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -28,11 +30,31 @@ const expertSchema = z.object({
 
 type ExpertFormData = z.infer<typeof expertSchema>;
 
+interface EmploymentEntry {
+  id?: string;
+  company: string;
+  position: string;
+  startDate: string;
+  endDate?: string;
+  currentlyWorking: boolean;
+  description?: string;
+}
+
+interface EducationEntry {
+  id?: string;
+  school: string;
+  degree: string;
+  field: string;
+  startDate: string;
+  endDate?: string;
+  description?: string;
+}
+
 export default function AddExpert() {
   const [, navigate] = useLocation();
-  const [employmentHistory, setEmploymentHistory] = require("react").useState<any[]>([]);
-  const [educationHistory, setEducationHistory] = require("react").useState<any[]>([]);
-  const [resumeFile, setResumeFile] = require("react").useState<File | null>(null);
+  const [employmentHistory, setEmploymentHistory] = useState<EmploymentEntry[]>([]);
+  const [educationHistory, setEducationHistory] = useState<EducationEntry[]>([]);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
 
   const createMutation = trpc.experts.create.useMutation();
   const sectorsQuery = trpc.sectors.list.useQuery();
@@ -63,8 +85,6 @@ export default function AddExpert() {
         sector: data.sector,
         function: data.function,
         biography: data.biography,
-        employment: employmentHistory,
-        education: educationHistory,
       });
       toast.success("Expert created successfully");
       navigate("/admin/experts");
@@ -74,8 +94,9 @@ export default function AddExpert() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <AdminLayout>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
+        <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/experts")}>
@@ -241,28 +262,52 @@ export default function AddExpert() {
                 <div className="pt-6 border-t border-slate-200">
                   <h3 className="text-lg font-semibold text-slate-900 mb-4">Employment History</h3>
                   <EmploymentHistoryForm
-                    value={employmentHistory}
-                    onChange={setEmploymentHistory}
+                    entries={employmentHistory}
+                    onAdd={(entry) => setEmploymentHistory([...employmentHistory, entry])}
+                    onUpdate={(entry) => setEmploymentHistory(employmentHistory.map(e => e.id === entry.id ? entry : e))}
+                    onDelete={(id) => setEmploymentHistory(employmentHistory.filter(e => e.id !== id))}
                   />
                 </div>
 
                 <div className="pt-6 border-t border-slate-200">
                   <h3 className="text-lg font-semibold text-slate-900 mb-4">Education History</h3>
                   <EducationHistoryForm
-                    value={educationHistory}
-                    onChange={setEducationHistory}
+                    entries={educationHistory}
+                    onAdd={(entry) => setEducationHistory([...educationHistory, entry])}
+                    onUpdate={(entry) => setEducationHistory(educationHistory.map(e => e.id === entry.id ? entry : e))}
+                    onDelete={(id) => setEducationHistory(educationHistory.filter(e => e.id !== id))}
                   />
                 </div>
 
                 <div className="pt-6 border-t border-slate-200">
                   <h3 className="text-lg font-semibold text-slate-900 mb-4">Resume/CV (Optional)</h3>
                   <ResumeParserForm
-                    onParsed={(data, resetForm) => {
-                      if (resetForm) {
-                        setEmploymentHistory(data.employment || []);
-                        setEducationHistory(data.education || []);
+                    onParsed={(data, file) => {
+                      if (data.employment) {
+                        const mappedEmployment = data.employment.map((emp: any) => ({
+                          company: emp.companyName,
+                          position: emp.position,
+                          startDate: emp.startDate,
+                          endDate: emp.endDate,
+                          currentlyWorking: emp.isCurrent,
+                          description: emp.description,
+                        }));
+                        setEmploymentHistory(mappedEmployment);
                       }
-                      setResumeFile(data.file || null);
+                      if (data.education) {
+                        const mappedEducation = data.education.map((edu: any) => ({
+                          school: edu.schoolName,
+                          degree: edu.degree,
+                          field: edu.fieldOfStudy,
+                          startDate: edu.startDate,
+                          endDate: edu.endDate,
+                          description: edu.description,
+                        }));
+                        setEducationHistory(mappedEducation);
+                      }
+                      if (file) {
+                        setResumeFile(file);
+                      }
                     }}
                     onSkip={() => setResumeFile(null)}
                   />
@@ -280,7 +325,8 @@ export default function AddExpert() {
             </Form>
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }

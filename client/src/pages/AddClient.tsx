@@ -10,9 +10,11 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
+import AdminLayout from "@/components/AdminLayout";
 
 const clientSchema = z.object({
   name: z.string().min(1, "Client name is required"),
+  email: z.string().email("Valid email required"),
   phone: z.string().optional(),
   companyWebsite: z.string().optional(),
   sector: z.string().optional(),
@@ -29,6 +31,7 @@ export default function AddClient() {
     resolver: zodResolver(clientSchema),
     defaultValues: {
       name: "",
+      email: "",
       phone: "",
       companyWebsite: "",
       sector: "",
@@ -39,6 +42,7 @@ export default function AddClient() {
     try {
       await createMutation.mutateAsync({
         name: data.name,
+        email: data.email,
         phone: data.phone,
         companyWebsite: data.companyWebsite,
         sector: data.sector,
@@ -51,8 +55,9 @@ export default function AddClient() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <AdminLayout>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
+        <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/clients")}>
@@ -81,6 +86,20 @@ export default function AddClient() {
                       <FormLabel>Client Name *</FormLabel>
                       <FormControl>
                         <Input placeholder="TechCorp Inc" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email *</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="contact@techcorp.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -152,7 +171,8 @@ export default function AddClient() {
             </Form>
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }

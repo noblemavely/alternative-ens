@@ -20,11 +20,13 @@ import { TableRowSkeleton } from "@/components/TableRowSkeleton";
 
 const clientSchema = z.object({
   name: z.string().min(1, "Name is required"),
+  email: z.string().email("Valid email required"),
   phone: z.string().optional(),
   companyName: z.string().optional(),
   companyWebsite: z.string().optional(),
   contactPerson: z.string().optional(),
   sector: z.string().optional(),
+  industry: z.string().optional(),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
@@ -67,11 +69,13 @@ export default function AdminClients() {
     resolver: zodResolver(clientSchema),
     defaultValues: {
       name: "",
+      email: "",
       phone: "",
       companyName: "",
       companyWebsite: "",
       contactPerson: "",
       sector: "",
+      industry: "",
     },
   });
 
@@ -211,7 +215,7 @@ export default function AdminClients() {
                               size="sm"
                               variant="ghost"
                               tooltip="Edit this client"
-                              onClick={(e) => {
+                              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                                 e.stopPropagation();
                                 navigate(`/admin/clients/${client.id}`);
                               }}
@@ -222,7 +226,7 @@ export default function AdminClients() {
                               size="sm"
                               variant="ghost"
                               tooltip="Delete this client"
-                              onClick={(e) => {
+                              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                                 e.stopPropagation();
                                 handleDelete(client.id, client.name);
                               }}

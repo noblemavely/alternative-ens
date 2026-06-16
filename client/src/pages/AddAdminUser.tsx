@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import AdminLayout from "@/components/AdminLayout";
 
 function AddAdminUser() {
   const [, setLocation] = useLocation();
@@ -66,7 +67,8 @@ function AddAdminUser() {
   };
 
   return (
-    <div className="space-y-6">
+    <AdminLayout>
+      <div className="space-y-6">
       <Button
         variant="ghost"
         onClick={() => setLocation("/admin/users")}
@@ -185,7 +187,8 @@ function AddAdminUser() {
           </form>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }
 
