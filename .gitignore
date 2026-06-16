@@ -114,3 +114,4 @@ client/public/__manus__/version.json
 
 # User uploaded files (development only)
 /uploads/
+package-lock.json
