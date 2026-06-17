@@ -20,6 +20,7 @@ import {
   deleteClientContact,
   createExpert,
   getExperts,
+  countExperts,
   getExpertById,
   getExpertByEmail,
   getExpertByEmailOrPhone,
@@ -466,9 +467,30 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    list: adminProcedure.query(async () => {
-      return getExperts();
-    }),
+    list: adminProcedure
+      .input(
+        z.object({
+          page: z.number().int().min(1).default(1),
+          limit: z.number().int().min(1).max(100).default(20),
+        })
+      )
+      .query(async ({ input }) => {
+        const { page, limit } = input;
+        const [experts, total] = await Promise.all([
+          getExperts(page, limit),
+          countExperts(),
+        ]);
+        const totalPages = Math.ceil(total / limit);
+        return {
+          data: experts,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages,
+          },
+        };
+      }),
 
     getById: adminProcedure
       .input(z.object({ id: z.number() }))

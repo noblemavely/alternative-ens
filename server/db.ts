@@ -507,11 +507,26 @@ export async function createExpert(data: Omit<Expert, "id" | "createdAt" | "upda
   return result;
 }
 
-export async function getExperts() {
+export async function getExperts(page?: number, limit?: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return db.select().from(experts).orderBy(experts.createdAt);
+  let query = db.select().from(experts).orderBy(experts.createdAt);
+
+  if (page !== undefined && limit !== undefined) {
+    const offset = (page - 1) * limit;
+    query = query.offset(offset).limit(limit) as any;
+  }
+
+  return await query;
+}
+
+export async function countExperts() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.select({ count: sql`COUNT(*)` }).from(experts);
+  return result[0]?.count ? Number(result[0].count) : 0;
 }
 
 export async function getExpertById(id: number) {

@@ -19,6 +19,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { ButtonWithTooltip } from "@/components/ButtonWithTooltip";
 import { EmploymentHistoryForm } from "@/components/EmploymentHistoryForm";
 import { EducationHistoryForm } from "@/components/EducationHistoryForm";
+import { Pagination } from "@/components/Pagination";
 
 const expertSchema = z.object({
   email: z.string().email("Invalid email"),
@@ -48,21 +49,24 @@ export default function AdminExperts() {
   const [functionFilter, setFunctionFilter] = useState<string>(urlParams.get('function') || "");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expertToDelete, setExpertToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [currentPage, setCurrentPage] = useState(parseInt(urlParams.get('page') || '1'));
 
-  const updateUrl = (search: string, sector: string, func: string) => {
+  const updateUrl = (search: string, sector: string, func: string, page: number = 1) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     if (sector && sector !== "all") params.set('sector', sector);
     if (func && func !== "all") params.set('function', func);
+    if (page > 1) params.set('page', page.toString());
     const queryString = params.toString();
     navigate(`/admin/experts${queryString ? '?' + queryString : ''}`);
   };
 
-  const expertsQuery = trpc.experts.list.useQuery();
+  const expertsQuery = trpc.experts.list.useQuery({ page: currentPage, limit: 20 });
   const sectorsQuery = trpc.sectors.list.useQuery();
   const functionsQuery = trpc.functions.list.useQuery();
-  
-  const filteredExperts = expertsQuery.data?.filter(expert => 
+
+  // Client-side filtering of the paginated results
+  const filteredExperts = expertsQuery.data?.data?.filter((expert: any) =>
     (((expert.firstName || "") + " " + (expert.lastName || "")).toLowerCase().includes(searchTerm.toLowerCase()) ||
     expert.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     expert.sector?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -127,7 +131,8 @@ export default function AdminExperts() {
         toast.success("Expert created successfully");
 
         // Fetch the newly created expert by email to get their ID
-        const createdExperts = (await expertsQuery.refetch()).data?.filter(e => e.email === data.email);
+        const refetchedData = await expertsQuery.refetch();
+        const createdExperts = refetchedData.data?.data?.filter((e: any) => e.email === data.email);
         if (createdExperts && createdExperts.length > 0) {
           expertId = createdExperts[0].id;
         }
@@ -474,19 +479,20 @@ export default function AdminExperts() {
           {expertsQuery.isLoading ? (
             <div className="py-10 text-center text-sm text-muted-foreground">Loading experts…</div>
           ) : filteredExperts.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="sf-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Sector</th>
-                    <th>Function</th>
-                    <th className="text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredExperts.map((expert) => (
+            <>
+              <div className="overflow-x-auto">
+                <table className="sf-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Sector</th>
+                      <th>Function</th>
+                      <th className="text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredExperts.map((expert) => (
                     <tr key={expert.id} className="cursor-pointer" onClick={() => navigate(`/admin/experts/${expert.id}`)}>
                       <td className="font-medium text-primary hover:underline">
                         {expert.firstName} {expert.lastName}
@@ -513,10 +519,23 @@ export default function AdminExperts() {
                         </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {expertsQuery.data && (
+                <div className="px-5 py-4 border-t border-border">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={expertsQuery.data.pagination.totalPages}
+                    onPageChange={(page) => {
+                      setCurrentPage(page);
+                      updateUrl(searchTerm, sectorFilter, functionFilter, page);
+                    }}
+                  />
+                </div>
+              )}
+            </>
           ) : (
             <div className="px-5 py-8">
               <EmptyState
