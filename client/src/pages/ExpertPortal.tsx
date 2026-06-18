@@ -246,7 +246,6 @@ export default function ExpertPortal() {
         id: `edu-${Date.now()}-${Math.random()}`,
         school: edu.schoolName || "",
         degree: edu.degree || "",
-        field: edu.fieldOfStudy || "",
         startDate: edu.startDate || "",
         endDate: edu.endDate || "",
       }));
@@ -316,7 +315,6 @@ export default function ExpertPortal() {
           id: `linkedin-edu-${idx}`,
           school: edu.schoolName || "",
           degree: edu.degree || "",
-          field: edu.fieldOfStudy || "",
           startDate: edu.startDate || "",
           endDate: edu.endDate || "",
           description: "",
