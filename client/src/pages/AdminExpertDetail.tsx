@@ -317,9 +317,9 @@ export default function AdminExpertDetail() {
           {isEditing ? (
             <SectionCard title="Education History">
               <EducationHistoryForm
-                entries={educationHistory.map((edu: any) => ({ id: edu.id?.toString(), school: edu.schoolName, degree: edu.degree, field: edu.fieldOfStudy, startDate: edu.startDate, endDate: edu.endDate, description: edu.description }))}
-                onAdd={(e) => addEducationMutation.mutate({ expertId: expertId!, schoolName: e.school, degree: e.degree, fieldOfStudy: e.field, startDate: e.startDate, endDate: e.endDate || undefined, description: e.description || undefined })}
-                onUpdate={(e) => { if (e.id) updateEducationMutation.mutate({ id: parseInt(e.id), school: e.school, degree: e.degree, fieldOfStudy: e.field, startDate: e.startDate, endDate: e.endDate }); }}
+                entries={educationHistory.map((edu: any) => ({ id: edu.id?.toString(), school: edu.schoolName, degree: edu.degree, startDate: edu.startDate, endDate: edu.endDate, description: edu.description }))}
+                onAdd={(e) => addEducationMutation.mutate({ expertId: expertId!, schoolName: e.school, degree: e.degree, fieldOfStudy: undefined, startDate: e.startDate, endDate: e.endDate || undefined, description: e.description || undefined })}
+                onUpdate={(e) => { if (e.id) updateEducationMutation.mutate({ id: parseInt(e.id), school: e.school, degree: e.degree, fieldOfStudy: undefined, startDate: e.startDate, endDate: e.endDate }); }}
                 onDelete={(id) => deleteEducationMutation.mutate({ id: parseInt(id) })}
               />
             </SectionCard>
@@ -333,7 +333,7 @@ export default function AdminExpertDetail() {
                         <GraduationCap size={14} className="text-violet-600" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-foreground">{edu.degree}{edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ""}</p>
+                        <p className="text-sm font-semibold text-foreground">{edu.degree}</p>
                         <p className="text-sm text-muted-foreground">{edu.schoolName}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {edu.startDate}{edu.endDate ? ` – ${edu.endDate}` : ""}
