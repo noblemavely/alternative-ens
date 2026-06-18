@@ -44,7 +44,6 @@ interface EducationEntry {
   id?: string;
   school: string;
   degree: string;
-  field: string;
   startDate: string;
   endDate?: string;
   description?: string;
@@ -298,7 +297,6 @@ export default function AddExpert() {
                         const mappedEducation = data.education.map((edu: any) => ({
                           school: edu.schoolName,
                           degree: edu.degree,
-                          field: edu.fieldOfStudy,
                           startDate: edu.startDate,
                           endDate: edu.endDate,
                           description: edu.description,
