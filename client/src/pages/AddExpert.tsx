@@ -44,7 +44,6 @@ interface EducationEntry {
   id?: string;
   school: string;
   degree: string;
-  field: string;
   startDate: string;
   endDate?: string;
   description?: string;

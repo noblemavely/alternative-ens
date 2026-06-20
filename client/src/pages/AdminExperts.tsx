@@ -58,19 +58,15 @@ export default function AdminExperts() {
     navigate(`/admin/experts${queryString ? '?' + queryString : ''}`);
   };
 
-  const expertsQuery = trpc.experts.list.useQuery();
+  const expertsQuery = trpc.experts.list.useQuery({
+    search: searchTerm || undefined,
+    sector: sectorFilter || undefined,
+    function: functionFilter || undefined,
+  });
   const sectorsQuery = trpc.sectors.list.useQuery();
   const functionsQuery = trpc.functions.list.useQuery();
-  
-  const filteredExperts = expertsQuery.data?.filter(expert => 
-    (((expert.firstName || "") + " " + (expert.lastName || "")).toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expert.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expert.sector?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expert.function?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expert.biography?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (!sectorFilter || sectorFilter === "all" || expert.sector === sectorFilter) &&
-    (!functionFilter || functionFilter === "all" || expert.function === functionFilter)
-  ) || [];
+
+  const filteredExperts = expertsQuery.data || [];
   const createMutation = trpc.experts.create.useMutation();
   const updateMutation = trpc.experts.update.useMutation();
   const deleteMutation = trpc.experts.delete.useMutation();
