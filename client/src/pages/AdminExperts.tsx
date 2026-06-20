@@ -41,6 +41,8 @@ export default function AdminExperts() {
   const [parsingLinkedin, setParsingLinkedin] = useState(false);
   const [employmentEntries, setEmploymentEntries] = useState<any[]>([]);
   const [educationEntries, setEducationEntries] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
@@ -56,21 +58,18 @@ export default function AdminExperts() {
     if (func && func !== "all") params.set('function', func);
     const queryString = params.toString();
     navigate(`/admin/experts${queryString ? '?' + queryString : ''}`);
+    setCurrentPage(1); // Reset to first page when filters change
   };
 
-  const expertsQuery = trpc.experts.list.useQuery();
+  const expertsQuery = trpc.experts.list.useQuery({
+    search: searchTerm || undefined,
+    sector: sectorFilter || undefined,
+    function: functionFilter || undefined,
+  });
   const sectorsQuery = trpc.sectors.list.useQuery();
   const functionsQuery = trpc.functions.list.useQuery();
-  
-  const filteredExperts = expertsQuery.data?.filter(expert => 
-    (((expert.firstName || "") + " " + (expert.lastName || "")).toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expert.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expert.sector?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expert.function?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expert.biography?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (!sectorFilter || sectorFilter === "all" || expert.sector === sectorFilter) &&
-    (!functionFilter || functionFilter === "all" || expert.function === functionFilter)
-  ) || [];
+
+  const filteredExperts = expertsQuery.data || [];
   const createMutation = trpc.experts.create.useMutation();
   const updateMutation = trpc.experts.update.useMutation();
   const deleteMutation = trpc.experts.delete.useMutation();
@@ -155,7 +154,7 @@ export default function AdminExperts() {
             expertId,
             schoolName: entry.school,
             degree: entry.degree,
-            fieldOfStudy: entry.field,
+            fieldOfStudy: "",
             startDate: entry.startDate,
             endDate: entry.endDate || undefined,
             description: entry.description || undefined,
@@ -474,19 +473,20 @@ export default function AdminExperts() {
           {expertsQuery.isLoading ? (
             <div className="py-10 text-center text-sm text-muted-foreground">Loading experts…</div>
           ) : filteredExperts.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="sf-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Sector</th>
-                    <th>Function</th>
-                    <th className="text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredExperts.map((expert) => (
+            <>
+              <div className="overflow-x-auto">
+                <table className="sf-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Sector</th>
+                      <th>Function</th>
+                      <th className="text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredExperts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((expert) => (
                     <tr key={expert.id} className="cursor-pointer" onClick={() => navigate(`/admin/experts/${expert.id}`)}>
                       <td className="font-medium text-primary hover:underline">
                         {expert.firstName} {expert.lastName}
@@ -514,9 +514,37 @@ export default function AdminExperts() {
                       </td>
                     </tr>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                  </tbody>
+                </table>
+              </div>
+              {Math.ceil(filteredExperts.length / itemsPerPage) > 1 && (
+                <div className="flex items-center justify-between px-5 py-3.5 border-t border-border">
+                  <div className="text-xs text-muted-foreground">
+                    Page {currentPage} of {Math.ceil(filteredExperts.length / itemsPerPage)}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="h-7 text-xs"
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredExperts.length / itemsPerPage), prev + 1))}
+                      disabled={currentPage === Math.ceil(filteredExperts.length / itemsPerPage)}
+                      className="h-7 text-xs"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <div className="px-5 py-8">
               <EmptyState

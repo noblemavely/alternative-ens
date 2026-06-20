@@ -466,9 +466,34 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    list: adminProcedure.query(async () => {
-      return getExperts();
-    }),
+    list: adminProcedure
+      .input(
+        z.object({
+          search: z.string().optional(),
+          sector: z.string().optional(),
+          function: z.string().optional(),
+        }).optional()
+      )
+      .query(async ({ input }) => {
+        const experts = await getExperts();
+
+        if (!input) return experts;
+
+        return experts.filter(expert => {
+          const matchesSearch = !input.search ||
+            (expert.firstName?.toLowerCase().includes(input.search.toLowerCase()) ||
+             expert.lastName?.toLowerCase().includes(input.search.toLowerCase()) ||
+             expert.email?.toLowerCase().includes(input.search.toLowerCase()) ||
+             expert.sector?.toLowerCase().includes(input.search.toLowerCase()) ||
+             expert.function?.toLowerCase().includes(input.search.toLowerCase()) ||
+             expert.biography?.toLowerCase().includes(input.search.toLowerCase()));
+
+          const matchesSector = !input.sector || input.sector === "all" || expert.sector === input.sector;
+          const matchesFunction = !input.function || input.function === "all" || expert.function === input.function;
+
+          return matchesSearch && matchesSector && matchesFunction;
+        });
+      }),
 
     getById: adminProcedure
       .input(z.object({ id: z.number() }))
