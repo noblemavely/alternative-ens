@@ -10,7 +10,6 @@ interface EducationEntry {
   id?: string;
   school: string;
   degree: string;
-  field: string;
   startDate: string;
   endDate?: string;
   description?: string;
@@ -34,7 +33,6 @@ export function EducationHistoryForm({
   const [formData, setFormData] = useState<EducationEntry>({
     school: "",
     degree: "",
-    field: "",
     startDate: "",
     endDate: "",
     description: "",
@@ -56,7 +54,6 @@ export function EducationHistoryForm({
     setFormData({
       school: "",
       degree: "",
-      field: "",
       startDate: "",
       endDate: "",
       description: "",
@@ -165,7 +162,6 @@ export function EducationHistoryForm({
                   setFormData({
                     school: "",
                     degree: "",
-                    field: "",
                     startDate: "",
                     endDate: "",
                     description: "",

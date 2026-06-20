@@ -155,7 +155,7 @@ export default function AdminExperts() {
             expertId,
             schoolName: entry.school,
             degree: entry.degree,
-            fieldOfStudy: entry.field,
+            fieldOfStudy: "",
             startDate: entry.startDate,
             endDate: entry.endDate || undefined,
             description: entry.description || undefined,

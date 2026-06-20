@@ -298,7 +298,6 @@ export default function AddExpert() {
                         const mappedEducation = data.education.map((edu: any) => ({
                           school: edu.schoolName,
                           degree: edu.degree,
-                          field: edu.fieldOfStudy,
                           startDate: edu.startDate,
                           endDate: edu.endDate,
                           description: edu.description,
