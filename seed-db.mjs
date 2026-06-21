@@ -3,6 +3,36 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Helper functions for generating realistic data
+const firstNames = ['Robert', 'Jennifer', 'Christopher', 'Amanda', 'Daniel', 'Jessica', 'Michael', 'Sarah', 'David', 'Lisa', 'James', 'Karen', 'John', 'Nancy', 'William', 'Margaret', 'Richard', 'Susan', 'Joseph', 'Patricia', 'Thomas', 'Barbara', 'Charles', 'Mary', 'Matthew', 'Elizabeth', 'Mark', 'Victoria', 'Andrew', 'Sandra'];
+
+const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin', 'Lee', 'Perez', 'Thompson', 'White', 'Harris', 'Sanchez', 'Clark', 'Ramirez', 'Lewis', 'Robinson'];
+
+const companyNames = ['TechCorp Inc', 'FinancePlus LLC', 'HealthCare Solutions', 'RetailMax Pro', 'ManufactureCo', 'CloudTech Systems', 'DataDrive Analytics', 'SecureNet Labs', 'InnovateLabs', 'FutureForce', 'GlobalTech Partners', 'VenturePro', 'TechVision Group', 'DigitalWorks', 'SmartSystems', 'ProTech Solutions', 'NextGen Industries', 'Quantum Computing Corp', 'Nexus Networks', 'Prime Analytics', 'Elite Consulting', 'Advanced Tech', 'Digital Innovations', 'Enterprise Solutions', 'Apex Systems', 'Core Technologies', 'Fusion Tech', 'Horizon Industries', 'Impact Ventures'];
+
+const sectors = ['Technology', 'Finance', 'Healthcare', 'Manufacturing', 'Retail'];
+const functions = ['Chief Executive Officer', 'Chief Financial Officer', 'Chief Technology Officer', 'Vice President', 'Senior Manager', 'Product Manager'];
+const roles = ['Hiring Manager', 'Project Lead', 'SPOC', 'VP', 'Director'];
+const workTypes = ['Recruitment', 'Advisory', 'Research', 'Implementation', 'Strategy'];
+const projectTypes = ['Call', 'Advisory', 'ID', 'Research', 'Engagement'];
+const shortlistStatuses = ['pending', 'contacted', 'interested', 'engaged', 'rejected'];
+
+function generateEmail(firstName, lastName, companyDomain) {
+  return `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${companyDomain}`;
+}
+
+function generatePhone() {
+  return `+1-555-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+}
+
+function generateCompanyDomain(companyName) {
+  return companyName.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '') + '.com';
+}
+
+function getRandomItem(array) {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
 async function seedDatabase() {
   let connection;
   try {
@@ -27,6 +57,7 @@ async function seedDatabase() {
     await connection.execute('DELETE FROM shortlists');
     await connection.execute('DELETE FROM expertClientMapping');
     await connection.execute('DELETE FROM screeningQuestions');
+    await connection.execute('DELETE FROM projectActivityEvents');
     await connection.execute('DELETE FROM projects');
     await connection.execute('DELETE FROM expertEducation');
     await connection.execute('DELETE FROM expertEmployment');
@@ -39,64 +70,59 @@ async function seedDatabase() {
 
     // Seed Sectors
     console.log('📊 Seeding sectors...');
-    const sectors = [
-      { name: 'Technology', description: 'Software, IT, Cloud Computing' },
-      { name: 'Finance', description: 'Banking, Investment, Insurance' },
-      { name: 'Healthcare', description: 'Pharmaceuticals, Medical Devices, Healthcare Services' },
-      { name: 'Manufacturing', description: 'Industrial, Automotive, Consumer Goods' },
-      { name: 'Retail', description: 'E-commerce, Brick & Mortar, Fashion' },
-    ];
-    for (const sector of sectors) {
+    const sectorNames = sectors;
+    const sectorDescriptions = {
+      'Technology': 'Software, IT, Cloud Computing, AI/ML',
+      'Finance': 'Banking, Investment, Insurance, Fintech',
+      'Healthcare': 'Pharmaceuticals, Medical Devices, Healthcare Services',
+      'Manufacturing': 'Industrial, Automotive, Consumer Goods',
+      'Retail': 'E-commerce, Brick & Mortar, Fashion'
+    };
+
+    for (const sector of sectorNames) {
       await connection.execute(
         'INSERT INTO sectors (name, description) VALUES (?, ?)',
-        [sector.name, sector.description]
+        [sector, sectorDescriptions[sector]]
       );
     }
-    console.log('✅ Seeded 5 sectors');
+    console.log(`✅ Seeded ${sectorNames.length} sectors`);
 
     // Seed Functions
     console.log('📋 Seeding functions...');
-    const functions = [
-      { name: 'Chief Executive Officer', description: 'C-level executive leadership' },
-      { name: 'Chief Financial Officer', description: 'Financial leadership and strategy' },
-      { name: 'Chief Technology Officer', description: 'Technology strategy and innovation' },
-      { name: 'Vice President', description: 'Senior management level' },
-      { name: 'Senior Manager', description: 'Management level' },
-      { name: 'Product Manager', description: 'Product leadership and strategy' },
-    ];
+    const functionDescriptions = {
+      'Chief Executive Officer': 'C-level executive leadership',
+      'Chief Financial Officer': 'Financial leadership and strategy',
+      'Chief Technology Officer': 'Technology strategy and innovation',
+      'Vice President': 'Senior management level',
+      'Senior Manager': 'Management and operational level',
+      'Product Manager': 'Product leadership and strategy'
+    };
+
     for (const func of functions) {
       await connection.execute(
         'INSERT INTO functions (name, description) VALUES (?, ?)',
-        [func.name, func.description]
+        [func, functionDescriptions[func]]
       );
     }
-    console.log('✅ Seeded 6 functions');
+    console.log(`✅ Seeded ${functions.length} functions`);
 
-    // Seed Clients
-    console.log('👥 Seeding clients...');
-    const clients = [
-      {
-        name: 'TechCorp Inc',
-        phone: '+1-555-0101',
-        companyWebsite: 'https://techcorp.com',
-        contactPerson: 'John Smith',
-        sector: 'Technology',
-      },
-      {
-        name: 'FinancePlus LLC',
-        phone: '+1-555-0102',
-        companyWebsite: 'https://financeplus.com',
-        contactPerson: 'Sarah Johnson',
-        sector: 'Finance',
-      },
-      {
-        name: 'HealthCare Solutions',
-        phone: '+1-555-0103',
-        companyWebsite: 'https://healthcaresolutions.com',
-        contactPerson: 'Michael Chen',
-        sector: 'Healthcare',
-      },
-    ];
+    // Seed 30 Clients
+    console.log('👥 Seeding 30 companies (clients)...');
+    const clients = [];
+    for (let i = 0; i < 30; i++) {
+      const companyName = companyNames[i];
+      const sector = getRandomItem(sectors);
+      const contactPerson = `${getRandomItem(firstNames)} ${getRandomItem(lastNames)}`;
+      const domain = generateCompanyDomain(companyName);
+
+      clients.push({
+        name: companyName,
+        phone: generatePhone(),
+        companyWebsite: `https://${domain}`,
+        contactPerson: contactPerson,
+        sector: sector,
+      });
+    }
 
     const clientIds = [];
     for (const client of clients) {
@@ -106,19 +132,27 @@ async function seedDatabase() {
       );
       clientIds.push(result.insertId);
     }
-    console.log('✅ Seeded 3 clients');
+    console.log(`✅ Seeded ${clients.length} companies`);
 
-    // Seed Client Contacts
-    console.log('📞 Seeding client contacts...');
-    const clientContacts = [
-      { clientId: clientIds[0], contactName: 'Alice Brown', email: 'alice.brown@techcorp.com', phone: '+1-555-0201', role: 'Hiring Manager', workType: 'Recruitment' },
-      { clientId: clientIds[0], contactName: 'Bob Wilson', email: 'bob.wilson@techcorp.com', phone: '+1-555-0202', role: 'Project Lead', workType: 'Advisory' },
-      { clientId: clientIds[1], contactName: 'Carol Davis', email: 'carol.davis@financeplus.com', phone: '+1-555-0203', role: 'SPOC', workType: 'Research' },
-      { clientId: clientIds[1], contactName: 'David Miller', email: 'david.miller@financeplus.com', phone: '+1-555-0204', role: 'Hiring Manager', workType: 'Recruitment' },
-      { clientId: clientIds[2], contactName: 'Emma Taylor', email: 'emma.taylor@healthcaresolutions.com', phone: '+1-555-0205', role: 'Project Lead', workType: 'Advisory' },
-      { clientId: clientIds[2], contactName: 'Frank Anderson', email: 'frank.anderson@healthcaresolutions.com', phone: '+1-555-0206', role: 'SPOC', workType: 'Research' },
-    ];
-    
+    // Seed ~90 Client Contacts (3 per company)
+    console.log('📞 Seeding ~90 client contacts (3 per company)...');
+    const clientContacts = [];
+    for (let i = 0; i < clientIds.length; i++) {
+      const domain = generateCompanyDomain(clients[i].name);
+      for (let j = 0; j < 3; j++) {
+        const firstName = getRandomItem(firstNames);
+        const lastName = getRandomItem(lastNames);
+        clientContacts.push({
+          clientId: clientIds[i],
+          contactName: `${firstName} ${lastName}`,
+          email: generateEmail(firstName, lastName, domain),
+          phone: generatePhone(),
+          role: getRandomItem(roles),
+          workType: getRandomItem(workTypes),
+        });
+      }
+    }
+
     const clientContactIds = [];
     for (const contact of clientContacts) {
       const [result] = await connection.execute(
@@ -127,199 +161,73 @@ async function seedDatabase() {
       );
       clientContactIds.push(result.insertId);
     }
-    console.log('✅ Seeded 6 client contacts');
+    console.log(`✅ Seeded ${clientContacts.length} client contacts`);
 
-    // Seed Experts
-    console.log('👨‍💼 Seeding experts...');
-    const experts = [
-      {
-        email: 'expert1@example.com',
-        phone: '+1-555-1001',
-        firstName: 'Robert',
-        lastName: 'Thompson',
-        sector: 'Technology',
-        function: 'Chief Technology Officer',
-        biography: 'Experienced CTO with 15+ years in cloud infrastructure and AI/ML solutions.',
-        linkedinUrl: 'https://linkedin.com/in/rthompson',
-        isVerified: true,
-      },
-      {
-        email: 'expert2@example.com',
-        phone: '+1-555-1002',
-        firstName: 'Jennifer',
-        lastName: 'Martinez',
-        sector: 'Finance',
-        function: 'Chief Financial Officer',
-        biography: 'CFO with expertise in financial strategy, M&A, and capital markets.',
-        linkedinUrl: 'https://linkedin.com/in/jmartinez',
-        isVerified: true,
-      },
-      {
-        email: 'expert3@example.com',
-        phone: '+1-555-1003',
-        firstName: 'Christopher',
-        lastName: 'Lee',
-        sector: 'Healthcare',
-        function: 'Vice President',
-        biography: 'VP of Operations in healthcare with focus on digital transformation.',
-        linkedinUrl: 'https://linkedin.com/in/clee',
-        isVerified: true,
-      },
-      {
-        email: 'expert4@example.com',
-        phone: '+1-555-1004',
-        firstName: 'Amanda',
-        lastName: 'White',
-        sector: 'Technology',
-        function: 'Product Manager',
-        biography: 'Product Manager specializing in SaaS platforms and user experience.',
-        linkedinUrl: 'https://linkedin.com/in/awhite',
-        isVerified: false,
-      },
-      {
-        email: 'expert5@example.com',
-        phone: '+1-555-1005',
-        firstName: 'Daniel',
-        lastName: 'Garcia',
-        sector: 'Retail',
-        function: 'Chief Executive Officer',
-        biography: 'CEO with proven track record in e-commerce and omnichannel retail.',
-        linkedinUrl: 'https://linkedin.com/in/dgarcia',
-        isVerified: true,
-      },
-    ];
-    
-    // Define employment records for each expert (before insertion so we can generate PDFs with this data)
-    const employmentRecords = [
-      { expertIdx: 0, companyName: 'Google', position: 'Senior Infrastructure Engineer', startDate: '2018-01', endDate: null, isCurrent: true, description: 'Led cloud infrastructure team' },
-      { expertIdx: 0, companyName: 'Amazon', position: 'Cloud Architect', startDate: '2015-06', endDate: '2017-12', isCurrent: false, description: 'Designed AWS solutions for enterprise clients' },
-      { expertIdx: 1, companyName: 'Goldman Sachs', position: 'Managing Director', startDate: '2019-03', endDate: null, isCurrent: true, description: 'Head of Financial Strategy' },
-      { expertIdx: 1, companyName: 'JP Morgan', position: 'Vice President', startDate: '2014-09', endDate: '2019-02', isCurrent: false, description: 'Investment banking division' },
-      { expertIdx: 2, companyName: 'Pfizer', position: 'VP Operations', startDate: '2017-05', endDate: null, isCurrent: true, description: 'Digital transformation initiatives' },
-      { expertIdx: 2, companyName: 'Merck', position: 'Senior Manager', startDate: '2012-01', endDate: '2017-04', isCurrent: false, description: 'Operations and supply chain' },
-    ];
+    // Seed 200+ Experts
+    console.log('👨‍💼 Seeding 200+ experts...');
+    const experts = [];
+    const usedEmails = new Set();
 
-    // Define education records for each expert
-    const educationRecords = [
-      { expertIdx: 0, schoolName: 'Stanford University', degree: 'Master of Science', fieldOfStudy: 'Computer Science', startDate: '2014-09', endDate: '2016-05', description: 'Specialized in distributed systems' },
-      { expertIdx: 0, schoolName: 'UC Berkeley', degree: 'Bachelor of Science', fieldOfStudy: 'Electrical Engineering', startDate: '2010-09', endDate: '2014-05', description: 'GPA: 3.8' },
-      { expertIdx: 1, schoolName: 'Harvard Business School', degree: 'MBA', fieldOfStudy: 'Business Administration', startDate: '2012-09', endDate: '2014-05', description: 'Baker Scholar' },
-      { expertIdx: 1, schoolName: 'Yale University', degree: 'Bachelor of Science', fieldOfStudy: 'Economics', startDate: '2008-09', endDate: '2012-05', description: 'Cum Laude' },
-      { expertIdx: 2, schoolName: 'Johns Hopkins University', degree: 'Master of Health Administration', fieldOfStudy: 'Healthcare Management', startDate: '2015-09', endDate: '2017-05', description: 'Focus on operations' },
-      { expertIdx: 2, schoolName: 'University of Michigan', degree: 'Bachelor of Science', fieldOfStudy: 'Biology', startDate: '2010-09', endDate: '2014-05', description: 'Pre-med track' },
-    ];
+    for (let i = 0; i < 200; i++) {
+      let email;
+      do {
+        const firstName = getRandomItem(firstNames);
+        const lastName = getRandomItem(lastNames);
+        email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i}@expertnetwork.com`;
+      } while (usedEmails.has(email));
 
-    // Map each expert to their static resume file
-    const resumeFiles = {
-      0: '/uploads/cv-uploads/robert-thompson-resume.pdf',
-      1: '/uploads/cv-uploads/jennifer-martinez-resume.pdf',
-      2: '/uploads/cv-uploads/christopher-lee-resume.pdf',
-      3: '/uploads/cv-uploads/amanda-white-resume.pdf',
-      4: '/uploads/cv-uploads/daniel-garcia-resume.pdf',
-    };
+      usedEmails.add(email);
+      const firstName = getRandomItem(firstNames);
+      const lastName = getRandomItem(lastNames);
+
+      experts.push({
+        email: email,
+        phone: generatePhone(),
+        firstName: firstName,
+        lastName: lastName,
+        sector: getRandomItem(sectors),
+        function: getRandomItem(functions),
+        biography: `Experienced professional with 10+ years in industry expertise and strategic advisory.`,
+        linkedinUrl: `https://linkedin.com/in/${firstName.toLowerCase()}${lastName.toLowerCase()}${i}`,
+        isVerified: Math.random() > 0.3, // 70% verified
+      });
+    }
 
     const expertIds = [];
-    for (let i = 0; i < experts.length; i++) {
-      const expert = experts[i];
-      const cvUrl = resumeFiles[i] || null;
-
+    for (const expert of experts) {
       const [result] = await connection.execute(
-        'INSERT INTO experts (email, phone, firstName, lastName, sector, `function`, biography, linkedinUrl, cvUrl, isVerified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [expert.email, expert.phone, expert.firstName, expert.lastName, expert.sector, expert.function, expert.biography, expert.linkedinUrl, cvUrl, expert.isVerified]
+        'INSERT INTO experts (email, phone, firstName, lastName, sector, `function`, biography, linkedinUrl, isVerified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [expert.email, expert.phone, expert.firstName, expert.lastName, expert.sector, expert.function, expert.biography, expert.linkedinUrl, expert.isVerified]
       );
       expertIds.push(result.insertId);
     }
-    console.log('✅ Seeded 5 experts with resume PDFs');
+    console.log(`✅ Seeded ${experts.length} experts`);
 
-    // Seed Expert Employment History
-    console.log('💼 Seeding expert employment history...');
-    const employmentRecordsWithIds = employmentRecords.map(emp => ({
-      ...emp,
-      expertId: expertIds[emp.expertIdx]
-    }));
-    
-    for (const record of employmentRecordsWithIds) {
-      await connection.execute(
-        'INSERT INTO expertEmployment (expertId, companyName, position, startDate, endDate, isCurrent, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [record.expertId, record.companyName, record.position, record.startDate, record.endDate, record.isCurrent, record.description]
-      );
-    }
-    console.log('✅ Seeded 6 employment records');
-
-    // Seed Expert Education History
-    console.log('🎓 Seeding expert education history...');
-    const educationRecordsWithIds = educationRecords.map(edu => ({
-      ...edu,
-      expertId: expertIds[edu.expertIdx]
-    }));
-
-    for (const record of educationRecordsWithIds) {
-      await connection.execute(
-        'INSERT INTO expertEducation (expertId, schoolName, degree, fieldOfStudy, startDate, endDate, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [record.expertId, record.schoolName, record.degree, record.fieldOfStudy, record.startDate, record.endDate, record.description]
-      );
-    }
-    console.log('✅ Seeded 6 education records');
-
-    // Seed Projects
-    console.log('📁 Seeding projects...');
-    const projects = [
-      {
-        clientContactId: clientContactIds[0],
-        name: 'Cloud Migration Initiative',
-        description: 'Migrate legacy systems to AWS cloud infrastructure',
-        projectType: 'Advisory',
-        targetCompanies: 'Fortune 500 Tech Companies',
-        targetPersona: 'CTO, VP Engineering',
-        rate: '250.00',
-      },
-      {
-        clientContactId: clientContactIds[1],
-        name: 'AI/ML Expert Search',
-        description: 'Find senior AI/ML engineers for new research division',
-        projectType: 'Call',
-        targetCompanies: 'FAANG Companies',
-        targetPersona: 'Senior ML Engineer, Research Scientist',
-        rate: '200.00',
-      },
-      {
-        clientContactId: clientContactIds[2],
-        name: 'Financial Strategy Review',
-        description: 'Review and optimize financial strategy for next 5 years',
-        projectType: 'Advisory',
-        targetCompanies: 'Investment Banks',
-        targetPersona: 'CFO, VP Finance',
-        rate: '300.00',
-      },
-      {
-        clientContactId: clientContactIds[3],
-        name: 'Market Research - Fintech',
-        description: 'Conduct market research on fintech disruption',
-        projectType: 'ID',
-        targetCompanies: 'Fintech Startups, Banks',
-        targetPersona: 'Industry Expert, Analyst',
-        rate: '180.00',
-      },
-      {
-        clientContactId: clientContactIds[4],
-        name: 'Digital Health Transformation',
-        description: 'Plan digital transformation for healthcare provider',
-        projectType: 'Call',
-        targetCompanies: 'Healthcare Systems',
-        targetPersona: 'CIO, VP Operations',
-        rate: '280.00',
-      },
-      {
-        clientContactId: clientContactIds[5],
-        name: 'Regulatory Compliance Study',
-        description: 'Study new healthcare regulations and compliance requirements',
-        projectType: 'ID',
-        targetCompanies: 'Healthcare Consultants',
-        targetPersona: 'Compliance Expert, Regulatory Specialist',
-        rate: '220.00',
-      },
+    // Seed ~150 Projects (5 per company)
+    console.log('📁 Seeding ~150 projects (5 per company)...');
+    const projects = [];
+    const projectNames = [
+      'Cloud Migration Initiative', 'AI/ML Expert Search', 'Financial Strategy Review',
+      'Market Research', 'Digital Transformation', 'Regulatory Compliance Study',
+      'Process Optimization', 'Technology Stack Evaluation', 'Data Analytics Platform',
+      'Cybersecurity Assessment', 'Team Expansion Planning', 'M&A Advisory'
     ];
-    
+
+    for (let i = 0; i < clientContactIds.length; i++) {
+      for (let j = 0; j < 5; j++) {
+        const projectName = `${getRandomItem(projectNames)} - Phase ${j + 1}`;
+        projects.push({
+          clientContactId: clientContactIds[i],
+          name: projectName,
+          description: `Project to support strategic objectives and operational excellence.`,
+          projectType: getRandomItem(projectTypes),
+          targetCompanies: getRandomItem(['Fortune 500', 'Mid-cap', 'Startups', 'Global Enterprises']),
+          targetPersona: `${getRandomItem(functions)} / Director level`,
+          rate: (150 + Math.random() * 300).toFixed(2),
+        });
+      }
+    }
+
     const projectIds = [];
     for (const project of projects) {
       const [result] = await connection.execute(
@@ -328,108 +236,102 @@ async function seedDatabase() {
       );
       projectIds.push(result.insertId);
     }
-    console.log('✅ Seeded 6 projects');
+    console.log(`✅ Seeded ${projects.length} projects`);
 
-    // Seed Screening Questions
+    // Seed Screening Questions (~2 per project)
     console.log('❓ Seeding screening questions...');
-    const screeningQuestions = [
-      { projectId: projectIds[0], question: 'What is your experience with AWS cloud migration?', order: 1 },
-      { projectId: projectIds[0], question: 'Have you worked with legacy system modernization?', order: 2 },
-      { projectId: projectIds[0], question: 'What is your experience with cost optimization?', order: 3 },
-      { projectId: projectIds[1], question: 'What is your experience with machine learning models?', order: 1 },
-      { projectId: projectIds[1], question: 'Have you published research papers?', order: 2 },
-      { projectId: projectIds[2], question: 'What is your experience with financial planning?', order: 1 },
-      { projectId: projectIds[2], question: 'Have you worked on M&A transactions?', order: 2 },
-      { projectId: projectIds[3], question: 'What is your knowledge of fintech trends?', order: 1 },
-      { projectId: projectIds[4], question: 'What is your experience with EHR systems?', order: 1 },
-      { projectId: projectIds[5], question: 'What is your knowledge of healthcare regulations?', order: 1 },
+    const questionTemplates = [
+      'What is your experience with {field}?',
+      'Have you worked with {technology}?',
+      'What is your expertise in {domain}?',
+      'How many years of experience do you have in {area}?',
+      'Describe your experience with {skill}',
+      'Have you led teams in {domain}?',
     ];
-    
-    for (const question of screeningQuestions) {
-      await connection.execute(
-        'INSERT INTO screeningQuestions (projectId, question, `order`) VALUES (?, ?, ?)',
-        [question.projectId, question.question, question.order]
-      );
-    }
-    console.log('✅ Seeded 10 screening questions');
 
-    // Seed Shortlists
-    console.log('⭐ Seeding shortlists...');
-    const shortlists = [
-      { projectId: projectIds[0], expertId: expertIds[0], status: 'contacted', notes: 'Excellent fit for cloud migration' },
-      { projectId: projectIds[0], expertId: expertIds[1], status: 'pending', notes: 'Awaiting response' },
-      { projectId: projectIds[1], expertId: expertIds[3], status: 'interested', notes: 'Very interested in AI/ML role' },
-      { projectId: projectIds[2], expertId: expertIds[1], status: 'engaged', notes: 'In discussions about engagement' },
-      { projectId: projectIds[2], expertId: expertIds[4], status: 'pending', notes: 'Initial outreach sent' },
-      { projectId: projectIds[3], expertId: expertIds[1], status: 'contacted', notes: 'Confirmed availability' },
-      { projectId: projectIds[4], expertId: expertIds[2], status: 'engaged', notes: 'Proposal under review' },
-      { projectId: projectIds[5], expertId: expertIds[2], status: 'interested', notes: 'Strong regulatory background' },
-      { projectId: projectIds[5], expertId: expertIds[4], status: 'pending', notes: 'Awaiting confirmation' },
-    ];
-    
-    for (const shortlist of shortlists) {
-      await connection.execute(
-        'INSERT INTO shortlists (projectId, expertId, status, notes) VALUES (?, ?, ?, ?)',
-        [shortlist.projectId, shortlist.expertId, shortlist.status, shortlist.notes]
-      );
-    }
-    console.log('✅ Seeded 9 shortlist records');
+    let questionCount = 0;
+    for (const projectId of projectIds) {
+      for (let j = 0; j < 2; j++) {
+        const question = getRandomItem(questionTemplates).replace('{field}', 'your domain').replace('{technology}', 'relevant technologies').replace('{domain}', 'your industry').replace('{area}', 'your field').replace('{skill}', 'required skills');
 
-    // Seed Expert-Client Mapping
+        await connection.execute(
+          'INSERT INTO screeningQuestions (projectId, question, `order`) VALUES (?, ?, ?)',
+          [projectId, question, j + 1]
+        );
+        questionCount++;
+      }
+    }
+    console.log(`✅ Seeded ${questionCount} screening questions`);
+
+    // Seed Shortlists (~3 per project on average)
+    console.log('⭐ Seeding shortlist records...');
+    let shortlistCount = 0;
+    for (const projectId of projectIds) {
+      const numExperts = Math.floor(Math.random() * 5) + 2; // 2-6 experts per project
+      const selectedExperts = new Set();
+
+      for (let i = 0; i < numExperts; i++) {
+        let expertId;
+        do {
+          expertId = expertIds[Math.floor(Math.random() * expertIds.length)];
+        } while (selectedExperts.has(expertId));
+
+        selectedExperts.add(expertId);
+
+        await connection.execute(
+          'INSERT INTO shortlists (projectId, expertId, status, notes) VALUES (?, ?, ?, ?)',
+          [projectId, expertId, getRandomItem(shortlistStatuses), 'Expert shortlisted for project engagement']
+        );
+        shortlistCount++;
+      }
+    }
+    console.log(`✅ Seeded ${shortlistCount} shortlist records`);
+
+    // Seed Expert-Client Mappings
     console.log('🔗 Seeding expert-client mappings...');
-    const expertClientMappings = [
-      { expertId: expertIds[0], clientId: clientIds[0], status: 'engaged', notes: 'Active engagement on cloud project' },
-      { expertId: expertIds[1], clientId: clientIds[0], status: 'contacted', notes: 'Initial conversation completed' },
-      { expertId: expertIds[1], clientId: clientIds[1], status: 'engaged', notes: 'Working on financial strategy' },
-      { expertId: expertIds[2], clientId: clientIds[2], status: 'engaged', notes: 'Digital transformation lead' },
-      { expertId: expertIds[3], clientId: clientIds[0], status: 'shortlisted', notes: 'Potential for AI/ML projects' },
-      { expertId: expertIds[4], clientId: clientIds[1], status: 'contacted', notes: 'Fintech expertise valuable' },
-      { expertId: expertIds[4], clientId: clientIds[2], status: 'shortlisted', notes: 'Retail background relevant' },
-    ];
-    
-    for (const mapping of expertClientMappings) {
-      await connection.execute(
-        'INSERT INTO expertClientMapping (expertId, clientId, status, notes) VALUES (?, ?, ?, ?)',
-        [mapping.expertId, mapping.clientId, mapping.status, mapping.notes]
-      );
-    }
-    console.log('✅ Seeded 7 expert-client mappings');
+    let mappingCount = 0;
+    const mappings = new Set();
 
-    // Seed Activity/Audit Logs
-    console.log('📝 Seeding activity timeline records...');
-    const auditLogs = [
-      { entityType: 'expert', entityId: expertIds[0], operationType: 'create', adminId: null, reason: 'Expert registration via portal' },
-      { entityType: 'expert', entityId: expertIds[1], operationType: 'create', adminId: null, reason: 'Expert registration via portal' },
-      { entityType: 'expert', entityId: expertIds[2], operationType: 'create', adminId: null, reason: 'Expert registration via portal' },
-      { entityType: 'expert', entityId: expertIds[3], operationType: 'create', adminId: null, reason: 'Expert registration via portal' },
-      { entityType: 'expert', entityId: expertIds[4], operationType: 'create', adminId: null, reason: 'Expert registration via portal' },
-      { entityType: 'shortlist', entityId: 1, operationType: 'create', adminId: null, reason: 'Expert shortlisted for project' },
-      { entityType: 'shortlist', entityId: 2, operationType: 'update', adminId: null, reason: 'Status changed from pending to contacted', oldValue: '{"status":"pending"}', newValue: '{"status":"contacted"}' },
-      { entityType: 'shortlist', entityId: 3, operationType: 'update', adminId: null, reason: 'Status changed from contacted to engaged', oldValue: '{"status":"contacted"}', newValue: '{"status":"engaged"}' },
-    ];
-
-    for (const log of auditLogs) {
-      await connection.execute(
-        'INSERT INTO auditLog (entityType, entityId, operationType, adminId, fieldChanged, oldValue, newValue, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [log.entityType, log.entityId, log.operationType, log.adminId, log.fieldChanged || null, log.oldValue || null, log.newValue || null, log.reason]
+    for (const shortlist of projectIds) {
+      // Create mappings from shortlist data
+      const shortlistResult = await connection.execute(
+        'SELECT DISTINCT projectId, expertId FROM shortlists LIMIT 300'
       );
+
+      if (shortlistResult[0]) {
+        for (const row of shortlistResult[0]) {
+          const projectResult = await connection.execute(
+            'SELECT clientId FROM projects JOIN clientContacts ON projects.clientContactId = clientContacts.id WHERE projects.id = ?',
+            [row.projectId]
+          );
+
+          if (projectResult[0] && projectResult[0][0]) {
+            const key = `${row.expertId}-${projectResult[0][0].clientId}`;
+            if (!mappings.has(key)) {
+              mappings.add(key);
+              await connection.execute(
+                'INSERT INTO expertClientMapping (expertId, clientId, status, notes) VALUES (?, ?, ?, ?)',
+                [row.expertId, projectResult[0][0].clientId, getRandomItem(['contacted', 'interested', 'engaged']), 'Expert-client engagement']
+              );
+              mappingCount++;
+            }
+          }
+        }
+      }
     }
-    console.log('✅ Seeded 8 activity timeline records');
+    console.log(`✅ Seeded ${mappingCount} expert-client mappings`);
 
     console.log('\n✅ Database seeding completed successfully!');
     console.log('\n📊 Summary:');
-    console.log('  - 5 Sectors');
-    console.log('  - 6 Functions');
-    console.log('  - 3 Clients');
-    console.log('  - 6 Client Contacts');
-    console.log('  - 5 Experts (2 with sample CVs)');
-    console.log('  - 6 Employment Records');
-    console.log('  - 6 Education Records');
-    console.log('  - 6 Projects');
-    console.log('  - 10 Screening Questions');
-    console.log('  - 9 Shortlist Records');
-    console.log('  - 7 Expert-Client Mappings');
-    console.log('  - 8 Activity Timeline Records');
+    console.log(`  - ${sectorNames.length} Sectors`);
+    console.log(`  - ${functions.length} Functions`);
+    console.log(`  - ${clients.length} Companies (Clients)`);
+    console.log(`  - ${clientContacts.length} Client Contacts`);
+    console.log(`  - ${experts.length} Experts`);
+    console.log(`  - ${projects.length} Projects`);
+    console.log(`  - ${questionCount} Screening Questions`);
+    console.log(`  - ${shortlistCount} Shortlist Records`);
+    console.log(`  - ${mappingCount} Expert-Client Mappings`);
 
   } catch (error) {
     console.error('❌ Error seeding database:', error);
