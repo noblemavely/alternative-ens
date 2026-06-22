@@ -69,9 +69,17 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-  // Serve uploaded files from /uploads directory (development only)
+  // Serve uploaded files from /uploads directory
   const uploadsDir = path.join(process.cwd(), "uploads");
-  app.use("/uploads", express.static(uploadsDir));
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  app.use("/uploads", express.static(uploadsDir, {
+    setHeaders: (res) => {
+      res.set("Cache-Control", "public, max-age=3600");
+      res.set("Access-Control-Allow-Origin", "*");
+    },
+  }));
 
   // OAuth authentication has been removed
   // TODO: Implement email/password or other authentication method
