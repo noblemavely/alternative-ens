@@ -13,7 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2, Upload, Loader2, Link2, Users } from "lucide-react";
+import { Plus, Trash2, Edit2, Upload, Loader2, Link2, Users, FileText, Check } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { ButtonWithTooltip } from "@/components/ButtonWithTooltip";
@@ -482,6 +482,7 @@ export default function AdminExperts() {
                     <th>Email</th>
                     <th>Sector</th>
                     <th>Function</th>
+                    <th>Resume</th>
                     <th className="text-right">Actions</th>
                   </tr>
                 </thead>
@@ -494,6 +495,16 @@ export default function AdminExperts() {
                       <td className="muted">{expert.email}</td>
                       <td className="muted">{expert.sector || "—"}</td>
                       <td className="muted">{expert.function || "—"}</td>
+                      <td>
+                        {expert.cvUrl ? (
+                          <div className="flex items-center gap-1.5 text-emerald-700">
+                            <FileText size={14} />
+                            <span className="text-xs font-medium">Yes</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
                       <td className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
                           <button
