@@ -270,65 +270,39 @@ async function seedDatabase() {
     }
     console.log('✅ Seeded 6 education records');
 
-    // Seed Projects
+    // Seed Projects - 5 per client contact
     console.log('📁 Seeding projects...');
-    const projects = [
-      {
-        clientContactId: clientContactIds[0],
-        name: 'Cloud Migration Initiative',
-        description: 'Migrate legacy systems to AWS cloud infrastructure',
-        projectType: 'Advisory',
-        targetCompanies: 'Fortune 500 Tech Companies',
-        targetPersona: 'CTO, VP Engineering',
-        rate: '250.00',
-      },
-      {
-        clientContactId: clientContactIds[1],
-        name: 'AI/ML Expert Search',
-        description: 'Find senior AI/ML engineers for new research division',
-        projectType: 'Call',
-        targetCompanies: 'FAANG Companies',
-        targetPersona: 'Senior ML Engineer, Research Scientist',
-        rate: '200.00',
-      },
-      {
-        clientContactId: clientContactIds[2],
-        name: 'Financial Strategy Review',
-        description: 'Review and optimize financial strategy for next 5 years',
-        projectType: 'Advisory',
-        targetCompanies: 'Investment Banks',
-        targetPersona: 'CFO, VP Finance',
-        rate: '300.00',
-      },
-      {
-        clientContactId: clientContactIds[3],
-        name: 'Market Research - Fintech',
-        description: 'Conduct market research on fintech disruption',
-        projectType: 'ID',
-        targetCompanies: 'Fintech Startups, Banks',
-        targetPersona: 'Industry Expert, Analyst',
-        rate: '180.00',
-      },
-      {
-        clientContactId: clientContactIds[4],
-        name: 'Digital Health Transformation',
-        description: 'Plan digital transformation for healthcare provider',
-        projectType: 'Call',
-        targetCompanies: 'Healthcare Systems',
-        targetPersona: 'CIO, VP Operations',
-        rate: '280.00',
-      },
-      {
-        clientContactId: clientContactIds[5],
-        name: 'Regulatory Compliance Study',
-        description: 'Study new healthcare regulations and compliance requirements',
-        projectType: 'ID',
-        targetCompanies: 'Healthcare Consultants',
-        targetPersona: 'Compliance Expert, Regulatory Specialist',
-        rate: '220.00',
-      },
+    const projectTypes = ['Call', 'Advisory', 'ID'];
+    const projectNames = [
+      'Strategic Consultation',
+      'Expert Research Study',
+      'Market Analysis Project',
+      'Implementation Review',
+      'Technical Assessment',
     ];
-    
+    const projectDescriptions = [
+      'Conduct a detailed assessment and provide strategic recommendations',
+      'In-depth research and analysis on industry trends',
+      'Market analysis and competitive benchmarking',
+      'Review and optimize current implementation',
+      'Technical review and assessment',
+    ];
+
+    const projects = [];
+    for (let contactIdx = 0; contactIdx < clientContactIds.length; contactIdx++) {
+      for (let projectIdx = 0; projectIdx < 5; projectIdx++) {
+        projects.push({
+          clientContactId: clientContactIds[contactIdx],
+          name: `${projectNames[projectIdx]} - Client ${Math.floor(contactIdx / 3)}`,
+          description: projectDescriptions[projectIdx],
+          projectType: projectTypes[projectIdx % 3],
+          targetCompanies: `Target Companies ${contactIdx}-${projectIdx}`,
+          targetPersona: `Persona ${contactIdx}-${projectIdx}`,
+          rate: String((150 + Math.random() * 250).toFixed(2)),
+        });
+      }
+    }
+
     const projectIds = [];
     for (const project of projects) {
       const [result] = await connection.execute(
@@ -337,30 +311,29 @@ async function seedDatabase() {
       );
       projectIds.push(result.insertId);
     }
-    console.log('✅ Seeded 6 projects');
+    console.log(`✅ Seeded ${projects.length} projects`);
 
-    // Seed Screening Questions
+    // Seed Screening Questions - 2 per project
     console.log('❓ Seeding screening questions...');
-    const screeningQuestions = [
-      { projectId: projectIds[0], question: 'What is your experience with AWS cloud migration?', order: 1 },
-      { projectId: projectIds[0], question: 'Have you worked with legacy system modernization?', order: 2 },
-      { projectId: projectIds[0], question: 'What is your experience with cost optimization?', order: 3 },
-      { projectId: projectIds[1], question: 'What is your experience with machine learning models?', order: 1 },
-      { projectId: projectIds[1], question: 'Have you published research papers?', order: 2 },
-      { projectId: projectIds[2], question: 'What is your experience with financial planning?', order: 1 },
-      { projectId: projectIds[2], question: 'Have you worked on M&A transactions?', order: 2 },
-      { projectId: projectIds[3], question: 'What is your knowledge of fintech trends?', order: 1 },
-      { projectId: projectIds[4], question: 'What is your experience with EHR systems?', order: 1 },
-      { projectId: projectIds[5], question: 'What is your knowledge of healthcare regulations?', order: 1 },
+    const screeningQuestionsTemplates = [
+      'What is your experience with this domain?',
+      'Have you worked on similar projects?',
+      'What is your approach to problem-solving?',
+      'How do you measure success?',
+      'What are your key strengths?',
     ];
-    
-    for (const question of screeningQuestions) {
-      await connection.execute(
-        'INSERT INTO screeningQuestions (projectId, question, `order`) VALUES (?, ?, ?)',
-        [question.projectId, question.question, question.order]
-      );
+
+    let questionCount = 0;
+    for (let projectIdx = 0; projectIdx < projectIds.length; projectIdx++) {
+      for (let qIdx = 0; qIdx < 2; qIdx++) {
+        await connection.execute(
+          'INSERT INTO screeningQuestions (projectId, question, `order`) VALUES (?, ?, ?)',
+          [projectIds[projectIdx], screeningQuestionsTemplates[qIdx % 5], qIdx + 1]
+        );
+        questionCount++;
+      }
     }
-    console.log('✅ Seeded 10 screening questions');
+    console.log(`✅ Seeded ${questionCount} screening questions`);
 
     // Seed Shortlists
     console.log('⭐ Seeding shortlists...');
@@ -429,9 +402,10 @@ async function seedDatabase() {
     console.log('\n📊 Summary:');
     console.log('  - 5 Sectors');
     console.log('  - 6 Functions');
-    console.log('  - 3 Clients');
-    console.log('  - 6 Client Contacts');
-    console.log('  - 5 Experts (2 with sample CVs)');
+    console.log(`  - ${clientIds.length} Clients`);
+    console.log(`  - ${clientContactIds.length} Client Contacts`);
+    console.log(`  - ${projectIds.length} Projects`);
+    console.log(`  - 5 Experts (2 with sample CVs)`);
     console.log('  - 6 Employment Records');
     console.log('  - 6 Education Records');
     console.log('  - 6 Projects');
