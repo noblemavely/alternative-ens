@@ -72,31 +72,30 @@ async function seedDatabase() {
     }
     console.log('✅ Seeded 6 functions');
 
-    // Seed Clients
+    // Seed Clients - Enhanced with more realistic company names
     console.log('👥 Seeding clients...');
-    const clients = [
-      {
-        name: 'TechCorp Inc',
-        phone: '+1-555-0101',
-        companyWebsite: 'https://techcorp.com',
-        contactPerson: 'John Smith',
-        sector: 'Technology',
-      },
-      {
-        name: 'FinancePlus LLC',
-        phone: '+1-555-0102',
-        companyWebsite: 'https://financeplus.com',
-        contactPerson: 'Sarah Johnson',
-        sector: 'Finance',
-      },
-      {
-        name: 'HealthCare Solutions',
-        phone: '+1-555-0103',
-        companyWebsite: 'https://healthcaresolutions.com',
-        contactPerson: 'Michael Chen',
-        sector: 'Healthcare',
-      },
-    ];
+    const companyNamesByIndustry = {
+      Technology: ['TechCorp Inc', 'Innovate Systems Ltd', 'Digital Solutions Partners', 'Cloud Nine Technologies', 'NextGen Software Group', 'AI Dynamics Corp', 'Quantum Computing Inc', 'VirtualWorks Ltd', 'DataStream Analytics'],
+      Finance: ['FinancePlus LLC', 'Capital Growth Partners', 'Wealth Management Group', 'Investment horizons Inc', 'Treasury Solutions Ltd', 'Asset Management Partners', 'Fintech Innovations Corp', 'Credit Capital Group'],
+      Healthcare: ['HealthCare Solutions', 'MediCare Innovations', 'Clinical Research Partners', 'Wellness Technologies Inc', 'PharmaCare Group', 'BioHealth Solutions Ltd', 'Patient Care Systems', 'MedDev Innovations'],
+      Retail: ['RetailPro Inc', 'Commerce Solutions Ltd', 'Shopping Dynamics Group', 'Omni-Channel Retail Corp', 'Store Operations Partners', 'Merchandising Systems Inc'],
+      Manufacturing: ['ManufactureCo Inc', 'Industrial Solutions Ltd', 'Production Dynamics Group', 'Supply Chain Partners', 'Quality Manufacturing Corp'],
+    };
+
+    const clients = [];
+    const sectors = Object.keys(companyNamesByIndustry);
+    for (const sector of sectors) {
+      const companies = companyNamesByIndustry[sector];
+      for (const company of companies.slice(0, 6)) { // 6 companies per sector = ~30 total
+        clients.push({
+          name: company,
+          phone: `+1-555-${String(clients.length).padStart(4, '0')}`,
+          companyWebsite: `https://${company.toLowerCase().replace(/\s+/g, '')}.com`,
+          contactPerson: `Contact Person ${clients.length}`,
+          sector: sector,
+        });
+      }
+    }
 
     const clientIds = [];
     for (const client of clients) {
@@ -108,16 +107,26 @@ async function seedDatabase() {
     }
     console.log('✅ Seeded 3 clients');
 
-    // Seed Client Contacts
+    // Seed Client Contacts - 3 per client
     console.log('📞 Seeding client contacts...');
-    const clientContacts = [
-      { clientId: clientIds[0], contactName: 'Alice Brown', email: 'alice.brown@techcorp.com', phone: '+1-555-0201', role: 'Hiring Manager', workType: 'Recruitment' },
-      { clientId: clientIds[0], contactName: 'Bob Wilson', email: 'bob.wilson@techcorp.com', phone: '+1-555-0202', role: 'Project Lead', workType: 'Advisory' },
-      { clientId: clientIds[1], contactName: 'Carol Davis', email: 'carol.davis@financeplus.com', phone: '+1-555-0203', role: 'SPOC', workType: 'Research' },
-      { clientId: clientIds[1], contactName: 'David Miller', email: 'david.miller@financeplus.com', phone: '+1-555-0204', role: 'Hiring Manager', workType: 'Recruitment' },
-      { clientId: clientIds[2], contactName: 'Emma Taylor', email: 'emma.taylor@healthcaresolutions.com', phone: '+1-555-0205', role: 'Project Lead', workType: 'Advisory' },
-      { clientId: clientIds[2], contactName: 'Frank Anderson', email: 'frank.anderson@healthcaresolutions.com', phone: '+1-555-0206', role: 'SPOC', workType: 'Research' },
-    ];
+    const roles = ['Hiring Manager', 'Project Lead', 'SPOC'];
+    const workTypes = ['Recruitment', 'Advisory', 'Research'];
+    const clientContacts = [];
+
+    for (let clientIdx = 0; clientIdx < clientIds.length; clientIdx++) {
+      for (let contactIdx = 0; contactIdx < 3; contactIdx++) {
+        const role = roles[contactIdx];
+        const workType = workTypes[contactIdx];
+        clientContacts.push({
+          clientId: clientIds[clientIdx],
+          contactName: `Contact ${clientIdx}-${contactIdx}`,
+          email: `contact-${clientIdx}-${contactIdx}@company${clientIdx}.com`,
+          phone: `+1-555-${String(9000 + clientIdx * 100 + contactIdx).padStart(4, '0')}`,
+          role: role,
+          workType: workType,
+        });
+      }
+    }
     
     const clientContactIds = [];
     for (const contact of clientContacts) {
