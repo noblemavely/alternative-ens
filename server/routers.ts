@@ -474,6 +474,28 @@ export const appRouter = router({
       return getExperts();
     }),
 
+    listPaginated: adminProcedure
+      .input(
+        z.object({
+          limit: z.number().default(10).optional(),
+          offset: z.number().default(0).optional(),
+        })
+      )
+      .query(async ({ input }) => {
+        const experts = await getExperts();
+        const total = experts.length;
+        const limit = input.limit || 10;
+        const offset = input.offset || 0;
+        const data = experts.slice(offset, offset + limit);
+        return {
+          data,
+          total,
+          limit,
+          offset,
+          hasMore: offset + limit < total,
+        };
+      }),
+
     getById: adminProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
