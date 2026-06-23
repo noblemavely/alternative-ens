@@ -22,6 +22,7 @@ import {
   adminUsers,
   projectActivityTimeline,
   leads,
+  expertNotes,
   type Lead,
   type InsertLead,
   type Client,
@@ -36,6 +37,8 @@ import {
   type Function,
   type AdminUser,
   type ProjectActivityTimeline,
+  type ExpertNote,
+  type InsertExpertNote,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -283,6 +286,18 @@ async function initializeSchema(pool: any) {
         ADD COLUMN IF NOT EXISTS utm_campaign VARCHAR(255) AFTER utm_medium,
         ADD COLUMN IF NOT EXISTS utm_content  VARCHAR(255) AFTER utm_campaign,
         ADD COLUMN IF NOT EXISTS utm_term     VARCHAR(255) AFTER utm_content`,
+
+      `CREATE TABLE IF NOT EXISTS expert_notes (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        expertId INT NOT NULL,
+        content LONGTEXT NOT NULL,
+        createdBy INT,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY (expertId) REFERENCES experts(id) ON DELETE CASCADE,
+        INDEX idx_expertId (expertId),
+        INDEX idx_createdAt (createdAt)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
     ];
 
     // Execute all table creation statements
@@ -1646,4 +1661,38 @@ export async function listLeads(): Promise<Lead[]> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.select().from(leads).orderBy(leads.createdAt);
+}
+
+// ─── Expert Notes ────────────────────────────────────────────────────────────
+
+export async function createExpertNote(data: Omit<InsertExpertNote, "createdAt" | "updatedAt">) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.insert(expertNotes).values(data);
+}
+
+export async function getExpertNotes(expertId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(expertNotes)
+    .where(eq(expertNotes.expertId, expertId))
+    .orderBy(expertNotes.createdAt);
+}
+
+export async function updateExpertNote(id: number, content: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(expertNotes).set({ content }).where(eq(expertNotes.id, id));
+}
+
+export async function deleteExpertNote(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(expertNotes).where(eq(expertNotes.id, id));
 }

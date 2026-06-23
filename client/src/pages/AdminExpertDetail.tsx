@@ -16,6 +16,7 @@ import ActivityTimeline from "@/components/ActivityTimeline";
 import DocumentViewer from "@/components/DocumentViewer";
 import { EmploymentHistoryForm } from "@/components/EmploymentHistoryForm";
 import { EducationHistoryForm } from "@/components/EducationHistoryForm";
+import { ExpertNotesSection } from "@/components/ExpertNotesSection";
 import AdminLayout from "@/components/AdminLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 
@@ -345,6 +346,12 @@ export default function AdminExpertDetail() {
               </div>
             </SectionCard>
           ) : null}
+
+          {/* Notes */}
+          <div className="bg-white rounded border border-border p-5" style={{ boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }}>
+            <h3 className="text-sm font-semibold text-foreground mb-4">Notes</h3>
+            <ExpertNotesSection expertId={expertId!} />
+          </div>
 
           {/* Projects & Shortlisting */}
           <div className="bg-white rounded border border-border" style={{ boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }}>
