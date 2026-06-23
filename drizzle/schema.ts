@@ -316,3 +316,18 @@ export const leads = mysqlTable("leads", {
 
 export type Lead = typeof leads.$inferSelect;
 export type InsertLead = typeof leads.$inferInsert;
+
+/**
+ * Expert Notes table — captures timestamped notes against expert profiles
+ */
+export const expertNotes = mysqlTable("expert_notes", {
+  id: int("id").autoincrement().primaryKey(),
+  expertId: int("expertId").notNull(),
+  content: longtext("content").notNull(),
+  createdBy: int("createdBy"), // References adminUsers.id
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ExpertNote = typeof expertNotes.$inferSelect;
+export type InsertExpertNote = typeof expertNotes.$inferInsert;

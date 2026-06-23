@@ -71,6 +71,10 @@ import {
   createProjectActivityEvent,
   getProjectActivityTimeline,
   getDb,
+  createExpertNote,
+  getExpertNotes,
+  updateExpertNote,
+  deleteExpertNote,
 } from "./db";
 import { storagePut, storageGet } from "./storage";
 import { nanoid } from "nanoid";
@@ -891,6 +895,51 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteExpertEducation(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ============ EXPERT NOTES ROUTERS ============
+  expertNotes: router({
+    add: adminProcedure
+      .input(
+        z.object({
+          expertId: z.number(),
+          content: z.string(),
+          createdBy: z.number().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const note = await createExpertNote({
+          expertId: input.expertId,
+          content: input.content,
+          createdBy: input.createdBy || null,
+        });
+        return note;
+      }),
+
+    getByExpert: adminProcedure
+      .input(z.object({ expertId: z.number() }))
+      .query(async ({ input }) => {
+        return getExpertNotes(input.expertId);
+      }),
+
+    update: adminProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          content: z.string(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await updateExpertNote(input.id, input.content);
+        return { success: true };
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteExpertNote(input.id);
         return { success: true };
       }),
   }),
