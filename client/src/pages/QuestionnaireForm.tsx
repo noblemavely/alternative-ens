@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { CheckCircle2, Loader2, ClipboardList } from "lucide-react";
@@ -13,15 +12,18 @@ export default function QuestionnaireForm() {
   const [, params] = useRoute("/questionnaire/:token");
   const token = params?.token ?? "";
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [submitted, setSubmitted] = useState(false);
 
-  const qQuery = trpc.questionnaires.getByToken.useQuery({ token }, { enabled: !!token });
-  const submitMutation = trpc.questionnaires.submit.useMutation();
+  // Use invitation token endpoint
+  const qQuery = trpc.questionnaires.getByInvitationToken.useQuery({ token }, { enabled: !!token });
+  const submitMutation = trpc.questionnaires.submitInvitation.useMutation();
 
-  const q = qQuery.data;
+  const data = qQuery.data;
+  const q = data?.questionnaire;
+  const expert = data?.expert;
+  const project = data?.project;
+  const client = data?.client;
 
   const setAnswer = (questionId: number, value: any) => {
     setAnswers(prev => ({ ...prev, [String(questionId)]: value }));
@@ -41,7 +43,6 @@ export default function QuestionnaireForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) { toast.error("Email is required"); return; }
     if (!q) return;
 
     // Validate required questions
@@ -54,7 +55,7 @@ export default function QuestionnaireForm() {
     }
 
     try {
-      await submitMutation.mutateAsync({ token, respondentEmail: email, respondentName: name, answers });
+      await submitMutation.mutateAsync({ token, answers, respondentName: expert?.firstName });
       setSubmitted(true);
     } catch (err: any) {
       toast.error(err.message || "Submission failed. Please try again.");
@@ -116,20 +117,32 @@ export default function QuestionnaireForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Respondent info */}
-          <div className="bg-white rounded-xl border border-border p-6 space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Your Details</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1.5">Full Name</label>
-                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" className="h-9 rounded-lg" />
-              </div>
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1.5">Email <span className="text-red-400">*</span></label>
-                <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="h-9 rounded-lg" required />
+          {/* Confirmation section - read-only details */}
+          {expert && project && (
+            <div className="bg-blue-50 rounded-xl border border-blue-200 p-6 space-y-4">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-blue-900">Questionnaire Details</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-blue-700 block mb-1.5">Expert Name</label>
+                  <p className="text-sm text-blue-900 font-medium">{expert.firstName} {expert.lastName}</p>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-blue-700 block mb-1.5">Email</label>
+                  <p className="text-sm text-blue-900 font-medium">{expert.email}</p>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-blue-700 block mb-1.5">Project</label>
+                  <p className="text-sm text-blue-900 font-medium">{project.name}</p>
+                </div>
+                {client && (
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-blue-700 block mb-1.5">Client</label>
+                    <p className="text-sm text-blue-900 font-medium">{client.name}</p>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Questions */}
           {q.questions.map((question: any, idx: number) => {
