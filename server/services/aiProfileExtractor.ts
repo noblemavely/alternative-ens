@@ -73,9 +73,33 @@ class ClaudeProvider implements AIProvider {
   async extractFromText(text: string): Promise<ProfileData | null> {
     try {
       console.log("[Claude] Extracting profile from text (resume)");
+
+      // Handle PDF base64 input
+      if (text.startsWith("[PDF_BASE64]")) {
+        const base64 = text.substring(12); // Remove prefix
+        const pdfText = await this.extractTextFromPDF(base64);
+        if (!pdfText) {
+          console.error("[Claude] Failed to extract text from PDF");
+          return null;
+        }
+        return await this.parseProfileText(pdfText);
+      }
+
       return await this.parseProfileText(text);
     } catch (error) {
       console.error("[Claude] Error extracting from text:", error);
+      return null;
+    }
+  }
+
+  private async extractTextFromPDF(base64: string): Promise<string | null> {
+    try {
+      const { default: pdfParse } = await import("pdf-parse");
+      const buffer = Buffer.from(base64, "base64");
+      const data = await pdfParse(buffer);
+      return data.text || null;
+    } catch (error) {
+      console.error("[Claude] Error extracting text from PDF:", error);
       return null;
     }
   }

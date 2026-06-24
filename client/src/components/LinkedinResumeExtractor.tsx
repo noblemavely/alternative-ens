@@ -7,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, FileText, AlertCircle, CheckCircle, Loader2, Zap } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import pdfParse from "pdf-parse/lib/pdf-parse.js";
 
 export interface ExtractedProfileData {
   firstName?: string;
@@ -109,33 +108,37 @@ export default function LinkedinResumeExtractor({
 
   const parseResume = async (file: File) => {
     try {
+      toast.loading("Reading PDF file...");
+
+      // Read PDF file and convert to base64
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      const binary = bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), "");
+      const base64 = btoa(binary);
+
       toast.loading("Parsing resume and extracting data...");
 
-      // Read PDF file
-      const arrayBuffer = await file.arrayBuffer();
-      const data = await pdfParse(Buffer.from(arrayBuffer));
-      const resumeText = data.text;
-
-      if (!resumeText.trim()) {
+      try {
+        // Send to Claude API for extraction (directly with base64)
+        // The server will handle converting base64 to text
+        const result = await extractMutation.mutateAsync({
+          resumeText: `[PDF_BASE64]${base64}`,
+        });
         toast.dismiss();
-        toast.error("Could not extract text from PDF. Please try a different file.");
-        return;
-      }
 
-      // Send to API for Claude parsing
-      const result = await extractMutation.mutateAsync({
-        resumeText: resumeText.trim(),
-      });
-      toast.dismiss();
-
-      if (result) {
-        toast.success("Resume parsed successfully!");
-        onExtracted(result, "resume");
+        if (result) {
+          toast.success("Resume parsed successfully!");
+          onExtracted(result, "resume");
+        }
+      } catch (error: any) {
+        toast.dismiss();
+        console.error("Resume parsing error:", error);
+        toast.error(error?.message || "Failed to parse resume. Please try again or fill manually.");
       }
     } catch (error: any) {
       toast.dismiss();
-      console.error("Resume parsing error:", error);
-      toast.error(error?.message || "Failed to parse resume. Please try again or fill manually.");
+      console.error("Resume read error:", error);
+      toast.error("Failed to read file");
     }
   };
 
