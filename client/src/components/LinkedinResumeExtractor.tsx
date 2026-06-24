@@ -177,10 +177,10 @@ export default function LinkedinResumeExtractor({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Zap size={20} className="text-blue-600" />
-          Auto-fill Profile Information
+          Connect to AlterNatives
         </CardTitle>
         <CardDescription>
-          Extract your professional details from LinkedIn or upload your resume
+          Connect your LinkedIn profile to your AlterNative expert profile
         </CardDescription>
       </CardHeader>
       <CardContent>
