@@ -80,7 +80,9 @@ export default function AdminProjectDetail() {
   const [editType, setEditType] = useState<"long_text" | "yes_no" | "dropdown" | "multi_select">("long_text");
   const [editOptions, setEditOptions] = useState<string[]>([]);
   const [editOptionInput, setEditOptionInput] = useState("");
-  // Responses
+  // Responses modal
+  const [showResponseModal, setShowResponseModal] = useState(false);
+  const [selectedExpertResponse, setSelectedExpertResponse] = useState<any>(null);
   // Email draft modal
   const [showEmailDraft, setShowEmailDraft] = useState(false);
   const [emailDraft, setEmailDraft] = useState<any>(null);
@@ -387,8 +389,8 @@ export default function AdminProjectDetail() {
                             {shortlist.status === "questionnaire_responded" && (
                               <button
                                 onClick={() => {
-                                  // TODO: Open responses modal/panel
-                                  toast.info("Response viewing coming soon");
+                                  setSelectedExpertResponse(shortlist);
+                                  setShowResponseModal(true);
                                 }}
                                 title="View Expert Response"
                                 className="inline-flex items-center justify-center h-7 w-7 rounded text-muted-foreground hover:bg-green-50 hover:text-emerald-600 transition-colors"
@@ -833,6 +835,49 @@ export default function AdminProjectDetail() {
             >
               Close
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Questionnaire Response Modal */}
+      {showResponseModal && selectedExpertResponse && questionnaireQuery.data && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4">
+            <div className="sticky top-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-foreground">Questionnaire Response</h2>
+              <button onClick={() => setShowResponseModal(false)} className="text-muted-foreground hover:text-foreground">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Expert info */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Expert</p>
+                <p className="text-sm font-semibold text-foreground mt-1">{selectedExpertResponse.expert?.firstName} {selectedExpertResponse.expert?.lastName}</p>
+                <p className="text-sm text-muted-foreground">{selectedExpertResponse.expert?.email}</p>
+              </div>
+
+              {/* Responses */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-foreground">Responses</h3>
+                {questionnaireQuery.data.questions && questionnaireQuery.data.questions.length > 0 ? (
+                  questionnaireQuery.data.questions.map((q: any) => {
+                    const response = selectedExpertResponse.response?.answers?.[String(q.id)];
+                    if (response === undefined) return null;
+
+                    return (
+                      <div key={q.id} className="rounded-lg border border-border p-4">
+                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">{q.questionText}</p>
+                        <p className="text-sm text-foreground">{Array.isArray(response) ? response.join(", ") : response}</p>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-sm text-muted-foreground">No responses available</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
