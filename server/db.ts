@@ -2097,28 +2097,28 @@ export async function getInvitationByToken(token: string) {
 
   console.log(`[DB] getInvitationByToken: Looking up token ${token}`);
 
-  // Use Drizzle ORM instead of raw pool.execute for proper persistence
-  const invitations = await db.select()
-    .from(questionnaireInvitations)
-    .where(eq(questionnaireInvitations.token, token))
-    .limit(1);
+  try {
+    // Use Drizzle ORM instead of raw pool.execute for proper persistence
+    const [inv] = await db.select()
+      .from(questionnaireInvitations)
+      .where(eq(questionnaireInvitations.token, token))
+      .limit(1);
 
-  console.log(`[DB] Invitation query result:`, invitations);
-  const inv = invitations?.[0];
-  if (!inv) {
-    console.error(`[DB] ❌ Invitation not found for token: ${token}`);
-    return null;
-  }
+    console.log(`[DB] Invitation query result:`, JSON.stringify({invId: inv?.id, token: inv?.token, qId: inv?.questionnaireId}));
+
+    if (!inv) {
+      console.error(`[DB] ❌ Invitation not found for token: ${token}`);
+      return null;
+    }
 
   console.log(`[DB] ✓ Invitation found: id=${inv.id}, questionnaireId=${inv.questionnaireId}, expertId=${inv.expertId}`);
 
-  const questionnairesData = await db.select()
+  const [q] = await db.select()
     .from(questionnaires)
     .where(eq(questionnaires.id, inv.questionnaireId))
     .limit(1);
 
-  console.log(`[DB] Questionnaire query for id=${inv.questionnaireId} result:`, questionnairesData);
-  const q = questionnairesData?.[0];
+  console.log(`[DB] Questionnaire query for id=${inv.questionnaireId} result:`, JSON.stringify({qId: q?.id, title: q?.title, isPublished: q?.isPublished}));
   if (!q) {
     console.error(`[DB] ❌ Questionnaire not found for id ${inv.questionnaireId}`);
     return null;
@@ -2131,7 +2131,7 @@ export async function getInvitationByToken(token: string) {
     .where(eq(questionnaireQuestions.questionnaireId, inv.questionnaireId))
     .orderBy(questionnaireQuestions.order);
 
-  const expertData = await db.select({
+  const [expert] = await db.select({
     id: experts.id,
     firstName: experts.firstName,
     lastName: experts.lastName,
@@ -2140,9 +2140,8 @@ export async function getInvitationByToken(token: string) {
     .from(experts)
     .where(eq(experts.id, inv.expertId))
     .limit(1);
-  const expert = expertData?.[0] ?? null;
 
-  const projectData = await db.select({
+  const [project] = await db.select({
     id: projects.id,
     name: projects.name,
     clientId: projects.clientId,
@@ -2150,18 +2149,17 @@ export async function getInvitationByToken(token: string) {
     .from(projects)
     .where(eq(projects.id, q.projectId))
     .limit(1);
-  const project = projectData?.[0] ?? null;
 
   let client = null;
   if (project?.clientId) {
-    const clientData = await db.select({
+    const [clientData] = await db.select({
       id: clients.id,
       name: clients.name,
     })
       .from(clients)
       .where(eq(clients.id, project.clientId))
       .limit(1);
-    client = clientData?.[0] ?? null;
+    client = clientData ?? null;
   }
 
   return {
