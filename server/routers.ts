@@ -660,39 +660,16 @@ export const appRouter = router({
 
           let profileData = null;
 
-          // Try Apollo.io first for LinkedIn URLs
           if (linkedinUrl) {
-            console.log(`[extractProfile] ========== LINKEDIN EXTRACTION START ==========`);
-            console.log(`[extractProfile] URL:`, linkedinUrl);
-            console.log(`[extractProfile] ENV CHECK - apolloApiKey exists:`, !!process.env.APOLLO_API_KEY);
-            console.log(`[extractProfile] ENV CHECK - apolloClientId exists:`, !!process.env.APOLLO_CLIENT_ID);
-            console.log(`[extractProfile] ENV CHECK - apolloClientSecret exists:`, !!process.env.APOLLO_CLIENT_SECRET);
-
             const { searchApolloByLinkedInUrl, isApolloConfigured } = await import(
               "./services/apolloLinkedinExtractor"
             );
 
-            const configured = isApolloConfigured();
-            console.log(`[extractProfile] isApolloConfigured() returned:`, configured);
-
-            if (configured) {
-              try {
-                console.log(`[extractProfile] Calling searchApolloByLinkedInUrl...`);
-                profileData = await searchApolloByLinkedInUrl(linkedinUrl);
-
-                if (profileData && profileData.firstName) {
-                  console.log(`[extractProfile] ✅ SUCCESS: Apollo returned profile for ${profileData.firstName} ${profileData.lastName}`);
-                  console.log(`[extractProfile] Employment count:`, profileData.employment?.length || 0);
-                  console.log(`[extractProfile] ========== LINKEDIN EXTRACTION SUCCESS ==========`);
-                  return profileData;
-                } else {
-                  console.warn(`[extractProfile] Apollo returned empty/null data`);
-                }
-              } catch (apolloError) {
-                console.error(`[extractProfile] Apollo extraction error:`, apolloError instanceof Error ? apolloError.message : apolloError);
+            if (isApolloConfigured()) {
+              profileData = await searchApolloByLinkedInUrl(linkedinUrl);
+              if (profileData) {
+                return profileData;
               }
-            } else {
-              console.warn(`[extractProfile] Apollo NOT configured - skipping Apollo attempt`);
             }
 
             // Fallback to Claude if Apollo not configured or failed

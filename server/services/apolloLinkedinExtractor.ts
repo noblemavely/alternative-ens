@@ -181,35 +181,16 @@ async function searchWithApiKey(
       }),
     });
 
-    console.log(`[Apollo] API Response Status: ${response.status}`);
-
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[Apollo] API key error: ${response.status} - ${errorText}`);
       return null;
     }
 
     const data = (await response.json()) as any;
-    console.log(`[Apollo] API Response received, has person: ${!!data.person}`);
-
     if (!data.person) {
-      console.error(`[Apollo] Response missing person object. Response keys:`, Object.keys(data).join(", "));
       return null;
     }
 
-    console.log(`[Apollo] Person object exists. Keys:`, Object.keys(data.person).join(", "));
-    console.log(`[Apollo] Person first_name:`, data.person.first_name);
-    console.log(`[Apollo] Person employment_history type:`, typeof data.person.employment_history);
-    console.log(`[Apollo] Person employment_history value:`, data.person.employment_history);
-    console.log(`[Apollo] Full person object:`, JSON.stringify(data.person, null, 2).substring(0, 500));
-
     const result = extractProfileFromResponse(data, username);
-    console.log(`[Apollo] Extracted profile data:`, {
-      firstName: result?.firstName,
-      lastName: result?.lastName,
-      employmentCount: result?.employment?.length || 0,
-      educationCount: result?.education?.length || 0,
-    });
     return result;
   } catch (error) {
     console.error(`[Apollo] API key search failed:`, error);
@@ -256,23 +237,16 @@ function extractProfileFromResponse(
   data: any,
   username: string
 ): ApolloProfileData | null {
-  console.log(`[Apollo] extractProfileFromResponse called with data:`, { hasPerson: !!data.person });
-
   if (!data || typeof data !== 'object') {
-    console.error(`[Apollo] Invalid data structure received:`, typeof data);
     return null;
   }
 
   if (!data.person) {
-    console.warn(`[Apollo] No person found for LinkedIn username: ${username}`);
     return null;
   }
 
   const person = data.person;
-  console.log(`[Apollo] Successfully found profile for ${username}, building profile data...`);
 
-  // CRITICAL: Always try to extract data if we have a person object
-  // Even partial data is valuable
   try {
     const employment = mapEmploymentHistory(person.employment_history);
     const education = mapEducationHistory(person.education);
@@ -308,47 +282,27 @@ function extractProfileFromResponse(
   }
 }
 
-/**
- * Map Apollo employment history to our format
- */
 function mapEmploymentHistory(
   employmentHistory: any[]
 ): ApolloProfileData["employment"] {
-  console.log(`[Apollo] mapEmploymentHistory called with:`, {
-    type: typeof employmentHistory,
-    isArray: Array.isArray(employmentHistory),
-    value: employmentHistory
-  });
-
   if (!employmentHistory || !Array.isArray(employmentHistory)) {
-    console.log(`[Apollo] Employment history is not an array, returning empty`);
     return [];
   }
 
   return employmentHistory.map((emp) => ({
-    companyName: emp.organization_name || emp.company_name || "",
+    companyName: emp.organization_name || "",
     position: emp.title || "",
     startDate: emp.start_date ? formatDate(emp.start_date) : undefined,
     endDate: emp.end_date ? formatDate(emp.end_date) : undefined,
-    isCurrent: emp.current !== false, // If current is true or undefined, assume current
+    isCurrent: emp.current === true,
     description: emp.description || "",
   }));
 }
 
-/**
- * Map Apollo education to our format
- */
 function mapEducationHistory(
   education: any[]
 ): ApolloProfileData["education"] {
-  console.log(`[Apollo] mapEducationHistory called with:`, {
-    type: typeof education,
-    isArray: Array.isArray(education),
-    value: education
-  });
-
   if (!education || !Array.isArray(education)) {
-    console.log(`[Apollo] Education history is not an array, returning empty`);
     return [];
   }
 
