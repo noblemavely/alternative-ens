@@ -67,6 +67,7 @@ export default function ExpertPortal() {
   const enrichLinkedinMutation = trpc.upload.enrichLinkedInProfile.useMutation();
   const linkedinCallbackMutation = trpc.linkedinOAuth.handleCallback.useMutation();
   const uploadCVMutation = trpc.upload.uploadCV.useMutation();
+  const extractProfileMutation = trpc.experts.extractProfile.useMutation();
   const createExpertMutation = trpc.experts.submitProfile.useMutation({
     onSuccess: () => {
       utils.experts.list.invalidate();
@@ -694,7 +695,7 @@ export default function ExpertPortal() {
                         if (url) {
                           try {
                             toast.loading("Extracting profile from LinkedIn...");
-                            const result = await trpc.experts.extractProfile.useMutation().mutateAsync({
+                            const result = await extractProfileMutation.mutateAsync({
                               linkedinUrl: url,
                             });
                             toast.dismiss();
