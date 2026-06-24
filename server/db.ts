@@ -352,6 +352,22 @@ async function initializeSchema(pool: any) {
         INDEX idx_questionnaireId (questionnaireId),
         INDEX idx_expertId (expertId)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+      `ALTER TABLE questionnaires ADD COLUMN IF NOT EXISTS isPublished BOOLEAN DEFAULT FALSE NOT NULL`,
+
+      `CREATE TABLE IF NOT EXISTS questionnaire_invitations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        questionnaireId INT NOT NULL,
+        expertId INT NOT NULL,
+        shortlistId INT,
+        token VARCHAR(64) NOT NULL UNIQUE,
+        status ENUM('pending','completed') DEFAULT 'pending' NOT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY (questionnaireId) REFERENCES questionnaires(id) ON DELETE CASCADE,
+        INDEX idx_questionnaireId (questionnaireId),
+        INDEX idx_expertId (expertId),
+        INDEX idx_token (token)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
     ];
 
     // Execute all table creation statements
@@ -1945,4 +1961,132 @@ export async function deleteQuestionnaire(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(questionnaires).where(eq(questionnaires.id, id));
+}
+
+export async function publishQuestionnaire(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(questionnaires).set({ isPublished: true }).where(eq(questionnaires.id, id));
+}
+
+export async function updateQuestionnaireQuestion(id: number, data: {
+  questionText?: string;
+  questionType?: "long_text" | "yes_no" | "dropdown" | "multi_select";
+  options?: string[];
+  isRequired?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(questionnaireQuestions).set({
+    ...(data.questionText !== undefined && { questionText: data.questionText }),
+    ...(data.questionType !== undefined && { questionType: data.questionType }),
+    ...(data.options !== undefined && { options: JSON.stringify(data.options) }),
+    ...(data.isRequired !== undefined && { isRequired: data.isRequired }),
+  }).where(eq(questionnaireQuestions.id, id));
+}
+
+export async function createOrGetInvitation(data: {
+  questionnaireId: number;
+  expertId: number;
+  shortlistId?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const pool = (db as any).$client;
+
+  // Return existing invitation for this expert+questionnaire
+  const [existing]: any = await pool.execute(
+    "SELECT * FROM questionnaire_invitations WHERE questionnaireId = ? AND expertId = ? LIMIT 1",
+    [data.questionnaireId, data.expertId]
+  );
+  if (existing?.[0]) return existing[0];
+
+  // Create new invitation
+  const token = generateToken();
+  await pool.execute(
+    "INSERT INTO questionnaire_invitations (questionnaireId, expertId, shortlistId, token, status) VALUES (?, ?, ?, ?, 'pending')",
+    [data.questionnaireId, data.expertId, data.shortlistId ?? null, token]
+  );
+  const [created]: any = await pool.execute(
+    "SELECT * FROM questionnaire_invitations WHERE token = ? LIMIT 1",
+    [token]
+  );
+  return created[0];
+}
+
+export async function getInvitationByToken(token: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const pool = (db as any).$client;
+
+  const [invRows]: any = await pool.execute(
+    "SELECT * FROM questionnaire_invitations WHERE token = ? LIMIT 1",
+    [token]
+  );
+  const inv = invRows?.[0];
+  if (!inv) return null;
+
+  const [qRows]: any = await pool.execute(
+    "SELECT * FROM questionnaires WHERE id = ? LIMIT 1",
+    [inv.questionnaireId]
+  );
+  const q = qRows?.[0];
+  if (!q) return null;
+
+  const [questionRows]: any = await pool.execute(
+    "SELECT * FROM questionnaire_questions WHERE questionnaireId = ? ORDER BY `order` ASC",
+    [inv.questionnaireId]
+  );
+
+  const [expertRows]: any = await pool.execute(
+    "SELECT id, firstName, lastName, email FROM experts WHERE id = ? LIMIT 1",
+    [inv.expertId]
+  );
+  const expert = expertRows?.[0] ?? null;
+
+  return {
+    invitation: inv,
+    questionnaire: { ...q, questions: questionRows ?? [] },
+    expert,
+  };
+}
+
+export async function submitInvitationResponse(data: {
+  token: string;
+  answers: Record<string, any>;
+  respondentName?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const pool = (db as any).$client;
+
+  const [invRows]: any = await pool.execute(
+    "SELECT * FROM questionnaire_invitations WHERE token = ? LIMIT 1",
+    [data.token]
+  );
+  const inv = invRows?.[0];
+  if (!inv) throw new Error("Invitation not found");
+
+  const [expertRows]: any = await pool.execute(
+    "SELECT email FROM experts WHERE id = ? LIMIT 1",
+    [inv.expertId]
+  );
+  const expertEmail = expertRows?.[0]?.email ?? "";
+
+  await db.insert(questionnaireSubmissions).values({
+    questionnaireId: inv.questionnaireId,
+    expertId: inv.expertId,
+    respondentEmail: expertEmail,
+    respondentName: data.respondentName ?? null,
+    answers: JSON.stringify(data.answers),
+  });
+
+  // Mark invitation completed
+  await pool.execute(
+    "UPDATE questionnaire_invitations SET status = 'completed' WHERE token = ?",
+    [data.token]
+  );
 }

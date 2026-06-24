@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Trash2, Calendar, Edit2, X, Save, CheckCircle, AlertCircle, XCircle, Briefcase, ClipboardList, Plus, Copy, ChevronDown, Users } from "lucide-react";
+import { Loader2, Trash2, Calendar, Edit2, X, Save, CheckCircle, AlertCircle, XCircle, Briefcase, ClipboardList, Plus, Copy, ChevronDown, Users, Link2, Pencil, Send } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRoute, useLocation } from "wouter";
@@ -64,12 +64,24 @@ export default function AdminProjectDetail() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<any>(null);
 
-  const [newQuestionText, setNewQuestionText] = useState("");
-  const [newQuestionType, setNewQuestionType] = useState<"long_text" | "yes_no" | "dropdown" | "multi_select">("long_text");
-  const [newQuestionOptions, setNewQuestionOptions] = useState("");
-  const [showResponses, setShowResponses] = useState(false);
+  // ── Questionnaire state ──────────────────────────────────────────────────
   const [creatingQuestionnaire, setCreatingQuestionnaire] = useState(false);
   const [qTitle, setQTitle] = useState("");
+  // New-question form
+  const [newQuestionText, setNewQuestionText] = useState("");
+  const [newQuestionType, setNewQuestionType] = useState<"long_text" | "yes_no" | "dropdown" | "multi_select">("long_text");
+  const [newOptionsList, setNewOptionsList] = useState<string[]>([]);
+  const [newOptionInput, setNewOptionInput] = useState("");
+  // Edit-question form
+  const [editingQuestionId, setEditingQuestionId] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
+  const [editType, setEditType] = useState<"long_text" | "yes_no" | "dropdown" | "multi_select">("long_text");
+  const [editOptions, setEditOptions] = useState<string[]>([]);
+  const [editOptionInput, setEditOptionInput] = useState("");
+  // Responses
+  const [showResponses, setShowResponses] = useState(false);
+  // Per-expert invitation links
+  const [inviteLinks, setInviteLinks] = useState<Record<number, string>>({}); // keyed by shortlistId
 
   const projectQuery          = trpc.projects.getById.useQuery({ id: projectId! }, { enabled: !!projectId });
   const shortlistQuery        = trpc.shortlists.getByProject.useQuery({ projectId: projectId! }, { enabled: !!projectId });
@@ -102,7 +114,7 @@ export default function AdminProjectDetail() {
   });
 
   const addQuestionMutation = trpc.questionnaires.addQuestion.useMutation({
-    onSuccess: () => { toast.success("Question added"); questionnaireQuery.refetch(); setNewQuestionText(""); setNewQuestionOptions(""); },
+    onSuccess: () => { toast.success("Question added"); questionnaireQuery.refetch(); setNewQuestionText(""); setNewOptionsList([]); setNewOptionInput(""); },
     onError: (e: any) => toast.error(e.message || "Failed to add question"),
   });
 
@@ -114,6 +126,20 @@ export default function AdminProjectDetail() {
   const deleteQuestionnaireMutation = trpc.questionnaires.delete.useMutation({
     onSuccess: () => { toast.success("Questionnaire deleted"); questionnaireQuery.refetch(); },
     onError: (e: any) => toast.error(e.message || "Failed to delete questionnaire"),
+  });
+
+  const publishQuestionnaireMutation = trpc.questionnaires.publish.useMutation({
+    onSuccess: () => { toast.success("Questionnaire published — generate links for each expert below"); questionnaireQuery.refetch(); },
+    onError: (e: any) => toast.error(e.message || "Failed to publish"),
+  });
+
+  const updateQuestionMutation = trpc.questionnaires.updateQuestion.useMutation({
+    onSuccess: () => { toast.success("Question updated"); questionnaireQuery.refetch(); setEditingQuestionId(null); },
+    onError: (e: any) => toast.error(e.message || "Failed to update question"),
+  });
+
+  const createInvitationMutation = trpc.questionnaires.createInvitation.useMutation({
+    onError: (e: any) => toast.error(e.message || "Failed to generate link"),
   });
 
   const responsesQuery = trpc.questionnaires.responses.useQuery(
@@ -276,6 +302,7 @@ export default function AdminProjectDetail() {
                       <th>Sector</th>
                       <th>Function</th>
                       <th>Status</th>
+                      {questionnaireQuery.data?.isPublished && <th><span className="flex items-center gap-1"><Link2 size={11} />Q Link</span></th>}
                       <th className="text-right">Actions</th>
                     </tr>
                   </thead>
@@ -305,6 +332,39 @@ export default function AdminProjectDetail() {
                             </SelectContent>
                           </Select>
                         </td>
+                        {questionnaireQuery.data?.isPublished && (
+                          <td>
+                            {inviteLinks[shortlist.id] ? (
+                              <div className="flex items-center gap-1.5 max-w-xs">
+                                <span className="text-[10px] font-mono text-muted-foreground truncate flex-1">{inviteLinks[shortlist.id]}</span>
+                                <button
+                                  onClick={() => { navigator.clipboard.writeText(inviteLinks[shortlist.id]); toast.success("Link copied!"); }}
+                                  className="flex-shrink-0 inline-flex items-center justify-center h-6 w-6 rounded text-muted-foreground hover:text-primary transition-colors"
+                                >
+                                  <Copy size={12} />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={async () => {
+                                  const inv = await createInvitationMutation.mutateAsync({
+                                    questionnaireId: questionnaireQuery.data!.id,
+                                    expertId: shortlist.expertId,
+                                    shortlistId: shortlist.id,
+                                  });
+                                  const link = `${window.location.origin}/questionnaire/i/${inv.token}`;
+                                  setInviteLinks(prev => ({ ...prev, [shortlist.id]: link }));
+                                  navigator.clipboard.writeText(link);
+                                  toast.success("Link generated and copied!");
+                                }}
+                                disabled={createInvitationMutation.isPending}
+                                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                              >
+                                <Send size={11} /> Get Link
+                              </button>
+                            )}
+                          </td>
+                        )}
                         <td className="text-right">
                           <button
                             onClick={() => removeFromShortlistMutation.mutate({ id: shortlist.id })}
@@ -323,29 +383,18 @@ export default function AdminProjectDetail() {
           </div>
 
           {/* Questionnaire */}
-          <SectionCard title="Questionnaire" subtitle="Send a form to experts to collect structured responses">
+          <SectionCard title="Questionnaire" subtitle="Build a form, publish it, then send unique links to each expert">
             {questionnaireQuery.isLoading ? (
               <div className="py-6 text-center text-sm text-muted-foreground">Loading…</div>
             ) : !questionnaireQuery.data ? (
-              /* Create questionnaire */
               creatingQuestionnaire ? (
                 <div className="space-y-3">
-                  <Input
-                    placeholder="Questionnaire title (e.g. Expert Screening — Cloud Migration)"
-                    value={qTitle}
-                    onChange={e => setQTitle(e.target.value)}
-                    className="h-9 rounded-lg"
-                  />
+                  <Input placeholder="Questionnaire title (e.g. Expert Screening — Cloud Migration)" value={qTitle} onChange={e => setQTitle(e.target.value)} className="h-9 rounded-lg" />
                   <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      className="gap-1.5 rounded-lg"
-                      style={{ background: "#2563EB" }}
+                    <Button size="sm" className="gap-1.5 rounded-lg" style={{ background: "#2563EB" }}
                       disabled={!qTitle.trim() || createQuestionnaireMutation.isPending}
-                      onClick={() => createQuestionnaireMutation.mutate({ projectId: projectId!, title: qTitle })}
-                    >
-                      {createQuestionnaireMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <ClipboardList size={12} />}
-                      Create
+                      onClick={() => createQuestionnaireMutation.mutate({ projectId: projectId!, title: qTitle })}>
+                      {createQuestionnaireMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <ClipboardList size={12} />} Create
                     </Button>
                     <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setCreatingQuestionnaire(false)}>Cancel</Button>
                   </div>
@@ -359,173 +408,229 @@ export default function AdminProjectDetail() {
                   </Button>
                 </div>
               )
-            ) : (
-              /* Questionnaire exists */
-              (() => {
-                const q = questionnaireQuery.data!;
-                const link = `${window.location.origin}/questionnaire/${q.token}`;
-                return (
-                  <div className="space-y-4">
-                    {/* Share link */}
-                    <div className="rounded-lg border border-border bg-secondary/40 p-3 flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground flex-1 truncate font-mono">{link}</span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-shrink-0 gap-1 rounded-lg h-7 text-xs"
-                        onClick={() => { navigator.clipboard.writeText(link); toast.success("Link copied!"); }}
-                      >
-                        <Copy size={11} /> Copy Link
-                      </Button>
-                    </div>
+            ) : (() => {
+              const q = questionnaireQuery.data!;
+              return (
+                <div className="space-y-5">
 
-                    {/* Questions */}
+                  {/* Header: title + publish state */}
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Questions ({q.questions.length})</p>
-                      {q.questions.length === 0 ? (
-                        <p className="text-sm text-muted-foreground py-2">No questions yet. Add one below.</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {q.questions.map((question: any, idx: number) => (
+                      <p className="text-sm font-semibold text-foreground">{q.title}</p>
+                      {q.isPublished
+                        ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full mt-1"><CheckCircle size={10} /> Published — generate expert links in the table above</span>
+                        : <span className="text-[10px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full mt-1 inline-block">Draft — add your questions, then publish</span>}
+                    </div>
+                    {!q.isPublished && (
+                      <Button size="sm" className="gap-1.5 rounded-lg text-xs" style={{ background: "#059669" }}
+                        disabled={q.questions.length === 0 || publishQuestionnaireMutation.isPending}
+                        onClick={() => publishQuestionnaireMutation.mutate({ id: q.id })}>
+                        {publishQuestionnaireMutation.isPending ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle size={11} />}
+                        Save & Publish
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Questions list */}
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Questions ({q.questions.length})</p>
+                    {q.questions.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-2">No questions yet — add one below.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {q.questions.map((question: any, idx: number) => {
+                          const isEditing = editingQuestionId === question.id;
+                          const parsedOpts: string[] = (() => { try { return JSON.parse(question.options || "[]"); } catch { return []; } })();
+
+                          if (isEditing) {
+                            return (
+                              <div key={question.id} className="rounded-lg border border-primary/30 bg-blue-50/30 p-4 space-y-3">
+                                <Input value={editText} onChange={e => setEditText(e.target.value)} className="h-8 rounded-lg text-sm" placeholder="Question text" />
+                                <Select value={editType} onValueChange={(v: any) => { setEditType(v); if (v === "yes_no" || v === "long_text") setEditOptions([]); }}>
+                                  <SelectTrigger className="h-8 rounded-lg text-sm"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="long_text">Long Text</SelectItem>
+                                    <SelectItem value="yes_no">Yes / No</SelectItem>
+                                    <SelectItem value="dropdown">Dropdown (Radio)</SelectItem>
+                                    <SelectItem value="multi_select">Multi-Select (Checkbox)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                {(editType === "dropdown" || editType === "multi_select") && (
+                                  <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Options</p>
+                                    <div className="flex flex-wrap gap-1.5 mb-2">
+                                      {editOptions.map((opt, i) => (
+                                        <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                          {opt}
+                                          <button type="button" onClick={() => setEditOptions(editOptions.filter((_, j) => j !== i))}><X size={10} /></button>
+                                        </span>
+                                      ))}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Input value={editOptionInput} onChange={e => setEditOptionInput(e.target.value)}
+                                        onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); const v = editOptionInput.trim(); if (v) { setEditOptions([...editOptions, v]); setEditOptionInput(""); } } }}
+                                        placeholder="Type option, press Enter" className="h-8 rounded-lg text-xs flex-1" />
+                                      <Button size="sm" variant="outline" className="h-8 rounded-lg px-3"
+                                        onClick={() => { const v = editOptionInput.trim(); if (v) { setEditOptions([...editOptions, v]); setEditOptionInput(""); } }}>
+                                        <Plus size={12} />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="flex gap-2">
+                                  <Button size="sm" className="h-7 gap-1 rounded-lg text-xs" style={{ background: "#2563EB" }}
+                                    disabled={!editText.trim() || updateQuestionMutation.isPending}
+                                    onClick={() => updateQuestionMutation.mutate({ id: question.id, questionText: editText, questionType: editType, options: (editType === "dropdown" || editType === "multi_select") ? editOptions : [] })}>
+                                    {updateQuestionMutation.isPending ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />} Save
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="h-7 rounded-lg text-xs" onClick={() => setEditingQuestionId(null)}>Cancel</Button>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          return (
                             <div key={question.id} className="flex items-start gap-2 p-3 rounded-lg border border-border bg-white">
                               <span className="text-xs text-muted-foreground font-mono mt-0.5 w-4 flex-shrink-0">{idx + 1}.</span>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm text-foreground">{question.questionText}</p>
-                                <div className="flex items-center gap-2 mt-1">
+                                <div className="flex items-center gap-2 mt-1 flex-wrap">
                                   <span className="badge-info text-[10px]">{question.questionType.replace(/_/g, " ")}</span>
                                   {question.isRequired && <span className="text-[10px] text-muted-foreground">Required</span>}
                                 </div>
-                                {question.options && (() => { try { const opts = JSON.parse(question.options); return opts.length ? <p className="text-[10px] text-muted-foreground mt-1">Options: {opts.join(" · ")}</p> : null; } catch { return null; } })()}
+                                {parsedOpts.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1.5">
+                                    {parsedOpts.map((o, i) => (
+                                      <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">{o}</span>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="flex-shrink-0 h-7 w-7 p-0 text-muted-foreground hover:text-red-500"
-                                onClick={() => deleteQuestionMutation.mutate({ id: question.id })}
-                                disabled={deleteQuestionMutation.isPending}
-                              >
-                                <Trash2 size={13} />
-                              </Button>
+                              <div className="flex gap-1 flex-shrink-0">
+                                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                                  onClick={() => { setEditingQuestionId(question.id); setEditText(question.questionText); setEditType(question.questionType); setEditOptions(parsedOpts); setEditOptionInput(""); }}>
+                                  <Pencil size={12} />
+                                </Button>
+                                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500"
+                                  onClick={() => deleteQuestionMutation.mutate({ id: question.id })} disabled={deleteQuestionMutation.isPending}>
+                                  <Trash2 size={12} />
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add question */}
+                  <div className="rounded-lg border border-dashed border-border p-4 space-y-3">
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Add Question</p>
+                    <Input placeholder="Question text…" value={newQuestionText} onChange={e => setNewQuestionText(e.target.value)} className="h-9 rounded-lg" />
+                    <div className="flex gap-2">
+                      <Select value={newQuestionType} onValueChange={(v: any) => { setNewQuestionType(v); if (v === "yes_no" || v === "long_text") setNewOptionsList([]); }}>
+                        <SelectTrigger className="h-9 rounded-lg flex-1 text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="long_text">Long Text</SelectItem>
+                          <SelectItem value="yes_no">Yes / No</SelectItem>
+                          <SelectItem value="dropdown">Dropdown (Radio)</SelectItem>
+                          <SelectItem value="multi_select">Multi-Select (Checkbox)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button size="sm" className="gap-1.5 rounded-lg" style={{ background: "#2563EB" }}
+                        disabled={!newQuestionText.trim() || addQuestionMutation.isPending}
+                        onClick={() => {
+                          addQuestionMutation.mutate({
+                            questionnaireId: q.id,
+                            questionText: newQuestionText,
+                            questionType: newQuestionType,
+                            options: (newQuestionType === "dropdown" || newQuestionType === "multi_select") ? newOptionsList : undefined,
+                            order: q.questions.length,
+                          });
+                          setNewOptionsList([]);
+                          setNewOptionInput("");
+                        }}>
+                        {addQuestionMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Add
+                      </Button>
+                    </div>
+
+                    {/* Chip-based options adder */}
+                    {(newQuestionType === "dropdown" || newQuestionType === "multi_select") && (
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Options</p>
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {newOptionsList.map((opt, i) => (
+                            <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                              {opt}
+                              <button type="button" onClick={() => setNewOptionsList(newOptionsList.filter((_, j) => j !== i))}><X size={10} /></button>
+                            </span>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            value={newOptionInput}
+                            onChange={e => setNewOptionInput(e.target.value)}
+                            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); const v = newOptionInput.trim(); if (v) { setNewOptionsList([...newOptionsList, v]); setNewOptionInput(""); } } }}
+                            placeholder="Type an option, press Enter or click +"
+                            className="h-8 rounded-lg text-xs flex-1"
+                          />
+                          <Button size="sm" variant="outline" className="h-8 rounded-lg px-3"
+                            onClick={() => { const v = newOptionInput.trim(); if (v) { setNewOptionsList([...newOptionsList, v]); setNewOptionInput(""); } }}>
+                            <Plus size={12} />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Responses */}
+                  <div>
+                    <button className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => setShowResponses(v => !v)}>
+                      <Users size={12} />
+                      Responses {responsesQuery.data ? `(${responsesQuery.data.length})` : ""}
+                      <ChevronDown size={12} className={`transition-transform ${showResponses ? "rotate-180" : ""}`} />
+                    </button>
+                    {showResponses && (
+                      responsesQuery.isLoading ? (
+                        <div className="py-4 text-sm text-muted-foreground">Loading…</div>
+                      ) : !responsesQuery.data?.length ? (
+                        <p className="text-sm text-muted-foreground py-3">No responses yet.</p>
+                      ) : (
+                        <div className="mt-3 space-y-4">
+                          {responsesQuery.data.map((resp: any) => (
+                            <div key={resp.id} className="rounded-lg border border-border p-4 bg-white">
+                              <p className="text-sm font-semibold text-foreground">{resp.respondentName || resp.respondentEmail}</p>
+                              <p className="text-xs text-muted-foreground mb-3">{resp.respondentEmail} · {new Date(resp.submittedAt).toLocaleDateString()}</p>
+                              <div className="space-y-2">
+                                {q.questions.map((question: any) => {
+                                  const ans = resp.answers[String(question.id)];
+                                  if (ans === undefined) return null;
+                                  return (
+                                    <div key={question.id}>
+                                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{question.questionText}</p>
+                                      <p className="text-sm text-foreground mt-0.5">{Array.isArray(ans) ? ans.join(", ") : ans}</p>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
                           ))}
                         </div>
-                      )}
-                    </div>
-
-                    {/* Add question */}
-                    <div className="rounded-lg border border-dashed border-border p-4 space-y-3">
-                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Add Question</p>
-                      <Input
-                        placeholder="Question text…"
-                        value={newQuestionText}
-                        onChange={e => setNewQuestionText(e.target.value)}
-                        className="h-9 rounded-lg"
-                      />
-                      <div className="flex gap-2">
-                        <Select value={newQuestionType} onValueChange={(v: any) => setNewQuestionType(v)}>
-                          <SelectTrigger className="h-9 rounded-lg flex-1 text-sm"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="long_text">Long Text</SelectItem>
-                            <SelectItem value="yes_no">Yes / No</SelectItem>
-                            <SelectItem value="dropdown">Dropdown (Radio)</SelectItem>
-                            <SelectItem value="multi_select">Multi-Select (Checkbox)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          size="sm"
-                          className="gap-1.5 rounded-lg"
-                          style={{ background: "#2563EB" }}
-                          disabled={!newQuestionText.trim() || addQuestionMutation.isPending}
-                          onClick={() => {
-                            const opts = (newQuestionType === "dropdown" || newQuestionType === "multi_select")
-                              ? newQuestionOptions.split(",").map(s => s.trim()).filter(Boolean)
-                              : undefined;
-                            addQuestionMutation.mutate({
-                              questionnaireId: q.id,
-                              questionText: newQuestionText,
-                              questionType: newQuestionType,
-                              options: opts,
-                              order: q.questions.length,
-                            });
-                          }}
-                        >
-                          {addQuestionMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
-                          Add
-                        </Button>
-                      </div>
-                      {(newQuestionType === "dropdown" || newQuestionType === "multi_select") && (
-                        <Input
-                          placeholder="Options (comma-separated): e.g. Option A, Option B, Option C"
-                          value={newQuestionOptions}
-                          onChange={e => setNewQuestionOptions(e.target.value)}
-                          className="h-9 rounded-lg text-sm"
-                        />
-                      )}
-                    </div>
-
-                    {/* Responses */}
-                    <div>
-                      <button
-                        className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
-                        onClick={() => setShowResponses(v => !v)}
-                      >
-                        <Users size={12} />
-                        Responses {responsesQuery.data ? `(${responsesQuery.data.length})` : ""}
-                        <ChevronDown size={12} className={`transition-transform ${showResponses ? "rotate-180" : ""}`} />
-                      </button>
-                      {showResponses && (
-                        responsesQuery.isLoading ? (
-                          <div className="py-4 text-sm text-muted-foreground">Loading…</div>
-                        ) : !responsesQuery.data?.length ? (
-                          <p className="text-sm text-muted-foreground py-3">No responses yet.</p>
-                        ) : (
-                          <div className="mt-3 space-y-4">
-                            {responsesQuery.data.map((resp: any) => (
-                              <div key={resp.id} className="rounded-lg border border-border p-4 bg-white">
-                                <div className="flex items-center justify-between mb-3">
-                                  <div>
-                                    <p className="text-sm font-semibold text-foreground">{resp.respondentName || resp.respondentEmail}</p>
-                                    <p className="text-xs text-muted-foreground">{resp.respondentEmail} · {new Date(resp.submittedAt).toLocaleDateString()}</p>
-                                  </div>
-                                </div>
-                                <div className="space-y-2">
-                                  {q.questions.map((question: any) => {
-                                    const ans = resp.answers[String(question.id)];
-                                    if (ans === undefined) return null;
-                                    return (
-                                      <div key={question.id}>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{question.questionText}</p>
-                                        <p className="text-sm text-foreground mt-0.5">{Array.isArray(ans) ? ans.join(", ") : ans}</p>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )
-                      )}
-                    </div>
-
-                    {/* Delete questionnaire */}
-                    <div className="pt-2 border-t border-border">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-xs text-muted-foreground hover:text-red-500 gap-1.5"
-                        onClick={() => {
-                          if (confirm("Delete this questionnaire and all responses?")) {
-                            deleteQuestionnaireMutation.mutate({ id: q.id });
-                          }
-                        }}
-                      >
-                        <Trash2 size={12} /> Delete Questionnaire
-                      </Button>
-                    </div>
+                      )
+                    )}
                   </div>
-                );
-              })()
-            )}
+
+                  {/* Delete */}
+                  <div className="pt-2 border-t border-border">
+                    <Button size="sm" variant="ghost" className="text-xs text-muted-foreground hover:text-red-500 gap-1.5"
+                      onClick={() => { if (confirm("Delete this questionnaire and all responses?")) deleteQuestionnaireMutation.mutate({ id: q.id }); }}>
+                      <Trash2 size={12} /> Delete Questionnaire
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()}
           </SectionCard>
 
           {/* Activity Timeline */}

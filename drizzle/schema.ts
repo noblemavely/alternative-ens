@@ -343,6 +343,7 @@ export const questionnaires = mysqlTable("questionnaires", {
   description: text("description"),
   token: varchar("token", { length: 64 }).notNull().unique(),
   isActive: boolean("isActive").default(true).notNull(),
+  isPublished: boolean("isPublished").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -382,3 +383,19 @@ export const questionnaireSubmissions = mysqlTable("questionnaire_submissions", 
 
 export type QuestionnaireSubmission = typeof questionnaireSubmissions.$inferSelect;
 export type InsertQuestionnaireSubmission = typeof questionnaireSubmissions.$inferInsert;
+
+/**
+ * Per-expert questionnaire invitations — unique token per expert+questionnaire
+ */
+export const questionnaireInvitations = mysqlTable("questionnaire_invitations", {
+  id: int("id").autoincrement().primaryKey(),
+  questionnaireId: int("questionnaireId").notNull(),
+  expertId: int("expertId").notNull(),
+  shortlistId: int("shortlistId"),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  status: mysqlEnum("status", ["pending", "completed"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type QuestionnaireInvitation = typeof questionnaireInvitations.$inferSelect;
+export type InsertQuestionnaireInvitation = typeof questionnaireInvitations.$inferInsert;
