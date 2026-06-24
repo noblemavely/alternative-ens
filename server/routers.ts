@@ -667,9 +667,11 @@ export const appRouter = router({
               "./services/apolloLinkedinExtractor"
             );
 
+            console.log(`[extractProfile] Apollo configured check:`, isApolloConfigured());
             if (isApolloConfigured()) {
-              console.log(`[extractProfile] Apollo.io is configured, attempting extraction...`);
+              console.log(`[extractProfile] Apollo.io is configured, calling searchApolloByLinkedInUrl...`);
               profileData = await searchApolloByLinkedInUrl(linkedinUrl);
+              console.log(`[extractProfile] searchApolloByLinkedInUrl returned:`, profileData ? "DATA" : "NULL");
               console.log(`[extractProfile] Apollo extraction result:`, {
                 success: !!profileData,
                 hasFirstName: profileData?.firstName ? true : false,
