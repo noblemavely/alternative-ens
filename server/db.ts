@@ -1342,6 +1342,7 @@ export async function seedDatabase() {
         linkedinUrl: 'https://linkedin.com/in/rthompson',
         cvUrl: '',
         cvKey: '',
+        location: 'United States',
         isVerified: true,
       },
       {
@@ -1355,6 +1356,7 @@ export async function seedDatabase() {
         linkedinUrl: 'https://linkedin.com/in/jmartinez',
         cvUrl: '',
         cvKey: '',
+        location: 'United Kingdom',
         isVerified: true,
       },
       {
@@ -1368,6 +1370,7 @@ export async function seedDatabase() {
         linkedinUrl: 'https://linkedin.com/in/clee',
         cvUrl: '',
         cvKey: '',
+        location: 'Singapore',
         isVerified: true,
       },
       {
@@ -1381,6 +1384,7 @@ export async function seedDatabase() {
         linkedinUrl: 'https://linkedin.com/in/awhite',
         cvUrl: '',
         cvKey: '',
+        location: 'India',
         isVerified: false,
       },
       {
@@ -1394,6 +1398,7 @@ export async function seedDatabase() {
         linkedinUrl: 'https://linkedin.com/in/dgarcia',
         cvUrl: '',
         cvKey: '',
+        location: 'United Arab Emirates',
         isVerified: true,
       },
     ];
