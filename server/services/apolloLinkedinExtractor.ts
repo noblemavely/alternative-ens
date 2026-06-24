@@ -158,6 +158,8 @@ async function searchWithApiKey(
 
   try {
     console.log(`[Apollo] Attempting API key search for ${username}`);
+    console.log(`[Apollo] API Key configured: ${apiKey ? "YES" : "NO"}`);
+    console.log(`[Apollo] API Key length: ${apiKey?.length || 0}`);
 
     // Try with X-Api-Key header
     const response = await fetch("https://api.apollo.io/v1/people/match", {
@@ -171,6 +173,8 @@ async function searchWithApiKey(
       }),
     });
 
+    console.log(`[Apollo] API Response Status: ${response.status}`);
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[Apollo] API key error: ${response.status} - ${errorText}`);
@@ -178,7 +182,10 @@ async function searchWithApiKey(
     }
 
     const data = (await response.json()) as any;
-    return extractProfileFromResponse(data, username);
+    console.log(`[Apollo] API Response received, has person: ${!!data.person}`);
+    const result = extractProfileFromResponse(data, username);
+    console.log(`[Apollo] Extracted profile data: ${JSON.stringify(result)}`);
+    return result;
   } catch (error) {
     console.error(`[Apollo] API key search failed:`, error);
     return null;
