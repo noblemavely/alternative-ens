@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Trash2, Calendar, Edit2, X, Save, CheckCircle, AlertCircle, XCircle, Briefcase, ClipboardList, Plus, Copy, ChevronDown, Users, Link2, Pencil, Send } from "lucide-react";
+import { Loader2, Trash2, Calendar, Edit2, X, Save, CheckCircle, AlertCircle, XCircle, Briefcase, ClipboardList, Plus, Copy, ChevronDown, Users, Link2, Pencil, Send, Eye, Download } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRoute, useLocation } from "wouter";
@@ -397,13 +397,57 @@ export default function AdminProjectDetail() {
                           </td>
                         )}
                         <td className="text-right">
-                          <button
-                            onClick={() => removeFromShortlistMutation.mutate({ id: shortlist.id })}
-                            disabled={removeFromShortlistMutation.isPending}
-                            className="inline-flex items-center justify-center h-7 w-7 rounded text-muted-foreground hover:bg-red-50 hover:text-destructive transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          <div className="flex items-center justify-end gap-1">
+                            {/* Get Link - Active when status is "invited" or beyond */}
+                            {["invited", "accepted", "questionnaire_responded", "p2c_done", "calls_done"].includes(shortlist.status) && (
+                              <button
+                                onClick={async () => {
+                                  if (!questionnaireQuery.data) return;
+                                  try {
+                                    const inv = await createInvitationMutation.mutateAsync({
+                                      questionnaireId: questionnaireQuery.data!.id,
+                                      expertId: shortlist.expertId,
+                                      shortlistId: shortlist.id,
+                                    });
+                                    const link = `${window.location.origin}/questionnaire/${inv.token}`;
+                                    navigator.clipboard.writeText(link);
+                                    toast.success("Link copied!");
+                                  } catch (err) {
+                                    toast.error("Failed to generate link");
+                                  }
+                                }}
+                                disabled={createInvitationMutation.isPending}
+                                title="Get Questionnaire Link"
+                                className="inline-flex items-center justify-center h-7 w-7 rounded text-muted-foreground hover:bg-blue-50 hover:text-primary transition-colors"
+                              >
+                                <Link2 size={14} />
+                              </button>
+                            )}
+
+                            {/* See Response - Active when expert has submitted */}
+                            {shortlist.status === "questionnaire_responded" && (
+                              <button
+                                onClick={() => {
+                                  // TODO: Open responses modal/panel
+                                  toast.info("Response viewing coming soon");
+                                }}
+                                title="View Expert Response"
+                                className="inline-flex items-center justify-center h-7 w-7 rounded text-muted-foreground hover:bg-green-50 hover:text-emerald-600 transition-colors"
+                              >
+                                <Eye size={14} />
+                              </button>
+                            )}
+
+                            {/* Delete - Always active */}
+                            <button
+                              onClick={() => removeFromShortlistMutation.mutate({ id: shortlist.id })}
+                              disabled={removeFromShortlistMutation.isPending}
+                              title="Remove from Shortlist"
+                              className="inline-flex items-center justify-center h-7 w-7 rounded text-muted-foreground hover:bg-red-50 hover:text-destructive transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
