@@ -2144,25 +2144,25 @@ export async function getInvitationByToken(token: string) {
       .where(eq(questionnaireQuestions.questionnaireId, inv.questionnaireId))
       .orderBy(questionnaireQuestions.order);
 
-    const expertResult = await db.select({
-      id: experts.id,
-      firstName: experts.firstName,
-      lastName: experts.lastName,
-      email: experts.email,
-    })
+    const [expertData] = await db.select()
       .from(experts)
       .where(eq(experts.id, inv.expertId))
       .limit(1);
-    [expert] = expertResult;
+    expert = expertData ? {
+      id: expertData.id,
+      firstName: expertData.firstName,
+      lastName: expertData.lastName,
+      email: expertData.email,
+    } : null;
 
-    const projectResult = await db.select({
-      id: projects.id,
-      name: projects.name,
-    })
+    const [projectData] = await db.select()
       .from(projects)
       .where(eq(projects.id, q.projectId))
       .limit(1);
-    [project] = projectResult;
+    project = projectData ? {
+      id: projectData.id,
+      name: projectData.name,
+    } : null;
   } catch (err) {
     console.error(`[DB] ❌ ERROR fetching related data:`, err);
     return null;
