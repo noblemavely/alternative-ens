@@ -13,6 +13,8 @@ interface EnvVariables {
   appOrigin: string;
   claudeApiKey: string;
   apolloApiKey: string;
+  apolloClientId: string;
+  apolloClientSecret: string;
   smtpHost: string;
   smtpPort: number;
   smtpUser: string;
@@ -51,6 +53,10 @@ export const ENV = new Proxy({}, {
         return process.env.CLAUDE_API_KEY ?? "";
       case "apolloApiKey":
         return process.env.APOLLO_API_KEY ?? "";
+      case "apolloClientId":
+        return process.env.APOLLO_CLIENT_ID ?? "";
+      case "apolloClientSecret":
+        return process.env.APOLLO_CLIENT_SECRET ?? "";
       case "smtpHost":
         return process.env.SMTP_HOST ?? "";
       case "smtpPort":

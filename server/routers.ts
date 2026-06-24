@@ -658,16 +658,34 @@ export const appRouter = router({
             });
           }
 
-          const { getProfileExtractor } = await import("./services/aiProfileExtractor");
-          const extractor = getProfileExtractor("claude");
-
           let profileData = null;
 
+          // Try Apollo.io first for LinkedIn URLs
           if (linkedinUrl) {
-            console.log(`[extractProfile] Extracting from LinkedIn URL: ${linkedinUrl}`);
+            console.log(`[extractProfile] Attempting Apollo.io extraction for LinkedIn URL: ${linkedinUrl}`);
+            const { searchApolloByLinkedInUrl, isApolloConfigured } = await import(
+              "./services/apolloLinkedinExtractor"
+            );
+
+            if (isApolloConfigured()) {
+              profileData = await searchApolloByLinkedInUrl(linkedinUrl);
+              if (profileData) {
+                console.log(
+                  `[extractProfile] ✅ Successfully extracted profile via Apollo.io`
+                );
+                return profileData;
+              }
+            }
+
+            // Fallback to Claude if Apollo not configured or failed
+            console.log(`[extractProfile] Falling back to Claude API for LinkedIn URL`);
+            const { getProfileExtractor } = await import("./services/aiProfileExtractor");
+            const extractor = getProfileExtractor("claude");
             profileData = await extractor.extractFromURL(linkedinUrl);
           } else if (resumeText) {
             console.log(`[extractProfile] Extracting from resume text`);
+            const { getProfileExtractor } = await import("./services/aiProfileExtractor");
+            const extractor = getProfileExtractor("claude");
             profileData = await extractor.extractFromText(resumeText);
           }
 
