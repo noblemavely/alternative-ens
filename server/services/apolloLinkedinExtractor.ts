@@ -157,8 +157,14 @@ async function searchWithApiKey(
   const username = extractLinkedInUsername(linkedinUrl);
 
   try {
+    if (!apiKey) {
+      console.error(`[Apollo] API Key is empty!`);
+      return null;
+    }
+
     console.log(`[Apollo] Attempting API key search for ${username}`);
     console.log(`[Apollo] API Key configured: ${apiKey ? "YES" : "NO"}`);
+    console.log(`[Apollo] API Key first 20 chars: ${apiKey?.substring(0, 20) || "NONE"}`);
     console.log(`[Apollo] API Key length: ${apiKey?.length || 0}`);
 
     // Try with X-Api-Key header
@@ -257,35 +263,43 @@ function extractProfileFromResponse(
   }
 
   const person = data.person;
-
   console.log(`[Apollo] Successfully found profile for ${username}, building profile data...`);
 
-  // Map Apollo data to our ProfileData format
-  const employment = mapEmploymentHistory(person.employment_history);
-  const education = mapEducationHistory(person.education);
+  // CRITICAL: Always try to extract data if we have a person object
+  // Even partial data is valuable
+  try {
+    const employment = mapEmploymentHistory(person.employment_history);
+    const education = mapEducationHistory(person.education);
 
-  const profileData: ApolloProfileData = {
-    firstName: person.first_name || "",
-    lastName: person.last_name || "",
-    email: person.email || person.emails?.[0] || "",
-    phone: person.phone_number || "",
-    headline: person.headline || person.title || "",
-    sector: person.organization?.industry || person.industry || "",
-    biography: `${person.headline || ""} at ${person.organization?.name || ""}`.trim(),
-    skills: person.skills?.slice(0, 10) || [],
-    employment,
-    education,
-  };
+    // Build profile data with fallbacks
+    const profileData: ApolloProfileData = {
+      firstName: person.first_name || "",
+      lastName: person.last_name || "",
+      email: person.email || person.emails?.[0] || "",
+      phone: person.phone_number || "",
+      headline: person.headline || person.title || "",
+      sector: person.organization?.industry || person.industry || "",
+      biography: `${person.headline || ""} at ${person.organization?.name || ""}`.trim(),
+      skills: person.skills?.slice(0, 10) || [],
+      employment: employment || [],
+      education: education || [],
+    };
 
-  console.log(`[Apollo] Profile data built successfully:`, {
-    firstName: profileData.firstName,
-    lastName: profileData.lastName,
-    email: profileData.email,
-    employmentCount: profileData.employment?.length || 0,
-    educationCount: profileData.education?.length || 0,
-  });
+    console.log(`[Apollo] Profile data built successfully:`, {
+      firstName: profileData.firstName,
+      lastName: profileData.lastName,
+      email: profileData.email,
+      employmentCount: profileData.employment?.length || 0,
+      educationCount: profileData.education?.length || 0,
+    });
 
-  return profileData;
+    // CRITICAL FIX: Return data even if minimal, as long as we have person data
+    // This ensures we don't lose data due to strict validation
+    return profileData;
+  } catch (error) {
+    console.error(`[Apollo] Error building profile data:`, error);
+    return null;
+  }
 }
 
 /**
