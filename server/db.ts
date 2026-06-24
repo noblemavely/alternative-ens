@@ -26,6 +26,7 @@ import {
   questionnaires,
   questionnaireQuestions,
   questionnaireSubmissions,
+  questionnaireInvitations,
   type Lead,
   type InsertLead,
   type Client,
