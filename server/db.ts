@@ -1344,6 +1344,8 @@ export async function seedDatabase() {
         cvKey: '',
         location: 'United States',
         isVerified: true,
+        verificationToken: null,
+        verificationTokenExpiry: null,
       },
       {
         email: 'expert2@example.com',
@@ -1358,6 +1360,8 @@ export async function seedDatabase() {
         cvKey: '',
         location: 'United Kingdom',
         isVerified: true,
+        verificationToken: null,
+        verificationTokenExpiry: null,
       },
       {
         email: 'expert3@example.com',
@@ -1372,6 +1376,8 @@ export async function seedDatabase() {
         cvKey: '',
         location: 'Singapore',
         isVerified: true,
+        verificationToken: null,
+        verificationTokenExpiry: null,
       },
       {
         email: 'expert4@example.com',
@@ -1386,6 +1392,8 @@ export async function seedDatabase() {
         cvKey: '',
         location: 'India',
         isVerified: false,
+        verificationToken: null,
+        verificationTokenExpiry: null,
       },
       {
         email: 'expert5@example.com',
@@ -1400,6 +1408,8 @@ export async function seedDatabase() {
         cvKey: '',
         location: 'United Arab Emirates',
         isVerified: true,
+        verificationToken: null,
+        verificationTokenExpiry: null,
       },
     ];
 
