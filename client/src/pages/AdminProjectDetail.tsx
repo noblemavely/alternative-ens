@@ -94,6 +94,7 @@ export default function AdminProjectDetail() {
   const shortlistQuery        = trpc.shortlists.getByProject.useQuery({ projectId: projectId! }, { enabled: !!projectId });
   const activityTimelineQuery = trpc.projects.getActivityTimeline.useQuery({ projectId: projectId! }, { enabled: !!projectId });
   const questionnaireQuery    = trpc.questionnaires.getByProject.useQuery({ projectId: projectId! }, { enabled: !!projectId });
+  const responsesQuery        = trpc.questionnaires.responses.useQuery({ questionnaireId: questionnaireQuery.data?.id ?? 0 }, { enabled: !!questionnaireQuery.data?.id && showResponseModal });
 
   const updateProjectMutation = trpc.projects.update.useMutation({
     onSuccess: () => { toast.success("Project updated"); setIsEditing(false); projectQuery.refetch(); activityTimelineQuery.refetch(); },
@@ -861,18 +862,30 @@ export default function AdminProjectDetail() {
               {/* Responses */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-foreground">Responses</h3>
-                {questionnaireQuery.data.questions && questionnaireQuery.data.questions.length > 0 ? (
-                  questionnaireQuery.data.questions.map((q: any) => {
-                    const response = selectedExpertResponse.response?.answers?.[String(q.id)];
-                    if (response === undefined) return null;
+                {responsesQuery.isLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading responses...</p>
+                ) : responsesQuery.data && responsesQuery.data.length > 0 ? (
+                  (() => {
+                    const expertResponse = responsesQuery.data.find((r: any) => r.respondentEmail === selectedExpertResponse.expert?.email);
+                    if (!expertResponse) return <p className="text-sm text-muted-foreground">No response found</p>;
 
                     return (
-                      <div key={q.id} className="rounded-lg border border-border p-4">
-                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">{q.questionText}</p>
-                        <p className="text-sm text-foreground">{Array.isArray(response) ? response.join(", ") : response}</p>
-                      </div>
+                      <>
+                        <p className="text-xs text-muted-foreground mb-3">Submitted on {new Date(expertResponse.submittedAt).toLocaleDateString()}</p>
+                        {questionnaireQuery.data.questions && questionnaireQuery.data.questions.map((q: any) => {
+                          const ans = expertResponse.answers?.[String(q.id)];
+                          if (ans === undefined) return null;
+
+                          return (
+                            <div key={q.id} className="rounded-lg border border-border p-4">
+                              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">{q.questionText}</p>
+                              <p className="text-sm text-foreground">{Array.isArray(ans) ? ans.join(", ") : ans}</p>
+                            </div>
+                          );
+                        })}
+                      </>
                     );
-                  })
+                  })()
                 ) : (
                   <p className="text-sm text-muted-foreground">No responses available</p>
                 )}
