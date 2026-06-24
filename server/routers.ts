@@ -722,14 +722,14 @@ export const appRouter = router({
         z.object({
           projectId: z.number(),
           expertId: z.number(),
-          status: z.enum(["pending", "interested", "rejected", "new", "contacted", "attempting_contact", "engaged", "qualified", "proposal_sent", "negotiation", "verbal_agreement", "closed_won", "closed_lost"]).optional(),
+          status: z.enum(["attached", "invited", "accepted", "p2c_done", "declined", "calls_done"]).optional(),
           notes: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
         const shortlist = await addToShortlist({
           ...input,
-          status: input.status || "pending",
+          status: input.status || "attached",
           notes: input.notes || null,
         });
         return shortlist;
@@ -758,7 +758,7 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number(),
-          status: z.enum(["pending", "interested", "rejected", "new", "contacted", "attempting_contact", "engaged", "qualified", "proposal_sent", "negotiation", "verbal_agreement", "closed_won", "closed_lost"]).optional(),
+          status: z.enum(["attached", "invited", "accepted", "p2c_done", "declined", "calls_done"]).optional(),
           notes: z.string().optional(),
         })
       )
@@ -766,7 +766,7 @@ export const appRouter = router({
         const { id, ...data } = input;
         await updateShortlist(id, {
           ...data,
-          status: data.status || "pending",
+          status: data.status || "attached",
           notes: data.notes || null,
         });
         return { success: true };

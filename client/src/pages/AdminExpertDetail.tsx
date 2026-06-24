@@ -45,26 +45,19 @@ function SectionCard({ title, action, children }: { title: string; action?: Reac
 }
 
 const SHORTLIST_STATUSES = [
-  { value: "pending",           label: "Pending" },
-  { value: "new",               label: "New" },
-  { value: "shortlisted",       label: "Shortlisted" },
-  { value: "contacted",         label: "Contacted" },
-  { value: "attempting_contact",label: "Attempting Contact" },
-  { value: "engaged",           label: "Engaged" },
-  { value: "qualified",         label: "Qualified" },
-  { value: "proposal_sent",     label: "Proposal Sent" },
-  { value: "negotiation",       label: "Negotiation" },
-  { value: "verbal_agreement",  label: "Verbal Agreement" },
-  { value: "closed_won",        label: "Closed Won" },
-  { value: "closed_lost",       label: "Closed Lost" },
-  { value: "interested",        label: "Interested" },
-  { value: "rejected",          label: "Rejected" },
+  { value: "attached",   label: "Attached" },
+  { value: "invited",    label: "Invited / Questionnaire Sent" },
+  { value: "accepted",   label: "Accepted" },
+  { value: "p2c_done",  label: "P2C Done" },
+  { value: "declined",  label: "Declined" },
+  { value: "calls_done", label: "Calls Done" },
 ];
 
 function statusBadgeClass(status: string) {
-  if (["closed_won", "qualified", "engaged", "interested"].includes(status)) return "badge-success";
-  if (["closed_lost", "rejected"].includes(status)) return "badge-error";
-  if (["proposal_sent", "negotiation", "verbal_agreement"].includes(status)) return "badge-warning";
+  if (["accepted", "calls_done"].includes(status)) return "badge-success";
+  if (["declined"].includes(status))               return "badge-error";
+  if (["invited"].includes(status))                return "badge-warning";
+  if (["p2c_done"].includes(status))               return "badge-purple";
   return "badge-info";
 }
 

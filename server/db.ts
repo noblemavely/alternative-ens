@@ -205,7 +205,7 @@ async function initializeSchema(pool: any) {
         id INT AUTO_INCREMENT PRIMARY KEY,
         projectId INT NOT NULL,
         expertId INT NOT NULL,
-        status ENUM('pending', 'interested', 'rejected', 'new', 'contacted', 'attempting_contact', 'engaged', 'qualified', 'proposal_sent', 'negotiation', 'verbal_agreement', 'closed_won', 'closed_lost') DEFAULT 'pending' NOT NULL,
+        status ENUM('attached', 'invited', 'accepted', 'p2c_done', 'declined', 'calls_done') DEFAULT 'attached' NOT NULL,
         notes LONGTEXT,
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -298,6 +298,9 @@ async function initializeSchema(pool: any) {
         INDEX idx_expertId (expertId),
         INDEX idx_createdAt (createdAt)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+      /* Migrate shortlists.status ENUM to new workflow values */
+      `ALTER TABLE shortlists MODIFY COLUMN status ENUM('attached','invited','accepted','p2c_done','declined','calls_done') DEFAULT 'attached' NOT NULL`,
     ];
 
     // Execute all table creation statements
