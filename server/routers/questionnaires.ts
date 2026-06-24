@@ -192,7 +192,58 @@ export const questionnairesRouter = router({
         answers: input.answers,
       });
 
-      // Notify admin
+      // Update shortlist status to "questionnaire_responded" and email consultant
+      try {
+        const { updateShortlist, getShortlistsByProject } = await import("../db");
+        const shortlists = await getShortlistsByProject(q.projectId);
+        const shortlist = shortlists.find((s: any) => s.expert?.email === input.respondentEmail);
+
+        if (shortlist && shortlist.consultantInChargeId) {
+          await updateShortlist(shortlist.id, { status: "questionnaire_responded" });
+
+          // Get consultant details and send email
+          const pool = (await import("../db").then(m => m.getDb()))?.$client;
+          const [adminRows]: any = await pool.execute(
+            "SELECT email, name FROM admin_users WHERE id = ? LIMIT 1",
+            [shortlist.consultantInChargeId]
+          );
+          const admin = adminRows?.[0];
+
+          if (admin?.email) {
+            const answerRows = q.questions
+              .map((qs: any) => {
+                const ans = input.answers[String(qs.id)];
+                const display = Array.isArray(ans) ? ans.join(", ") : (ans ?? "—");
+                return `<tr><td style="padding:8px;border-bottom:1px solid #eee;color:#555">${qs.questionText}</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600">${display}</td></tr>`;
+              })
+              .join("");
+
+            await sendEmail({
+              to: admin.email,
+              subject: `Questionnaire Response from ${input.respondentName || input.respondentEmail}`,
+              html: `
+                <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+                  <div style="background:#0F172A;padding:20px 24px;border-radius:8px 8px 0 0">
+                    <h2 style="color:#fff;margin:0;font-size:18px">Questionnaire Response Received</h2>
+                  </div>
+                  <div style="padding:24px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px">
+                    <p>Hi ${admin.name},</p>
+                    <p><strong>${input.respondentName || input.respondentEmail}</strong> has completed the questionnaire for your project.</p>
+                    <table style="width:100%;border-collapse:collapse;margin-top:16px">
+                      <tr><td style="padding:8px;background:#f8fafc;font-weight:700;color:#333;border-bottom:2px solid #e2e8f0">Question</td><td style="padding:8px;background:#f8fafc;font-weight:700;color:#333;border-bottom:2px solid #e2e8f0">Answer</td></tr>
+                      ${answerRows}
+                    </table>
+                    <p style="color:#888;font-size:12px;margin-top:24px">© ${new Date().getFullYear()} AlterNatives</p>
+                  </div>
+                </div>`,
+            });
+          }
+        }
+      } catch (e) {
+        console.warn("[Questionnaire] Failed to update shortlist or email consultant:", e);
+      }
+
+      // Notify admin (original behavior)
       try {
         const appUrl = (ENV as any).appUrl || "https://alternatives.nativeworld.com";
         const answerRows = q.questions

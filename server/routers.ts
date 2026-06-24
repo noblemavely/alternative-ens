@@ -797,15 +797,16 @@ export const appRouter = router({
         z.object({
           projectId: z.number(),
           expertId: z.number(),
-          status: z.enum(["attached", "invited", "accepted", "p2c_done", "declined", "calls_done"]).optional(),
+          status: z.enum(["attached", "invited", "accepted", "questionnaire_responded", "p2c_done", "declined", "calls_done"]).optional(),
           notes: z.string().optional(),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const shortlist = await addToShortlist({
           ...input,
           status: input.status || "attached",
           notes: input.notes || null,
+          consultantInChargeId: ctx.adminUser?.id || null,
         });
         return shortlist;
       }),
@@ -833,17 +834,60 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number(),
-          status: z.enum(["attached", "invited", "accepted", "p2c_done", "declined", "calls_done"]).optional(),
+          status: z.enum(["attached", "invited", "accepted", "questionnaire_responded", "p2c_done", "declined", "calls_done"]).optional(),
+          consultantInChargeId: z.number().optional(),
           notes: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
+        const { id, status, consultantInChargeId, notes } = input;
+
+        // Get current shortlist to check old status
+        const oldShortlist = await getShortlistByProjectAndExpert(
+          (await getAllShortlists()).find((s: any) => s.id === id)?.projectId || 0,
+          (await getAllShortlists()).find((s: any) => s.id === id)?.expertId || 0
+        );
+
         await updateShortlist(id, {
-          ...data,
-          status: data.status || "attached",
-          notes: data.notes || null,
+          status: status || "attached",
+          consultantInChargeId: consultantInChargeId !== undefined ? consultantInChargeId : oldShortlist?.consultantInChargeId,
+          notes: notes || null,
         });
+
+        // Send email if status changed to "invited" and questionnaire exists
+        if (status === "invited" && oldShortlist?.status !== "invited") {
+          const sl = await getShortlistByProjectAndExpert(oldShortlist?.projectId || 0, oldShortlist?.expertId || 0);
+          if (sl?.projectId) {
+            try {
+              const q = await getQuestionnaireByProject(sl.projectId);
+              if (q) {
+                const { sendEmail } = await import("./email");
+                const expert = await (async () => {
+                  const [rows]: any = await (await import("./db").then(m => m.getDb()))
+                    ?.$client.execute("SELECT email, firstName FROM experts WHERE id = ? LIMIT 1", [sl.expertId]);
+                  return rows?.[0];
+                })();
+
+                if (expert?.email) {
+                  const link = `${process.env.APP_ORIGIN || 'https://alternatives.nativeworld.com'}/questionnaire/${q.token}`;
+                  await sendEmail({
+                    to: expert.email,
+                    subject: `${expert.firstName}, You're invited to complete a questionnaire`,
+                    html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+                      <p>Hi ${expert.firstName},</p>
+                      <p>You have been invited to complete a questionnaire for <strong>${(await getProjectById(sl.projectId))?.name || 'a project'}</strong>.</p>
+                      <p><a href="${link}" style="display:inline-block;padding:12px 28px;background:#2563EB;color:white;text-decoration:none;border-radius:6px;font-weight:600">Complete Questionnaire</a></p>
+                      <p style="color:#888;font-size:12px;margin-top:24px">© ${new Date().getFullYear()} AlterNatives</p>
+                    </div>`,
+                  });
+                }
+              }
+            } catch (e) {
+              console.warn("Failed to send questionnaire email:", e);
+            }
+          }
+        }
+
         return { success: true };
       }),
 

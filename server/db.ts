@@ -212,14 +212,17 @@ async function initializeSchema(pool: any) {
         id INT AUTO_INCREMENT PRIMARY KEY,
         projectId INT NOT NULL,
         expertId INT NOT NULL,
-        status ENUM('attached', 'invited', 'accepted', 'p2c_done', 'declined', 'calls_done') DEFAULT 'attached' NOT NULL,
+        status ENUM('attached', 'invited', 'accepted', 'questionnaire_responded', 'p2c_done', 'declined', 'calls_done') DEFAULT 'attached' NOT NULL,
+        consultantInChargeId INT,
         notes LONGTEXT,
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE,
         FOREIGN KEY (expertId) REFERENCES experts(id) ON DELETE CASCADE,
+        FOREIGN KEY (consultantInChargeId) REFERENCES admin_users(id) ON DELETE SET NULL,
         INDEX idx_projectId (projectId),
-        INDEX idx_expertId (expertId)
+        INDEX idx_expertId (expertId),
+        INDEX idx_consultantInChargeId (consultantInChargeId)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
       `CREATE TABLE IF NOT EXISTS expert_client_mapping (
@@ -307,7 +310,10 @@ async function initializeSchema(pool: any) {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
       /* Migrate shortlists.status ENUM to new workflow values */
-      `ALTER TABLE shortlists MODIFY COLUMN status ENUM('attached','invited','accepted','p2c_done','declined','calls_done') DEFAULT 'attached' NOT NULL`,
+      `ALTER TABLE shortlists MODIFY COLUMN status ENUM('attached','invited','accepted','questionnaire_responded','p2c_done','declined','calls_done') DEFAULT 'attached' NOT NULL`,
+
+      /* Add consultantInChargeId column to shortlists table */
+      `ALTER TABLE shortlists ADD COLUMN consultantInChargeId INT`,
 
       /* Add location column to experts table */
       `ALTER TABLE experts ADD COLUMN location VARCHAR(255) AFTER cvKey`,

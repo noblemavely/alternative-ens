@@ -2,7 +2,8 @@ import { z } from "zod";
 import { notifyOwner } from "./notification";
 import { adminProcedure, publicProcedure, router } from "./trpc";
 import { getDb, seedDatabase } from "../db";
-import { experts, clients, projects, shortlists, expertEmployment, expertEducation, expertVerification, screeningQuestions, users, expertClientMapping, projectActivityTimeline, auditLog, clientContacts } from "../../drizzle/schema";
+import { experts, clients, projects, shortlists, expertEmployment, expertEducation, expertVerification, screeningQuestions, users, expertClientMapping, projectActivityTimeline, auditLog, clientContacts, adminUsers } from "../../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 export const systemRouter = router({
   health: publicProcedure
@@ -68,6 +69,23 @@ export const systemRouter = router({
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("Error seeding database:", error);
       throw new Error(`Failed to seed database: ${errorMessage}`);
+    }
+  }),
+
+  listAdminUsers: adminProcedure.query(async () => {
+    try {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const allAdmins = await db.select({
+        id: adminUsers.id,
+        name: adminUsers.name,
+        email: adminUsers.email,
+        role: adminUsers.role,
+      }).from(adminUsers).where(eq(adminUsers.isActive, true));
+      return allAdmins;
+    } catch (error) {
+      console.error("Error fetching admin users:", error);
+      throw new Error("Failed to fetch admin users");
     }
   }),
 });
