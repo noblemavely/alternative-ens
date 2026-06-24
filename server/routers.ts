@@ -39,6 +39,7 @@ import {
   deleteScreeningQuestion,
   getAllShortlists,
   addToShortlist,
+  getShortlistById,
   getShortlistByProjectAndExpert,
   getShortlistsByProject,
   updateShortlist,
@@ -76,6 +77,7 @@ import {
   getExpertNotes,
   updateExpertNote,
   deleteExpertNote,
+  getQuestionnaireByProject,
 } from "./db";
 import { storagePut, storageGet } from "./storage";
 import { nanoid } from "nanoid";
@@ -834,21 +836,13 @@ export const appRouter = router({
       .input(z.object({ shortlistId: z.number() }))
       .query(async ({ input }) => {
         try {
-          const { getShortlistById, getDb } = await import("./db");
           const shortlist = await getShortlistById(input.shortlistId);
           if (!shortlist) throw new Error("Shortlist not found");
 
           const q = await getQuestionnaireByProject(shortlist.projectId);
           if (!q) throw new Error("No questionnaire created for this project. Please create one first.");
 
-          const db = await getDb();
-          if (!db) throw new Error("Database connection failed");
-
-          const [expertRows]: any = await db.$client.execute(
-            "SELECT email, firstName FROM experts WHERE id = ? LIMIT 1",
-            [shortlist.expertId]
-          );
-          const expert = expertRows?.[0];
+          const expert = await getExpertById(shortlist.expertId);
           if (!expert) throw new Error("Expert not found");
 
           const project = await getProjectById(shortlist.projectId);
@@ -887,18 +881,12 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const { getShortlistById, getDb } = await import("./db");
         const { sendEmail } = await import("./email");
 
         const shortlist = await getShortlistById(input.shortlistId);
         if (!shortlist) throw new Error("Shortlist not found");
 
-        const db = await getDb();
-        const [expertRows]: any = await db?.$client.execute(
-          "SELECT email FROM experts WHERE id = ? LIMIT 1",
-          [shortlist.expertId]
-        );
-        const expert = expertRows?.[0];
+        const expert = await getExpertById(shortlist.expertId);
         if (!expert?.email) throw new Error("Expert not found");
 
         // Send email
@@ -929,7 +917,6 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         const { id, status, consultantInChargeId, notes } = input;
-        const { getShortlistById } = await import("./db");
 
         // Get current shortlist before updating
         const oldShortlist = await getShortlistById(id);
