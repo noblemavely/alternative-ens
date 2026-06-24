@@ -639,6 +639,57 @@ export const appRouter = router({
 
         return projects;
       }),
+
+    extractProfile: publicProcedure
+      .input(
+        z.object({
+          linkedinUrl: z.string().optional(),
+          resumeText: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          const { linkedinUrl, resumeText } = input;
+
+          if (!linkedinUrl && !resumeText) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Either LinkedIn URL or resume text is required",
+            });
+          }
+
+          const { getProfileExtractor } = await import("./services/aiProfileExtractor");
+          const extractor = getProfileExtractor("claude");
+
+          let profileData = null;
+
+          if (linkedinUrl) {
+            console.log(`[extractProfile] Extracting from LinkedIn URL: ${linkedinUrl}`);
+            profileData = await extractor.extractFromURL(linkedinUrl);
+          } else if (resumeText) {
+            console.log(`[extractProfile] Extracting from resume text`);
+            profileData = await extractor.extractFromText(resumeText);
+          }
+
+          if (!profileData) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to extract profile data. Please try again or fill in manually.",
+            });
+          }
+
+          return profileData;
+        } catch (error: any) {
+          console.error("[extractProfile] Error:", error);
+          if (error instanceof TRPCError) {
+            throw error;
+          }
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: error?.message || "Failed to extract profile data",
+          });
+        }
+      }),
   }),
 
   // ============ PROJECT ROUTERS ============
