@@ -518,6 +518,9 @@ export const appRouter = router({
           keyword: z.string().optional(),
           sector: z.string().optional(),
           function: z.string().optional(),
+          companyName: z.string().optional(),
+          location: z.string().optional(),
+          year: z.string().optional(),
           limit: z.number().optional().default(10),
           offset: z.number().optional().default(0),
         })

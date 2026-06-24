@@ -94,6 +94,7 @@ async function initializeSchema(pool: any) {
         biography LONGTEXT,
         cvUrl VARCHAR(500),
         cvKey VARCHAR(500),
+        location VARCHAR(255),
         verificationToken VARCHAR(255),
         verificationTokenExpiry TIMESTAMP NULL,
         isVerified BOOLEAN DEFAULT FALSE,
@@ -301,6 +302,9 @@ async function initializeSchema(pool: any) {
 
       /* Migrate shortlists.status ENUM to new workflow values */
       `ALTER TABLE shortlists MODIFY COLUMN status ENUM('attached','invited','accepted','p2c_done','declined','calls_done') DEFAULT 'attached' NOT NULL`,
+
+      /* Add location column to experts table */
+      `ALTER TABLE experts ADD COLUMN IF NOT EXISTS location VARCHAR(255) AFTER cvKey`,
     ];
 
     // Execute all table creation statements
@@ -579,38 +583,53 @@ export async function searchExperts(filters: {
   sector?: string;
   function?: string;
   keyword?: string;
+  companyName?: string;
+  location?: string;
+  year?: string;
   skillsets?: string[];
 }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const conditions = [];
+  // Use raw SQL when employment-table filters are active (requires JOIN)
+  const needsJoin = !!(filters.companyName || filters.year);
+
+  const whereClauses: string[] = [];
+  const params: any[] = [];
 
   if (filters.sector) {
-    conditions.push(like(experts.sector, `%${filters.sector}%`));
+    whereClauses.push("e.sector LIKE ?");
+    params.push(`%${filters.sector}%`);
   }
-
   if (filters.function) {
-    conditions.push(like(experts.function, `%${filters.function}%`));
+    whereClauses.push("e.`function` LIKE ?");
+    params.push(`%${filters.function}%`);
   }
-
+  if (filters.location) {
+    whereClauses.push("e.location LIKE ?");
+    params.push(`%${filters.location}%`);
+  }
   if (filters.keyword) {
-    conditions.push(
-      or(
-        like(experts.firstName, `%${filters.keyword}%`),
-        like(experts.lastName, `%${filters.keyword}%`),
-        like(experts.biography, `%${filters.keyword}%`),
-        like(experts.sector, `%${filters.keyword}%`),
-        like(experts.function, `%${filters.keyword}%`)
-      )
-    );
+    whereClauses.push("(e.firstName LIKE ? OR e.lastName LIKE ? OR e.biography LIKE ? OR e.sector LIKE ? OR e.`function` LIKE ?)");
+    params.push(...Array(5).fill(`%${filters.keyword}%`));
+  }
+  if (filters.companyName) {
+    whereClauses.push("ee.companyName LIKE ?");
+    params.push(`%${filters.companyName}%`);
+  }
+  if (filters.year) {
+    // Expert was active at a company during the given year
+    whereClauses.push("(LEFT(ee.startDate, 4) <= ? AND (ee.endDate IS NULL OR ee.endDate = '' OR LEFT(ee.endDate, 4) >= ?))");
+    params.push(filters.year, filters.year);
   }
 
-  if (conditions.length > 0) {
-    return db.select().from(experts).where(and(...conditions)).orderBy(experts.createdAt);
-  }
+  const whereSQL = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+  const joinClause = needsJoin ? "JOIN expert_employment ee ON e.id = ee.expertId" : "";
+  const finalSQL = `SELECT DISTINCT e.* FROM experts e ${joinClause} ${whereSQL} ORDER BY e.createdAt DESC`;
 
-  return db.select().from(experts).orderBy(experts.createdAt);
+  const pool = (db as any).$client;
+  const [rows] = await pool.execute(finalSQL, params);
+  return rows as any[];
 }
 
 // ============ PROJECT FUNCTIONS ============

@@ -83,6 +83,7 @@ export const experts = mysqlTable("experts", {
   linkedinUrl: varchar("linkedinUrl", { length: 500 }),
   cvUrl: varchar("cvUrl", { length: 500 }),
   cvKey: varchar("cvKey", { length: 500 }), // S3 key for CV
+  location: varchar("location", { length: 255 }),
   isVerified: boolean("isVerified").default(false).notNull(),
   verificationToken: varchar("verificationToken", { length: 255 }),
   verificationTokenExpiry: timestamp("verificationTokenExpiry"),
