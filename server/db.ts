@@ -2076,10 +2076,27 @@ export async function getInvitationByToken(token: string) {
   );
   const expert = expertRows?.[0] ?? null;
 
+  const [projectRows]: any = await pool.execute(
+    "SELECT id, name, clientId FROM projects WHERE id = ? LIMIT 1",
+    [q.projectId]
+  );
+  const project = projectRows?.[0] ?? null;
+
+  let client = null;
+  if (project?.clientId) {
+    const [clientRows]: any = await pool.execute(
+      "SELECT id, name FROM clients WHERE id = ? LIMIT 1",
+      [project.clientId]
+    );
+    client = clientRows?.[0] ?? null;
+  }
+
   return {
     invitation: inv,
     questionnaire: { ...q, questions: questionRows ?? [] },
     expert,
+    project,
+    client,
   };
 }
 
