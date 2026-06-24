@@ -327,6 +327,9 @@ async function initializeSchema(pool: any) {
         INDEX idx_token (token)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
+      /* Add isPublished column to questionnaires table */
+      `ALTER TABLE questionnaires ADD COLUMN isPublished BOOLEAN DEFAULT FALSE NOT NULL`,
+
       `CREATE TABLE IF NOT EXISTS questionnaire_questions (
         id INT AUTO_INCREMENT PRIMARY KEY,
         questionnaireId INT NOT NULL,
