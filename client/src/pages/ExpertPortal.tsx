@@ -689,10 +689,16 @@ export default function ExpertPortal() {
                     />
 
                     <Button
-                      onClick={() => setStep("experience-education")}
+                      onClick={() => {
+                        const url = profileForm.getValues("linkedinUrl");
+                        if (url) {
+                          toast.info("LinkedIn URL saved. You can auto-fill your experience using the resume upload below, or fill it manually in the next step.");
+                        }
+                        setStep("experience-education");
+                      }}
                       className="w-full bg-primary hover:bg-primary/90"
                     >
-                      Continue
+                      Continue Without Extraction
                     </Button>
                   </div>
                 </Form>
