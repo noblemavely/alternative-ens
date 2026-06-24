@@ -2080,19 +2080,31 @@ export async function getInvitationByToken(token: string) {
 
   const pool = (db as any).$client;
 
+  console.log(`[DB] getInvitationByToken: Looking up token ${token}`);
+
   const [invRows]: any = await pool.execute(
     "SELECT * FROM questionnaire_invitations WHERE token = ? LIMIT 1",
     [token]
   );
   const inv = invRows?.[0];
-  if (!inv) return null;
+  if (!inv) {
+    console.error(`[DB] ❌ Invitation not found for token: ${token}`);
+    return null;
+  }
+
+  console.log(`[DB] ✓ Invitation found: id=${inv.id}, questionnaireId=${inv.questionnaireId}, expertId=${inv.expertId}`);
 
   const [qRows]: any = await pool.execute(
     "SELECT * FROM questionnaires WHERE id = ? LIMIT 1",
     [inv.questionnaireId]
   );
   const q = qRows?.[0];
-  if (!q) return null;
+  if (!q) {
+    console.error(`[DB] ❌ Questionnaire not found for id ${inv.questionnaireId}`);
+    return null;
+  }
+
+  console.log(`[DB] ✓ Questionnaire found: id=${q.id}, title=${q.title}, isPublished=${q.isPublished}`);
 
   const [questionRows]: any = await pool.execute(
     "SELECT * FROM questionnaire_questions WHERE questionnaireId = ? ORDER BY `order` ASC",
