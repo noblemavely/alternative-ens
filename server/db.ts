@@ -870,6 +870,19 @@ export async function addToShortlist(data: Omit<Shortlist, "id" | "createdAt" | 
   return db.insert(shortlists).values(data);
 }
 
+export async function getShortlistById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .select()
+    .from(shortlists)
+    .where(eq(shortlists.id, id))
+    .limit(1);
+
+  return result[0] || null;
+}
+
 export async function getShortlistByProjectAndExpert(projectId: number, expertId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

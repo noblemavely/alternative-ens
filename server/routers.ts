@@ -841,50 +841,45 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         const { id, status, consultantInChargeId, notes } = input;
+        const { getShortlistById } = await import("./db");
 
-        // Get current shortlist to check old status
-        const oldShortlist = await getShortlistByProjectAndExpert(
-          (await getAllShortlists()).find((s: any) => s.id === id)?.projectId || 0,
-          (await getAllShortlists()).find((s: any) => s.id === id)?.expertId || 0
-        );
+        // Get current shortlist before updating
+        const oldShortlist = await getShortlistById(id);
+        if (!oldShortlist) throw new Error("Shortlist not found");
 
         await updateShortlist(id, {
-          status: status || "attached",
-          consultantInChargeId: consultantInChargeId !== undefined ? consultantInChargeId : oldShortlist?.consultantInChargeId,
-          notes: notes || null,
+          status: status || oldShortlist.status,
+          consultantInChargeId: consultantInChargeId !== undefined ? consultantInChargeId : oldShortlist.consultantInChargeId,
+          notes: notes !== undefined ? notes : oldShortlist.notes,
         });
 
         // Send email if status changed to "invited" and questionnaire exists
-        if (status === "invited" && oldShortlist?.status !== "invited") {
-          const sl = await getShortlistByProjectAndExpert(oldShortlist?.projectId || 0, oldShortlist?.expertId || 0);
-          if (sl?.projectId) {
-            try {
-              const q = await getQuestionnaireByProject(sl.projectId);
-              if (q) {
-                const { sendEmail } = await import("./email");
-                const expert = await (async () => {
-                  const [rows]: any = await (await import("./db").then(m => m.getDb()))
-                    ?.$client.execute("SELECT email, firstName FROM experts WHERE id = ? LIMIT 1", [sl.expertId]);
-                  return rows?.[0];
-                })();
+        if (status === "invited" && oldShortlist.status !== "invited") {
+          try {
+            const q = await getQuestionnaireByProject(oldShortlist.projectId);
+            if (q) {
+              const { sendEmail } = await import("./email");
+              const [rows]: any = await (await import("./db").then(m => m.getDb()))
+                ?.$client.execute("SELECT email, firstName FROM experts WHERE id = ? LIMIT 1", [oldShortlist.expertId]);
+              const expert = rows?.[0];
 
-                if (expert?.email) {
-                  const link = `${process.env.APP_ORIGIN || 'https://alternatives.nativeworld.com'}/questionnaire/${q.token}`;
-                  await sendEmail({
-                    to: expert.email,
-                    subject: `${expert.firstName}, You're invited to complete a questionnaire`,
-                    html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
-                      <p>Hi ${expert.firstName},</p>
-                      <p>You have been invited to complete a questionnaire for <strong>${(await getProjectById(sl.projectId))?.name || 'a project'}</strong>.</p>
-                      <p><a href="${link}" style="display:inline-block;padding:12px 28px;background:#2563EB;color:white;text-decoration:none;border-radius:6px;font-weight:600">Complete Questionnaire</a></p>
-                      <p style="color:#888;font-size:12px;margin-top:24px">© ${new Date().getFullYear()} AlterNatives</p>
-                    </div>`,
-                  });
-                }
+              if (expert?.email) {
+                const project = await getProjectById(oldShortlist.projectId);
+                const link = `${process.env.APP_ORIGIN || 'https://alternatives.nativeworld.com'}/questionnaire/${q.token}`;
+                await sendEmail({
+                  to: expert.email,
+                  subject: `${expert.firstName}, You're invited to complete a questionnaire`,
+                  html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+                    <p>Hi ${expert.firstName},</p>
+                    <p>You have been invited to complete a questionnaire for <strong>${project?.name || 'a project'}</strong>.</p>
+                    <p><a href="${link}" style="display:inline-block;padding:12px 28px;background:#2563EB;color:white;text-decoration:none;border-radius:6px;font-weight:600">Complete Questionnaire</a></p>
+                    <p style="color:#888;font-size:12px;margin-top:24px">© ${new Date().getFullYear()} AlterNatives</p>
+                  </div>`,
+                });
               }
-            } catch (e) {
-              console.warn("Failed to send questionnaire email:", e);
             }
+          } catch (e) {
+            console.warn("Failed to send questionnaire email:", e);
           }
         }
 
