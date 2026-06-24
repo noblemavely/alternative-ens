@@ -13,7 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2, Upload, Loader2, Link2, Users, FileText, Check } from "lucide-react";
+import { Plus, Trash2, Edit2, Upload, Loader2, Link2, Users, FileText, Check, Search } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { ButtonWithTooltip } from "@/components/ButtonWithTooltip";
@@ -253,22 +253,31 @@ export default function AdminExperts() {
               </SelectContent>
             </Select>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button
-                onClick={() => {
-                  form.reset();
-                  setEditingId(null);
-                  setLinkedinUrl("");
-                  setEmploymentEntries([]);
-                  setEducationEntries([]);
-                }}
-                className="gap-2 whitespace-nowrap"
-              >
-                <Plus size={18} />
-                Add Expert
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="gap-2 whitespace-nowrap"
+              onClick={() => navigate("/admin/search")}
+            >
+              <Search size={16} />
+              Advanced Search
+            </Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  onClick={() => {
+                    form.reset();
+                    setEditingId(null);
+                    setLinkedinUrl("");
+                    setEmploymentEntries([]);
+                    setEducationEntries([]);
+                  }}
+                  className="gap-2 whitespace-nowrap"
+                >
+                  <Plus size={18} />
+                  Add Expert
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingId ? "Edit Expert" : "Add New Expert"}</DialogTitle>
@@ -458,7 +467,8 @@ export default function AdminExperts() {
                 </form>
               </Form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         {/* Experts Table */}
