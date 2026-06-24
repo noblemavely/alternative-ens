@@ -1,10 +1,16 @@
 import { ENV } from './_core/env';
 
+export interface EmailAttachment {
+  name: string;
+  content: string; // base64 encoded
+}
+
 async function sendEmailViaBrevoAPI(
   to: string,
   subject: string,
   htmlContent: string,
-  textContent?: string
+  textContent?: string,
+  attachments?: EmailAttachment[]
 ): Promise<void> {
   const apiKey = (ENV as any).brevoApiKey;
   const fromEmail = (ENV as any).smtpFromEmail;
@@ -18,7 +24,7 @@ async function sendEmailViaBrevoAPI(
     throw new Error('SMTP_FROM_EMAIL environment variable is not set');
   }
 
-  const payload = {
+  const payload: any = {
     sender: {
       name: fromName || 'Alternatives Team',
       email: fromEmail,
@@ -32,6 +38,13 @@ async function sendEmailViaBrevoAPI(
     htmlContent,
     textContent: textContent || '',
   };
+
+  if (attachments && attachments.length > 0) {
+    payload.attachment = attachments.map((att) => ({
+      name: att.name,
+      content: att.content,
+    }));
+  }
 
   try {
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -63,6 +76,7 @@ export interface SendEmailOptions {
   subject: string;
   html: string;
   text?: string;
+  attachments?: EmailAttachment[];
 }
 
 export async function sendEmail(options: SendEmailOptions): Promise<void> {
@@ -76,7 +90,8 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
       options.to,
       options.subject,
       options.html,
-      options.text
+      options.text,
+      options.attachments
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

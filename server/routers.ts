@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { readFileSync } from "fs";
+import { join } from "path";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -429,7 +431,10 @@ export const appRouter = router({
           // Send T&C copy to the expert
           try {
             const { sendEmail } = await import("./email");
-            const TC_PDF_URL = `${ENV.appOrigin}/documents/alteratives-tnc.pdf`;
+            const pdfPath = join(process.cwd(), "public", "documents", "alteratives-tnc.pdf");
+            const pdfBuffer = readFileSync(pdfPath);
+            const pdfBase64 = pdfBuffer.toString("base64");
+
             await sendEmail({
               to: input.email,
               subject: "AlterNatives — Your Terms & Conditions Copy",
@@ -441,14 +446,17 @@ export const appRouter = router({
                   <div style="padding:24px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px">
                     <p style="color:#333">Hi ${input.firstName || "there"},</p>
                     <p style="color:#555">Thank you for joining the AlterNatives Expert Network. Your profile has been successfully submitted.</p>
-                    <p style="color:#555">As requested, please find a copy of the Terms &amp; Conditions you accepted during registration:</p>
-                    <div style="margin:24px 0;text-align:center">
-                      <a href="${TC_PDF_URL}" style="display:inline-block;padding:12px 28px;background:#2563EB;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">Download Terms &amp; Conditions</a>
-                    </div>
+                    <p style="color:#555">Please find attached a copy of the Terms &amp; Conditions you accepted during registration.</p>
                     <p style="color:#555;font-size:13px">Our team will review your profile and be in touch within 24 hours.</p>
                     <p style="color:#888;font-size:12px;margin-top:24px">© ${new Date().getFullYear()} AlterNatives · nativeworld.com</p>
                   </div>
                 </div>`,
+              attachments: [
+                {
+                  name: "AlterNatives-Terms-and-Conditions.pdf",
+                  content: pdfBase64,
+                },
+              ],
             });
           } catch (tcMailErr) {
             console.warn("[submitProfile] T&C email to expert failed:", tcMailErr);
