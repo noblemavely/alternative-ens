@@ -337,9 +337,37 @@ export const appRouter = router({
         return contact;
       }),
 
-    list: adminProcedure.query(async () => {
-      return getAllClientContacts();
-    }),
+    list: adminProcedure
+      .input(
+        z.object({
+          search: z.string().optional(),
+          limit: z.number().optional().default(20),
+          offset: z.number().optional().default(0),
+        })
+      )
+      .query(async ({ input }) => {
+        const contacts = await getAllClientContacts();
+        let filtered = contacts;
+
+        if (input.search) {
+          const searchLower = input.search.toLowerCase();
+          filtered = filtered.filter(contact =>
+            (contact.contactName?.toLowerCase().includes(searchLower) || false) ||
+            (contact.email?.toLowerCase().includes(searchLower) || false)
+          );
+        }
+
+        const total = filtered.length;
+        const items = filtered.slice(input.offset, input.offset + input.limit);
+
+        return {
+          items,
+          total,
+          offset: input.offset,
+          limit: input.limit,
+          hasMore: input.offset + input.limit < total,
+        };
+      }),
 
     listByClient: adminProcedure
       .input(z.object({ clientId: z.number() }))
