@@ -79,6 +79,7 @@ import {
   deleteExpertNote,
   getQuestionnaireByProject,
   createOrGetInvitation,
+  createFreshInvitation,
 } from "./db";
 import { storagePut, storageGet } from "./storage";
 import { nanoid } from "nanoid";
@@ -902,8 +903,8 @@ export const appRouter = router({
         const q = await getQuestionnaireByProject(shortlist.projectId);
         if (!q) throw new Error("No questionnaire for this project");
 
-        // Create the invitation (with database persistence in a mutation)
-        const invitation = await createOrGetInvitation({
+        // Create FRESH invitation token (delete old ones, create new)
+        const invitation = await createFreshInvitation({
           questionnaireId: q.id,
           expertId: shortlist.expertId,
           shortlistId: shortlist.id,

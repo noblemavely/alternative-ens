@@ -2045,6 +2045,35 @@ export async function createOrGetInvitation(data: {
   return created[0];
 }
 
+export async function createFreshInvitation(data: {
+  questionnaireId: number;
+  expertId: number;
+  shortlistId?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const pool = (db as any).$client;
+
+  // Delete any existing invitations for this expert+questionnaire
+  await pool.execute(
+    "DELETE FROM questionnaire_invitations WHERE questionnaireId = ? AND expertId = ?",
+    [data.questionnaireId, data.expertId]
+  );
+
+  // Create fresh new invitation
+  const token = generateToken();
+  await pool.execute(
+    "INSERT INTO questionnaire_invitations (questionnaireId, expertId, shortlistId, token, status) VALUES (?, ?, ?, ?, 'pending')",
+    [data.questionnaireId, data.expertId, data.shortlistId ?? null, token]
+  );
+  const [created]: any = await pool.execute(
+    "SELECT * FROM questionnaire_invitations WHERE token = ? LIMIT 1",
+    [token]
+  );
+  return created[0];
+}
+
 export async function getInvitationByToken(token: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
