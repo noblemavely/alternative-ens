@@ -2097,27 +2097,39 @@ export async function getInvitationByToken(token: string) {
 
   console.log(`[DB] getInvitationByToken: Looking up token ${token}`);
 
-  // Use Drizzle ORM instead of raw pool.execute for proper persistence
-  const [inv] = await db.select()
-    .from(questionnaireInvitations)
-    .where(eq(questionnaireInvitations.token, token))
-    .limit(1);
+  try {
+    // Use Drizzle ORM instead of raw pool.execute for proper persistence
+    const [inv] = await db.select()
+      .from(questionnaireInvitations)
+      .where(eq(questionnaireInvitations.token, token))
+      .limit(1);
 
-  console.log(`[DB] Invitation query result:`, JSON.stringify({invId: inv?.id, token: inv?.token, qId: inv?.questionnaireId}));
+    console.log(`[DB] Invitation query result:`, JSON.stringify({invId: inv?.id, token: inv?.token, qId: inv?.questionnaireId}));
 
-  if (!inv) {
-    console.error(`[DB] ❌ Invitation not found for token: ${token}`);
+    if (!inv) {
+      console.error(`[DB] ❌ Invitation not found for token: ${token}`);
+      return null;
+    }
+  } catch (err) {
+    console.error(`[DB] ❌ ERROR looking up invitation for token ${token}:`, err);
     return null;
   }
 
   console.log(`[DB] ✓ Invitation found: id=${inv.id}, questionnaireId=${inv.questionnaireId}, expertId=${inv.expertId}`);
 
-  const [q] = await db.select()
-    .from(questionnaires)
-    .where(eq(questionnaires.id, inv.questionnaireId))
-    .limit(1);
+  let q;
+  try {
+    const result = await db.select()
+      .from(questionnaires)
+      .where(eq(questionnaires.id, inv.questionnaireId))
+      .limit(1);
+    [q] = result;
+    console.log(`[DB] Questionnaire query for id=${inv.questionnaireId} result:`, JSON.stringify({qId: q?.id, title: q?.title, isPublished: q?.isPublished}));
+  } catch (err) {
+    console.error(`[DB] ❌ ERROR fetching questionnaire ${inv.questionnaireId}:`, err);
+    return null;
+  }
 
-  console.log(`[DB] Questionnaire query for id=${inv.questionnaireId} result:`, JSON.stringify({qId: q?.id, title: q?.title, isPublished: q?.isPublished}));
   if (!q) {
     console.error(`[DB] ❌ Questionnaire not found for id ${inv.questionnaireId}`);
     return null;
@@ -2125,29 +2137,36 @@ export async function getInvitationByToken(token: string) {
 
   console.log(`[DB] ✓ Questionnaire found: id=${q.id}, title=${q.title}, isPublished=${q.isPublished}`);
 
-  const questions = await db.select()
-    .from(questionnaireQuestions)
-    .where(eq(questionnaireQuestions.questionnaireId, inv.questionnaireId))
-    .orderBy(questionnaireQuestions.order);
+  let questions, expert, project;
+  try {
+    questions = await db.select()
+      .from(questionnaireQuestions)
+      .where(eq(questionnaireQuestions.questionnaireId, inv.questionnaireId))
+      .orderBy(questionnaireQuestions.order);
 
-  const [expert] = await db.select({
-    id: experts.id,
-    firstName: experts.firstName,
-    lastName: experts.lastName,
-    email: experts.email,
-  })
-    .from(experts)
-    .where(eq(experts.id, inv.expertId))
-    .limit(1);
+    const expertResult = await db.select({
+      id: experts.id,
+      firstName: experts.firstName,
+      lastName: experts.lastName,
+      email: experts.email,
+    })
+      .from(experts)
+      .where(eq(experts.id, inv.expertId))
+      .limit(1);
+    [expert] = expertResult;
 
-  const [project] = await db.select({
-    id: projects.id,
-    name: projects.name,
-    clientId: projects.clientId,
-  })
-    .from(projects)
-    .where(eq(projects.id, q.projectId))
-    .limit(1);
+    const projectResult = await db.select({
+      id: projects.id,
+      name: projects.name,
+    })
+      .from(projects)
+      .where(eq(projects.id, q.projectId))
+      .limit(1);
+    [project] = projectResult;
+  } catch (err) {
+    console.error(`[DB] ❌ ERROR fetching related data:`, err);
+    return null;
+  }
 
   let client = null;
   if (project?.clientId) {
