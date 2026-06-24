@@ -38,8 +38,8 @@ export default function AdminProjects() {
     limit: pageSize,
     offset: currentPage * pageSize,
   });
-  const clientsQuery = trpc.clients.list.useQuery();
-  const contactsQuery = trpc.clientContacts.list.useQuery();
+  const clientsQuery = trpc.clients.list.useQuery({ limit: 1000 });
+  const contactsQuery = trpc.clientContacts.list.useQuery({ limit: 1000 });
   const shortlistsQuery = trpc.shortlists.list.useQuery();
 
   const filteredProjects = projectsQuery.data?.items || [];
@@ -65,9 +65,9 @@ export default function AdminProjects() {
   };
 
   const getClientContactName = (contactId: number) => {
-    const contact = contactsQuery.data?.find((c: any) => c.id === contactId);
+    const contact = (contactsQuery.data?.items ?? []).find((c: any) => c.id === contactId);
     if (!contact) return "Unknown";
-    const client = clientsQuery.data?.find((c: any) => c.id === contact.clientId);
+    const client = (clientsQuery.data?.items ?? []).find((c: any) => c.id === contact.clientId);
     return `${client?.name} - ${contact.contactName}`;
   };
 
@@ -145,9 +145,9 @@ export default function AdminProjects() {
               <EmptyState
                 icon={Briefcase}
                 title="No projects yet"
-                description={searchTerm || projectTypeFilter !== "all" ? "No projects match your filters." : "Add your first project to get started"}
-                actionLabel={!searchTerm && projectTypeFilter === "all" ? "Add Project" : undefined}
-                onAction={!searchTerm && projectTypeFilter === "all" ? () => navigate("/admin/add-project") : undefined}
+                description={searchTerm || statusFilter !== "all" ? "No projects match your filters." : "Add your first project to get started"}
+                actionLabel={!searchTerm && statusFilter === "all" ? "Add Project" : undefined}
+                onAction={!searchTerm && statusFilter === "all" ? () => navigate("/admin/add-project") : undefined}
               />
             </div>
           ) : (

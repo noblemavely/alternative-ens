@@ -29,8 +29,8 @@ export default function AddProject() {
   const [, navigate] = useLocation();
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const createMutation = trpc.projects.create.useMutation();
-  const clientsQuery = trpc.clients.list.useQuery();
-  const contactsQuery = trpc.clientContacts.list.useQuery();
+  const clientsQuery = trpc.clients.list.useQuery({ limit: 1000 });
+  const contactsQuery = trpc.clientContacts.list.useQuery({ limit: 1000 });
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
@@ -115,7 +115,7 @@ export default function AddProject() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {clientsQuery.data?.map((client) => (
+                          {(clientsQuery.data?.items ?? []).map((client) => (
                             <SelectItem key={client.id} value={client.id.toString()}>
                               {client.name}
                             </SelectItem>
@@ -141,7 +141,7 @@ export default function AddProject() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {contactsQuery.data?.filter((c: any) => c.clientId === selectedClientId).map((contact: any) => (
+                            {(contactsQuery.data?.items ?? []).filter((c: any) => c.clientId === selectedClientId).map((contact: any) => (
                               <SelectItem key={contact.id} value={contact.id.toString()}>
                                 {contact.contactName}
                               </SelectItem>

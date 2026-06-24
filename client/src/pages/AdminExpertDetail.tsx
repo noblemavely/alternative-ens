@@ -89,10 +89,10 @@ export default function AdminExpertDetail() {
   const [educationHistory, setEducationHistory] = useState<any[]>([]);
 
   const expertQuery                = trpc.experts.getById.useQuery({ id: expertId! }, { enabled: !!expertId });
-  const projectsQuery              = trpc.projects.list.useQuery();
+  const projectsQuery              = trpc.projects.list.useQuery({ limit: 1000 });
   const shortlistedProjectsQuery   = trpc.shortlists.getByExpert.useQuery({ expertId: expertId! }, { enabled: !!expertId });
-  const clientsQuery               = trpc.clients.list.useQuery();
-  const contactsQuery              = trpc.clientContacts.list.useQuery();
+  const clientsQuery               = trpc.clients.list.useQuery({ limit: 1000 });
+  const contactsQuery              = trpc.clientContacts.list.useQuery({ limit: 1000 });
   const sectorsQuery               = trpc.sectors.list.useQuery();
   const functionsQuery             = trpc.functions.list.useQuery();
   const expertProjectsQuery        = trpc.experts.getProjectsForExpert.useQuery({ expertId: expertId! }, { enabled: !!expertId });
@@ -373,7 +373,7 @@ export default function AdminExpertDetail() {
                       <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Select Client *</Label>
                       <Select value={selectedClient} onValueChange={(v) => { setSelectedClient(v); setSelectedProject(""); }}>
                         <SelectTrigger className="mt-1.5 h-8 text-sm"><SelectValue placeholder="Choose a client…" /></SelectTrigger>
-                        <SelectContent>{clientsQuery.data?.map((c: any) => <SelectItem key={c.id} value={c.id.toString()}>{c.companyName || c.name}</SelectItem>)}</SelectContent>
+                        <SelectContent>{(clientsQuery.data?.items ?? []).map((c: any) => <SelectItem key={c.id} value={c.id.toString()}>{c.companyName || c.name}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                     <div>
@@ -381,7 +381,7 @@ export default function AdminExpertDetail() {
                       <Select value={selectedProject} onValueChange={setSelectedProject} disabled={!selectedClient}>
                         <SelectTrigger className="mt-1.5 h-8 text-sm"><SelectValue placeholder={selectedClient ? "Choose a project…" : "Select a client first…"} /></SelectTrigger>
                         <SelectContent>
-                          {projectsQuery.data?.filter((p: any) => contactsQuery.data?.find((c: any) => c.id === p.clientContactId)?.clientId?.toString() === selectedClient).map((p: any) => (
+                          {(projectsQuery.data?.items ?? []).filter((p: any) => (contactsQuery.data?.items ?? []).find((c: any) => c.id === p.clientContactId)?.clientId?.toString() === selectedClient).map((p: any) => (
                             <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
                           ))}
                         </SelectContent>
@@ -403,9 +403,9 @@ export default function AdminExpertDetail() {
                 <div className="px-5 py-8 text-center text-sm text-muted-foreground">No projects assigned yet</div>
               ) : (
                 shortlistedProjectsQuery.data.map((shortlist: any) => {
-                  const project = projectsQuery.data?.find((p: any) => p.id === shortlist.projectId);
-                  const contact = contactsQuery.data?.find((c: any) => c.id === project?.clientContactId);
-                  const client  = clientsQuery.data?.find((c: any) => c.id === contact?.clientId);
+                  const project = (projectsQuery.data?.items ?? []).find((p: any) => p.id === shortlist.projectId);
+                  const contact = (contactsQuery.data?.items ?? []).find((c: any) => c.id === project?.clientContactId);
+                  const client  = (clientsQuery.data?.items ?? []).find((c: any) => c.id === contact?.clientId);
                   const isEditingThis = editingShortlistId === shortlist.id;
 
                   return (

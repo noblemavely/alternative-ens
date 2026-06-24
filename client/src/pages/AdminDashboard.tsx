@@ -90,17 +90,20 @@ function SectionCard({ title, subtitle, action, onAction, children }: {
 
 export default function AdminDashboard() {
   const [, navigate] = useLocation();
-  const clientsQuery  = trpc.clients.list.useQuery();
-  const expertsQuery  = trpc.experts.list.useQuery();
-  const projectsQuery = trpc.projects.list.useQuery();
+  const clientsQuery  = trpc.clients.list.useQuery({ limit: 1000 });
+  const expertsQuery  = trpc.experts.list.useQuery({ limit: 1000 });
+  const projectsQuery = trpc.projects.list.useQuery({ limit: 1000 });
 
-  const totalClients  = clientsQuery.data?.length  ?? 0;
-  const totalExperts  = expertsQuery.data?.length  ?? 0;
-  const totalProjects = projectsQuery.data?.length ?? 0;
-  const verified      = expertsQuery.data?.filter((e) => e.isVerified).length ?? 0;
+  const allExperts = expertsQuery.data?.items ?? [];
+  const allProjects = projectsQuery.data?.items ?? [];
 
-  const recentExperts = expertsQuery.data?.slice(-6).reverse() ?? [];
-  const recentProjects = projectsQuery.data?.slice(-6).reverse() ?? [];
+  const totalClients  = clientsQuery.data?.total  ?? 0;
+  const totalExperts  = expertsQuery.data?.total  ?? 0;
+  const totalProjects = projectsQuery.data?.total ?? 0;
+  const verified      = allExperts.filter((e: any) => e.isVerified).length;
+
+  const recentExperts = allExperts.slice(-6).reverse();
+  const recentProjects = allProjects.slice(-6).reverse();
 
   return (
     <AdminLayout>

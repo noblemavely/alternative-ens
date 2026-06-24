@@ -36,8 +36,8 @@ export default function AdminClientDetail() {
   const clientQuery = trpc.clients.getById.useQuery({ id: clientId! }, { enabled: !!clientId });
   const sectorsQuery = trpc.sectors.list.useQuery();
   const contactsQuery = trpc.clientContacts.listByClient.useQuery({ clientId: clientId! }, { enabled: !!clientId });
-  const projectsQuery = trpc.projects.list.useQuery();
-  const allContactsQuery = trpc.clientContacts.list.useQuery();
+  const projectsQuery = trpc.projects.list.useQuery({ limit: 1000 });
+  const allContactsQuery = trpc.clientContacts.list.useQuery({ limit: 1000 });
 
   const updateClientMutation = trpc.clients.update.useMutation({
     onSuccess: () => { toast.success("Client updated"); setIsEditing(false); clientQuery.refetch(); },
@@ -93,8 +93,10 @@ export default function AdminClientDetail() {
     </AdminLayout>
   );
 
-  const clientContactIds = allContactsQuery.data?.filter((c: any) => c.clientId === clientId).map((c: any) => c.id) || [];
-  const projectCount = projectsQuery.data?.filter((p: any) => clientContactIds.includes(p.clientContactId)).length || 0;
+  const allContacts = allContactsQuery.data?.items ?? [];
+  const allProjects = projectsQuery.data?.items ?? [];
+  const clientContactIds = allContacts.filter((c: any) => c.clientId === clientId).map((c: any) => c.id);
+  const projectCount = allProjects.filter((p: any) => clientContactIds.includes(p.clientContactId)).length;
 
   return (
     <AdminLayout>
@@ -294,8 +296,8 @@ export default function AdminClientDetail() {
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Projects</h3>
               </div>
               <div className="divide-y divide-border">
-                {projectsQuery.data
-                  ?.filter((p: any) => clientContactIds.includes(p.clientContactId))
+                {(projectsQuery.data?.items ?? [])
+                  .filter((p: any) => clientContactIds.includes(p.clientContactId))
                   .map((p: any) => (
                     <button
                       key={p.id}

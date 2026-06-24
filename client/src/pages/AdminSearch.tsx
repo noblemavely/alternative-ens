@@ -32,7 +32,7 @@ export default function AdminSearch() {
   const [shortlistOpen, setShortlistOpen] = useState(false);
   const [selectedExpert, setSelectedExpert] = useState<any>(null);
 
-  const projectsQuery = trpc.projects.list.useQuery();
+  const projectsQuery = trpc.projects.list.useQuery({ limit: 1000 });
   const searchQuery = trpc.experts.search.useQuery({ sector: "", function: "", keyword: "" }, { enabled: false });
   const addShortlistMutation = trpc.shortlists.add.useMutation();
 
@@ -229,7 +229,7 @@ export default function AdminSearch() {
                                           </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                          {projectsQuery.data?.map((project) => (
+                                          {(projectsQuery.data?.items ?? []).map((project: any) => (
                                             <SelectItem key={project.id} value={String(project.id)}>
                                               {project.name}
                                             </SelectItem>

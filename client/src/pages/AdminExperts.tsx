@@ -128,7 +128,8 @@ export default function AdminExperts() {
         toast.success("Expert created successfully");
 
         // Fetch the newly created expert by email to get their ID
-        const createdExperts = (await expertsQuery.refetch()).data?.filter(e => e.email === data.email);
+        const refetched = await expertsQuery.refetch();
+        const createdExperts = refetched.data?.items?.filter((e: any) => e.email === data.email);
         if (createdExperts && createdExperts.length > 0) {
           expertId = createdExperts[0].id;
         }

@@ -59,8 +59,8 @@ export default function AdminClients() {
     offset: currentPage * pageSize,
   });
   const sectorsQuery = trpc.sectors.list.useQuery();
-  const projectsQuery = trpc.projects.list.useQuery();
-  const contactsQuery = trpc.clientContacts.list.useQuery();
+  const projectsQuery = trpc.projects.list.useQuery({ limit: 1000 });
+  const contactsQuery = trpc.clientContacts.list.useQuery({ limit: 1000 });
   const createMutation = trpc.clients.create.useMutation();
 
   const filteredClients = clientsQuery.data?.items || [];
@@ -206,8 +206,10 @@ export default function AdminClients() {
                 </thead>
                 <tbody>
                   {filteredClients.map((client: any) => {
-                    const clientContactIds = contactsQuery.data?.filter((c: any) => c.clientId === client.id).map((c: any) => c.id) || [];
-                    const projectCount = projectsQuery.data?.filter((p: any) => clientContactIds.includes(p.clientContactId)).length || 0;
+                    const allContacts = contactsQuery.data?.items ?? [];
+                    const allProjects = projectsQuery.data?.items ?? [];
+                    const clientContactIds = allContacts.filter((c: any) => c.clientId === client.id).map((c: any) => c.id);
+                    const projectCount = allProjects.filter((p: any) => clientContactIds.includes(p.clientContactId)).length;
                     return (
                       <tr
                         key={client.id}
