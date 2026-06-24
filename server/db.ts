@@ -2097,12 +2097,14 @@ export async function getInvitationByToken(token: string) {
 
   console.log(`[DB] getInvitationByToken: Looking up token ${token}`);
 
+  let inv;
   try {
     // Use Drizzle ORM instead of raw pool.execute for proper persistence
-    const [inv] = await db.select()
+    const result = await db.select()
       .from(questionnaireInvitations)
       .where(eq(questionnaireInvitations.token, token))
       .limit(1);
+    [inv] = result;
 
     console.log(`[DB] Invitation query result:`, JSON.stringify({invId: inv?.id, token: inv?.token, qId: inv?.questionnaireId}));
 
