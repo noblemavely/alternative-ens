@@ -689,10 +689,50 @@ export default function ExpertPortal() {
                     />
 
                     <Button
-                      onClick={() => {
+                      onClick={async () => {
                         const url = profileForm.getValues("linkedinUrl");
                         if (url) {
-                          toast.info("LinkedIn URL saved. You can auto-fill your experience using the resume upload below, or fill it manually in the next step.");
+                          try {
+                            toast.loading("Extracting profile from LinkedIn...");
+                            const result = await trpc.experts.extractProfile.useMutation().mutateAsync({
+                              linkedinUrl: url,
+                            });
+                            toast.dismiss();
+
+                            if (result) {
+                              // Auto-fill employment history
+                              if (result.employment && result.employment.length > 0) {
+                                const mappedEmployment = result.employment.map((emp: any, idx: number) => ({
+                                  id: `emp-${idx}`,
+                                  company: emp.companyName,
+                                  position: emp.position,
+                                  startDate: emp.startDate || "",
+                                  endDate: emp.endDate,
+                                  currentlyWorking: emp.isCurrent || false,
+                                  description: emp.description,
+                                }));
+                                setEmploymentHistory(mappedEmployment);
+                              }
+
+                              // Auto-fill education history
+                              if (result.education && result.education.length > 0) {
+                                const mappedEducation = result.education.map((edu: any, idx: number) => ({
+                                  id: `edu-${idx}`,
+                                  school: edu.schoolName,
+                                  degree: edu.degree || "",
+                                  field: edu.fieldOfStudy || "",
+                                  startDate: edu.startDate || "",
+                                  endDate: edu.endDate,
+                                }));
+                                setEducationHistory(mappedEducation);
+                              }
+
+                              toast.success("Profile extracted successfully!");
+                            }
+                          } catch (error: any) {
+                            toast.dismiss();
+                            toast.error(error?.message || "Could not extract profile. You can fill it manually in the next step.");
+                          }
                         }
                         setStep("experience-education");
                       }}
