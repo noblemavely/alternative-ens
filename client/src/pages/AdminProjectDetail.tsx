@@ -80,9 +80,6 @@ export default function AdminProjectDetail() {
   const [editOptionInput, setEditOptionInput] = useState("");
   // Responses
   const [showResponses, setShowResponses] = useState(false);
-  // Per-expert invitation links
-  const [inviteLinks, setInviteLinks] = useState<Record<number, string>>({}); // keyed by shortlistId
-
   // Email draft modal
   const [showEmailDraft, setShowEmailDraft] = useState(false);
   const [emailDraft, setEmailDraft] = useState<any>(null);
@@ -363,39 +360,6 @@ export default function AdminProjectDetail() {
                             </SelectContent>
                           </Select>
                         </td>
-                        {questionnaireQuery.data?.isPublished && (
-                          <td>
-                            {inviteLinks[shortlist.id] ? (
-                              <div className="flex items-center gap-1.5 max-w-xs">
-                                <span className="text-[10px] font-mono text-muted-foreground truncate flex-1">{inviteLinks[shortlist.id]}</span>
-                                <button
-                                  onClick={() => { navigator.clipboard.writeText(inviteLinks[shortlist.id]); toast.success("Link copied!"); }}
-                                  className="flex-shrink-0 inline-flex items-center justify-center h-6 w-6 rounded text-muted-foreground hover:text-primary transition-colors"
-                                >
-                                  <Copy size={12} />
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={async () => {
-                                  const inv = await createInvitationMutation.mutateAsync({
-                                    questionnaireId: questionnaireQuery.data!.id,
-                                    expertId: shortlist.expertId,
-                                    shortlistId: shortlist.id,
-                                  });
-                                  const link = `${window.location.origin}/questionnaire/i/${inv.token}`;
-                                  setInviteLinks(prev => ({ ...prev, [shortlist.id]: link }));
-                                  navigator.clipboard.writeText(link);
-                                  toast.success("Link generated and copied!");
-                                }}
-                                disabled={createInvitationMutation.isPending}
-                                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                              >
-                                <Send size={11} /> Get Link
-                              </button>
-                            )}
-                          </td>
-                        )}
                         <td className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             {/* Get Link - Active when status is "invited" or beyond */}
