@@ -237,9 +237,9 @@ function extractProfileFromResponse(
     lastName: person.last_name || "",
     email: person.email || person.emails?.[0] || "",
     phone: person.phone_number || "",
-    headline: person.title || "",
-    sector: person.industry || "",
-    biography: person.headline || "",
+    headline: person.headline || person.title || "",
+    sector: person.organization?.industry || person.industry || "",
+    biography: `${person.headline || ""} at ${person.organization?.name || ""}`.trim(),
     skills: person.skills?.slice(0, 10) || [],
     employment: mapEmploymentHistory(person.employment_history),
     education: mapEducationHistory(person.education),
@@ -259,11 +259,11 @@ function mapEmploymentHistory(
   }
 
   return employmentHistory.map((emp) => ({
-    companyName: emp.company_name || "",
+    companyName: emp.organization_name || emp.company_name || "",
     position: emp.title || "",
     startDate: emp.start_date ? formatDate(emp.start_date) : undefined,
     endDate: emp.end_date ? formatDate(emp.end_date) : undefined,
-    isCurrent: !emp.end_date, // If no end date, assume current
+    isCurrent: emp.current !== false, // If current is true or undefined, assume current
     description: emp.description || "",
   }));
 }
