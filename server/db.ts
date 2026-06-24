@@ -2057,32 +2057,37 @@ export async function createFreshInvitation(data: {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const pool = (db as any).$client;
-
   console.log(`[DB] createFreshInvitation: Creating invitation for questionnaireId=${data.questionnaireId}, expertId=${data.expertId}`);
 
-  // Delete any existing invitations for this expert+questionnaire
-  await pool.execute(
-    "DELETE FROM questionnaire_invitations WHERE questionnaireId = ? AND expertId = ?",
-    [data.questionnaireId, data.expertId]
-  );
+  // Delete any existing invitations for this expert+questionnaire using Drizzle ORM
+  await db.delete(questionnaireInvitations)
+    .where(
+      and(
+        eq(questionnaireInvitations.questionnaireId, data.questionnaireId),
+        eq(questionnaireInvitations.expertId, data.expertId)
+      )
+    );
 
-  // Create fresh new invitation
+  // Create fresh new invitation using Drizzle ORM (ensures proper persistence)
   const token = generateToken();
   console.log(`[DB] createFreshInvitation: Generated token=${token}`);
 
-  await pool.execute(
-    "INSERT INTO questionnaire_invitations (questionnaireId, expertId, shortlistId, token, status) VALUES (?, ?, ?, ?, 'pending')",
-    [data.questionnaireId, data.expertId, data.shortlistId ?? null, token]
-  );
+  const result = await db.insert(questionnaireInvitations).values({
+    questionnaireId: data.questionnaireId,
+    expertId: data.expertId,
+    shortlistId: data.shortlistId ?? null,
+    token,
+    status: "pending"
+  });
 
-  const [created]: any = await pool.execute(
-    "SELECT * FROM questionnaire_invitations WHERE token = ? LIMIT 1",
-    [token]
-  );
+  // Fetch the created invitation
+  const [created] = await db.select()
+    .from(questionnaireInvitations)
+    .where(eq(questionnaireInvitations.token, token))
+    .limit(1);
 
-  console.log(`[DB] createFreshInvitation: Invitation created with ID=${created[0]?.id}, token=${created[0]?.token}`);
-  return created[0];
+  console.log(`[DB] createFreshInvitation: Invitation created with ID=${created?.id}, token=${created?.token}`);
+  return created;
 }
 
 export async function getInvitationByToken(token: string) {
