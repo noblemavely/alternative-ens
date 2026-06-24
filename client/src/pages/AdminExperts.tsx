@@ -46,31 +46,32 @@ export default function AdminExperts() {
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
   const [sectorFilter, setSectorFilter] = useState<string>(urlParams.get('sector') || "");
   const [functionFilter, setFunctionFilter] = useState<string>(urlParams.get('function') || "");
+  const [currentPage, setCurrentPage] = useState(parseInt(urlParams.get('page') || '0'));
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expertToDelete, setExpertToDelete] = useState<{ id: number; name: string } | null>(null);
 
-  const updateUrl = (search: string, sector: string, func: string) => {
+  const pageSize = 20;
+  const updateUrl = (search: string, sector: string, func: string, page: number = 0) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     if (sector && sector !== "all") params.set('sector', sector);
     if (func && func !== "all") params.set('function', func);
+    if (page > 0) params.set('page', String(page));
     const queryString = params.toString();
     navigate(`/admin/experts${queryString ? '?' + queryString : ''}`);
   };
 
-  const expertsQuery = trpc.experts.list.useQuery();
+  const expertsQuery = trpc.experts.list.useQuery({
+    search: searchTerm,
+    sector: sectorFilter && sectorFilter !== "all" ? sectorFilter : undefined,
+    function: functionFilter && functionFilter !== "all" ? functionFilter : undefined,
+    limit: pageSize,
+    offset: currentPage * pageSize,
+  });
   const sectorsQuery = trpc.sectors.list.useQuery();
   const functionsQuery = trpc.functions.list.useQuery();
-  
-  const filteredExperts = expertsQuery.data?.filter(expert => 
-    (((expert.firstName || "") + " " + (expert.lastName || "")).toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expert.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expert.sector?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expert.function?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expert.biography?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (!sectorFilter || sectorFilter === "all" || expert.sector === sectorFilter) &&
-    (!functionFilter || functionFilter === "all" || expert.function === functionFilter)
-  ) || [];
+
+  const filteredExperts = expertsQuery.data?.items || [];
   const createMutation = trpc.experts.create.useMutation();
   const updateMutation = trpc.experts.update.useMutation();
   const deleteMutation = trpc.experts.delete.useMutation();
@@ -220,13 +221,15 @@ export default function AdminExperts() {
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                updateUrl(e.target.value, sectorFilter, functionFilter);
+                setCurrentPage(0);
+                updateUrl(e.target.value, sectorFilter, functionFilter, 0);
               }}
               className="flex-1 min-w-0"
             />
             <Select value={sectorFilter} onValueChange={(value) => {
               setSectorFilter(value);
-              updateUrl(searchTerm, value, functionFilter);
+              setCurrentPage(0);
+              updateUrl(searchTerm, value, functionFilter, 0);
             }}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Sector" />
@@ -240,7 +243,8 @@ export default function AdminExperts() {
             </Select>
             <Select value={functionFilter} onValueChange={(value) => {
               setFunctionFilter(value);
-              updateUrl(searchTerm, sectorFilter, value);
+              setCurrentPage(0);
+              updateUrl(searchTerm, sectorFilter, value, 0);
             }}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Function" />
@@ -467,7 +471,10 @@ export default function AdminExperts() {
             <div>
               <h3 className="text-sm font-semibold text-foreground">All Experts</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {filteredExperts.length} expert{filteredExperts.length !== 1 ? "s" : ""} found
+                {expertsQuery.data?.total || 0} expert{(expertsQuery.data?.total || 0) !== 1 ? "s" : ""} found
+                {filteredExperts.length > 0 && (
+                  <span> • Showing {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, expertsQuery.data?.total || 0)}</span>
+                )}
               </p>
             </div>
           </div>
@@ -527,6 +534,38 @@ export default function AdminExperts() {
                   ))}
                 </tbody>
               </table>
+              {/* Pagination Controls */}
+              {expertsQuery.data && expertsQuery.data.total > pageSize && (
+                <div className="flex items-center justify-between px-5 py-3 border-t border-border bg-muted/50">
+                  <div className="text-sm text-muted-foreground">
+                    Page {currentPage + 1} of {Math.ceil(expertsQuery.data.total / pageSize)}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setCurrentPage(currentPage - 1);
+                        updateUrl(searchTerm, sectorFilter, functionFilter, currentPage - 1);
+                      }}
+                      disabled={currentPage === 0}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setCurrentPage(currentPage + 1);
+                        updateUrl(searchTerm, sectorFilter, functionFilter, currentPage + 1);
+                      }}
+                      disabled={!expertsQuery.data.hasMore}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="px-5 py-8">

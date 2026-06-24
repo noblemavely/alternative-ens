@@ -138,11 +138,44 @@ export const leadsRouter = router({
       return { success: true, leadId };
     }),
 
-  list: protectedProcedure.query(async () => {
-    const rows = await listLeads();
-    return rows.map((r) => ({
-      ...r,
-      queryTypeLabel: QUERY_TYPE_LABELS[r.queryType] ?? r.queryType,
-    }));
-  }),
+  list: protectedProcedure
+    .input(
+      z.object({
+        search: z.string().optional(),
+        queryType: z.string().optional(),
+        limit: z.number().optional().default(20),
+        offset: z.number().optional().default(0),
+      })
+    )
+    .query(async ({ input }) => {
+      const rows = await listLeads();
+      let filtered = rows.map((r) => ({
+        ...r,
+        queryTypeLabel: QUERY_TYPE_LABELS[r.queryType] ?? r.queryType,
+      }));
+
+      if (input.search) {
+        const searchLower = input.search.toLowerCase();
+        filtered = filtered.filter(lead =>
+          (lead.name?.toLowerCase().includes(searchLower) || false) ||
+          (lead.email?.toLowerCase().includes(searchLower) || false) ||
+          (lead.organization?.toLowerCase().includes(searchLower) || false)
+        );
+      }
+
+      if (input.queryType) {
+        filtered = filtered.filter(lead => lead.queryType === input.queryType);
+      }
+
+      const total = filtered.length;
+      const items = filtered.slice(input.offset, input.offset + input.limit);
+
+      return {
+        items,
+        total,
+        offset: input.offset,
+        limit: input.limit,
+        hasMore: input.offset + input.limit < total,
+      };
+    }),
 });

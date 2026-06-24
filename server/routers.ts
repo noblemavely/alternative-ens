@@ -245,9 +245,39 @@ export const appRouter = router({
         return client;
       }),
 
-    list: adminProcedure.query(async () => {
-      return getClients();
-    }),
+    list: adminProcedure
+      .input(
+        z.object({
+          search: z.string().optional(),
+          limit: z.number().optional().default(20),
+          offset: z.number().optional().default(0),
+        })
+      )
+      .query(async ({ input }) => {
+        const clients = await getClients();
+        let filtered = clients;
+
+        if (input.search) {
+          const searchLower = input.search.toLowerCase();
+          filtered = filtered.filter(client =>
+            (client.name?.toLowerCase().includes(searchLower) || false) ||
+            (client.email?.toLowerCase().includes(searchLower) || false) ||
+            (client.companyName?.toLowerCase().includes(searchLower) || false) ||
+            (client.contactPerson?.toLowerCase().includes(searchLower) || false)
+          );
+        }
+
+        const total = filtered.length;
+        const items = filtered.slice(input.offset, input.offset + input.limit);
+
+        return {
+          items,
+          total,
+          offset: input.offset,
+          limit: input.limit,
+          hasMore: input.offset + input.limit < total,
+        };
+      }),
 
     getById: adminProcedure
       .input(z.object({ id: z.number() }))
@@ -470,9 +500,53 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    list: adminProcedure.query(async () => {
-      return getExperts();
-    }),
+    list: adminProcedure
+      .input(
+        z.object({
+          search: z.string().optional(),
+          sector: z.string().optional(),
+          function: z.string().optional(),
+          limit: z.number().optional().default(20),
+          offset: z.number().optional().default(0),
+        })
+      )
+      .query(async ({ input }) => {
+        const experts = await getExperts();
+        let filtered = experts;
+
+        // Apply filters
+        if (input.search) {
+          const searchLower = input.search.toLowerCase();
+          filtered = filtered.filter(expert =>
+            (expert.firstName?.toLowerCase().includes(searchLower) || false) ||
+            (expert.lastName?.toLowerCase().includes(searchLower) || false) ||
+            (expert.email?.toLowerCase().includes(searchLower) || false) ||
+            (expert.sector?.toLowerCase().includes(searchLower) || false) ||
+            (expert.function?.toLowerCase().includes(searchLower) || false) ||
+            (expert.biography?.toLowerCase().includes(searchLower) || false)
+          );
+        }
+
+        if (input.sector) {
+          filtered = filtered.filter(expert => expert.sector === input.sector);
+        }
+
+        if (input.function) {
+          filtered = filtered.filter(expert => expert.function === input.function);
+        }
+
+        // Apply pagination
+        const total = filtered.length;
+        const items = filtered.slice(input.offset, input.offset + input.limit);
+
+        return {
+          items,
+          total,
+          offset: input.offset,
+          limit: input.limit,
+          hasMore: input.offset + input.limit < total,
+        };
+      }),
 
     getById: adminProcedure
       .input(z.object({ id: z.number() }))
@@ -593,9 +667,42 @@ export const appRouter = router({
         return project;
       }),
 
-    list: adminProcedure.query(async () => {
-      return getProjects();
-    }),
+    list: adminProcedure
+      .input(
+        z.object({
+          search: z.string().optional(),
+          status: z.string().optional(),
+          limit: z.number().optional().default(20),
+          offset: z.number().optional().default(0),
+        })
+      )
+      .query(async ({ input }) => {
+        const projects = await getProjects();
+        let filtered = projects;
+
+        if (input.search) {
+          const searchLower = input.search.toLowerCase();
+          filtered = filtered.filter(project =>
+            (project.name?.toLowerCase().includes(searchLower) || false) ||
+            (project.description?.toLowerCase().includes(searchLower) || false)
+          );
+        }
+
+        if (input.status) {
+          filtered = filtered.filter(project => project.status === input.status);
+        }
+
+        const total = filtered.length;
+        const items = filtered.slice(input.offset, input.offset + input.limit);
+
+        return {
+          items,
+          total,
+          offset: input.offset,
+          limit: input.limit,
+          hasMore: input.offset + input.limit < total,
+        };
+      }),
 
     getById: adminProcedure
       .input(z.object({ id: z.number() }))
