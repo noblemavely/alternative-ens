@@ -114,7 +114,15 @@ export async function searchApolloByLinkedInUrl(
       console.log("[Apollo] Using direct API key authentication");
       const result = await searchWithApiKey(linkedinUrl, ENV.apolloApiKey);
       if (result) return result;
-      console.warn("[Apollo] Direct API key search failed, will try OAuth");
+      console.warn("[Apollo] Direct API key search failed");
+    }
+
+    // Try Client ID as API key (some APIs support this)
+    if (ENV.apolloClientId && ENV.apolloClientId !== "your-client-id") {
+      console.log("[Apollo] Trying Client ID as API key");
+      const result = await searchWithApiKey(linkedinUrl, ENV.apolloClientId);
+      if (result) return result;
+      console.warn("[Apollo] Client ID as API key failed");
     }
 
     // Try OAuth token if direct key not available or failed
@@ -148,25 +156,33 @@ async function searchWithApiKey(
 ): Promise<ApolloProfileData | null> {
   const username = extractLinkedInUsername(linkedinUrl);
 
-  const response = await fetch("https://api.apollo.io/v1/people/match", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Api-Key": apiKey,
-    },
-    body: JSON.stringify({
-      linkedin_url: linkedinUrl,
-    }),
-  });
+  try {
+    console.log(`[Apollo] Attempting API key search for ${username}`);
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`[Apollo] API error: ${response.status} - ${errorText}`);
+    // Try with X-Api-Key header
+    const response = await fetch("https://api.apollo.io/v1/people/match", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Api-Key": apiKey,
+      },
+      body: JSON.stringify({
+        linkedin_url: linkedinUrl,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[Apollo] API key error: ${response.status} - ${errorText}`);
+      return null;
+    }
+
+    const data = (await response.json()) as any;
+    return extractProfileFromResponse(data, username);
+  } catch (error) {
+    console.error(`[Apollo] API key search failed:`, error);
     return null;
   }
-
-  const data = (await response.json()) as any;
-  return extractProfileFromResponse(data, username);
 }
 
 /**
