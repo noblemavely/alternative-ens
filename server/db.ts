@@ -2055,6 +2055,8 @@ export async function createFreshInvitation(data: {
 
   const pool = (db as any).$client;
 
+  console.log(`[DB] createFreshInvitation: Creating invitation for questionnaireId=${data.questionnaireId}, expertId=${data.expertId}`);
+
   // Delete any existing invitations for this expert+questionnaire
   await pool.execute(
     "DELETE FROM questionnaire_invitations WHERE questionnaireId = ? AND expertId = ?",
@@ -2063,14 +2065,19 @@ export async function createFreshInvitation(data: {
 
   // Create fresh new invitation
   const token = generateToken();
+  console.log(`[DB] createFreshInvitation: Generated token=${token}`);
+
   await pool.execute(
     "INSERT INTO questionnaire_invitations (questionnaireId, expertId, shortlistId, token, status) VALUES (?, ?, ?, ?, 'pending')",
     [data.questionnaireId, data.expertId, data.shortlistId ?? null, token]
   );
+
   const [created]: any = await pool.execute(
     "SELECT * FROM questionnaire_invitations WHERE token = ? LIMIT 1",
     [token]
   );
+
+  console.log(`[DB] createFreshInvitation: Invitation created with ID=${created[0]?.id}, token=${created[0]?.token}`);
   return created[0];
 }
 
@@ -2086,6 +2093,8 @@ export async function getInvitationByToken(token: string) {
     "SELECT * FROM questionnaire_invitations WHERE token = ? LIMIT 1",
     [token]
   );
+
+  console.log(`[DB] Invitation query result:`, invRows);
   const inv = invRows?.[0];
   if (!inv) {
     console.error(`[DB] ❌ Invitation not found for token: ${token}`);
@@ -2098,9 +2107,11 @@ export async function getInvitationByToken(token: string) {
     "SELECT * FROM questionnaires WHERE id = ? LIMIT 1",
     [inv.questionnaireId]
   );
+
+  console.log(`[DB] Questionnaire query for id=${inv.questionnaireId} result:`, qRows);
   const q = qRows?.[0];
   if (!q) {
-    console.error(`[DB] ❌ Questionnaire not found for id ${inv.questionnaireId}`);
+    console.error(`[DB] ❌ Questionnaire not found for id ${inv.questionnaireId}. Raw query returned: ${JSON.stringify(qRows)}`);
     return null;
   }
 
