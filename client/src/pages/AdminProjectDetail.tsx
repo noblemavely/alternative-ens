@@ -825,6 +825,7 @@ export default function AdminProjectDetail() {
                       shortlistId: currentShortlistId!,
                       subject: emailSubject || generateEmailDraftQuery.data.subject,
                       htmlBody: generateEmailDraftQuery.data.htmlBody,
+                      textBody: emailBody || generateEmailDraftQuery.data.body,
                     });
                   }}
                 >

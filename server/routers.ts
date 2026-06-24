@@ -874,6 +874,7 @@ export const appRouter = router({
           shortlistId: z.number(),
           subject: z.string(),
           htmlBody: z.string(),
+          textBody: z.string(),
           updateOtherFields: z.object({
             consultantInChargeId: z.number().optional(),
             notes: z.string().optional(),
@@ -889,11 +890,12 @@ export const appRouter = router({
         const expert = await getExpertById(shortlist.expertId);
         if (!expert?.email) throw new Error("Expert not found");
 
-        // Send email
+        // Send email with both HTML and text content
         await sendEmail({
           to: expert.email,
           subject: input.subject,
           html: input.htmlBody,
+          text: input.textBody,
         });
 
         // Update status to invited
