@@ -2095,17 +2095,16 @@ export async function getInvitationByToken(token: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const pool = (db as any).$client;
-
   console.log(`[DB] getInvitationByToken: Looking up token ${token}`);
 
-  const [invRows]: any = await pool.execute(
-    "SELECT * FROM questionnaire_invitations WHERE token = ? LIMIT 1",
-    [token]
-  );
+  // Use Drizzle ORM instead of raw pool.execute for proper persistence
+  const invitations = await db.select()
+    .from(questionnaireInvitations)
+    .where(eq(questionnaireInvitations.token, token))
+    .limit(1);
 
-  console.log(`[DB] Invitation query result:`, invRows);
-  const inv = invRows?.[0];
+  console.log(`[DB] Invitation query result:`, invitations);
+  const inv = invitations?.[0];
   if (!inv) {
     console.error(`[DB] ❌ Invitation not found for token: ${token}`);
     return null;
@@ -2113,49 +2112,61 @@ export async function getInvitationByToken(token: string) {
 
   console.log(`[DB] ✓ Invitation found: id=${inv.id}, questionnaireId=${inv.questionnaireId}, expertId=${inv.expertId}`);
 
-  const [qRows]: any = await pool.execute(
-    "SELECT * FROM questionnaires WHERE id = ? LIMIT 1",
-    [inv.questionnaireId]
-  );
+  const questionnairesData = await db.select()
+    .from(questionnaires)
+    .where(eq(questionnaires.id, inv.questionnaireId))
+    .limit(1);
 
-  console.log(`[DB] Questionnaire query for id=${inv.questionnaireId} result:`, qRows);
-  const q = qRows?.[0];
+  console.log(`[DB] Questionnaire query for id=${inv.questionnaireId} result:`, questionnairesData);
+  const q = questionnairesData?.[0];
   if (!q) {
-    console.error(`[DB] ❌ Questionnaire not found for id ${inv.questionnaireId}. Raw query returned: ${JSON.stringify(qRows)}`);
+    console.error(`[DB] ❌ Questionnaire not found for id ${inv.questionnaireId}`);
     return null;
   }
 
   console.log(`[DB] ✓ Questionnaire found: id=${q.id}, title=${q.title}, isPublished=${q.isPublished}`);
 
-  const [questionRows]: any = await pool.execute(
-    "SELECT * FROM questionnaire_questions WHERE questionnaireId = ? ORDER BY `order` ASC",
-    [inv.questionnaireId]
-  );
+  const questions = await db.select()
+    .from(questionnaireQuestions)
+    .where(eq(questionnaireQuestions.questionnaireId, inv.questionnaireId))
+    .orderBy(questionnaireQuestions.order);
 
-  const [expertRows]: any = await pool.execute(
-    "SELECT id, firstName, lastName, email FROM experts WHERE id = ? LIMIT 1",
-    [inv.expertId]
-  );
-  const expert = expertRows?.[0] ?? null;
+  const expertData = await db.select({
+    id: experts.id,
+    firstName: experts.firstName,
+    lastName: experts.lastName,
+    email: experts.email,
+  })
+    .from(experts)
+    .where(eq(experts.id, inv.expertId))
+    .limit(1);
+  const expert = expertData?.[0] ?? null;
 
-  const [projectRows]: any = await pool.execute(
-    "SELECT id, name, clientId FROM projects WHERE id = ? LIMIT 1",
-    [q.projectId]
-  );
-  const project = projectRows?.[0] ?? null;
+  const projectData = await db.select({
+    id: projects.id,
+    name: projects.name,
+    clientId: projects.clientId,
+  })
+    .from(projects)
+    .where(eq(projects.id, q.projectId))
+    .limit(1);
+  const project = projectData?.[0] ?? null;
 
   let client = null;
   if (project?.clientId) {
-    const [clientRows]: any = await pool.execute(
-      "SELECT id, name FROM clients WHERE id = ? LIMIT 1",
-      [project.clientId]
-    );
-    client = clientRows?.[0] ?? null;
+    const clientData = await db.select({
+      id: clients.id,
+      name: clients.name,
+    })
+      .from(clients)
+      .where(eq(clients.id, project.clientId))
+      .limit(1);
+    client = clientData?.[0] ?? null;
   }
 
   return {
     invitation: inv,
-    questionnaire: { ...q, questions: questionRows ?? [] },
+    questionnaire: { ...q, questions: questions ?? [] },
     expert,
     project,
     client,
