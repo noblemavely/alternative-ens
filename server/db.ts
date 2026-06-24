@@ -310,7 +310,7 @@ async function initializeSchema(pool: any) {
       `ALTER TABLE shortlists MODIFY COLUMN status ENUM('attached','invited','accepted','p2c_done','declined','calls_done') DEFAULT 'attached' NOT NULL`,
 
       /* Add location column to experts table */
-      `ALTER TABLE experts ADD COLUMN IF NOT EXISTS location VARCHAR(255) AFTER cvKey`,
+      `ALTER TABLE experts ADD COLUMN location VARCHAR(255) AFTER cvKey`,
 
       /* Questionnaire tables */
       `CREATE TABLE IF NOT EXISTS questionnaires (
@@ -375,8 +375,8 @@ async function initializeSchema(pool: any) {
       try {
         await connection.execute(statement);
       } catch (error: any) {
-        // Ignore "already exists" errors
-        if (!error?.message?.includes('already exists')) {
+        // Ignore "already exists" and "duplicate column" errors
+        if (!error?.message?.includes('already exists') && !error?.message?.includes('Duplicate column')) {
           console.warn("[Database] Table creation notice:", error?.message);
         }
       }
