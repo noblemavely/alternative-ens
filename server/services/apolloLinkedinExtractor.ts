@@ -234,6 +234,13 @@ function extractProfileFromResponse(
   data: any,
   username: string
 ): ApolloProfileData | null {
+  console.log(`[Apollo] extractProfileFromResponse called with data:`, { hasPerson: !!data.person });
+
+  if (!data || typeof data !== 'object') {
+    console.error(`[Apollo] Invalid data structure received:`, typeof data);
+    return null;
+  }
+
   if (!data.person) {
     console.warn(`[Apollo] No person found for LinkedIn username: ${username}`);
     return null;
@@ -241,9 +248,12 @@ function extractProfileFromResponse(
 
   const person = data.person;
 
-  console.log(`[Apollo] Successfully found profile for ${username}`);
+  console.log(`[Apollo] Successfully found profile for ${username}, building profile data...`);
 
   // Map Apollo data to our ProfileData format
+  const employment = mapEmploymentHistory(person.employment_history);
+  const education = mapEducationHistory(person.education);
+
   const profileData: ApolloProfileData = {
     firstName: person.first_name || "",
     lastName: person.last_name || "",
@@ -253,9 +263,17 @@ function extractProfileFromResponse(
     sector: person.organization?.industry || person.industry || "",
     biography: `${person.headline || ""} at ${person.organization?.name || ""}`.trim(),
     skills: person.skills?.slice(0, 10) || [],
-    employment: mapEmploymentHistory(person.employment_history),
-    education: mapEducationHistory(person.education),
+    employment,
+    education,
   };
+
+  console.log(`[Apollo] Profile data built successfully:`, {
+    firstName: profileData.firstName,
+    lastName: profileData.lastName,
+    email: profileData.email,
+    employmentCount: profileData.employment?.length || 0,
+    educationCount: profileData.education?.length || 0,
+  });
 
   return profileData;
 }

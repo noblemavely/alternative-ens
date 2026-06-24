@@ -668,13 +668,24 @@ export const appRouter = router({
             );
 
             if (isApolloConfigured()) {
+              console.log(`[extractProfile] Apollo.io is configured, attempting extraction...`);
               profileData = await searchApolloByLinkedInUrl(linkedinUrl);
-              if (profileData) {
+              console.log(`[extractProfile] Apollo extraction result:`, {
+                success: !!profileData,
+                hasFirstName: profileData?.firstName ? true : false,
+                hasEmployment: profileData?.employment ? profileData.employment.length > 0 : false,
+              });
+
+              if (profileData && profileData.firstName) {
                 console.log(
-                  `[extractProfile] ✅ Successfully extracted profile via Apollo.io`
+                  `[extractProfile] ✅ Successfully extracted profile via Apollo.io for ${profileData.firstName} ${profileData.lastName}`
                 );
                 return profileData;
+              } else {
+                console.warn(`[extractProfile] Apollo extraction returned empty or null result`);
               }
+            } else {
+              console.warn(`[extractProfile] Apollo.io not configured`);
             }
 
             // Fallback to Claude if Apollo not configured or failed
@@ -682,20 +693,24 @@ export const appRouter = router({
             const { getProfileExtractor } = await import("./services/aiProfileExtractor");
             const extractor = getProfileExtractor("claude");
             profileData = await extractor.extractFromURL(linkedinUrl);
+            console.log(`[extractProfile] Claude extraction completed:`, !!profileData);
           } else if (resumeText) {
             console.log(`[extractProfile] Extracting from resume text`);
             const { getProfileExtractor } = await import("./services/aiProfileExtractor");
             const extractor = getProfileExtractor("claude");
             profileData = await extractor.extractFromText(resumeText);
+            console.log(`[extractProfile] Resume extraction completed:`, !!profileData);
           }
 
           if (!profileData) {
+            console.error(`[extractProfile] Final profileData is null/empty`);
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
               message: "Failed to extract profile data. Please try again or fill in manually.",
             });
           }
 
+          console.log(`[extractProfile] Returning extracted profile data`);
           return profileData;
         } catch (error: any) {
           console.error("[extractProfile] Error:", error);
