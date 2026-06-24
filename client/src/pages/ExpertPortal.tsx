@@ -861,15 +861,12 @@ export default function ExpertPortal() {
                 {/* PDF embed */}
                 <div className="rounded-lg border border-border overflow-hidden" style={{ height: 420 }}>
                   <iframe
-                    src="https://www.w3.org/WAI/WCAG21/Techniques/pdf/pdf-sample.pdf"
+                    src="/documents/alteratives-tnc.pdf"
                     title="Terms and Conditions"
                     className="w-full h-full"
                     style={{ border: "none" }}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground italic">
-                  This is a placeholder PDF. The final Terms &amp; Conditions document will be uploaded before go-live.
-                </p>
 
                 {/* Accept checkbox */}
                 <label className="flex items-start gap-3 cursor-pointer">

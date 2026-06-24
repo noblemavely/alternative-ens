@@ -429,7 +429,7 @@ export const appRouter = router({
           // Send T&C copy to the expert
           try {
             const { sendEmail } = await import("./email");
-            const TC_PDF_URL = "https://www.w3.org/WAI/WCAG21/Techniques/pdf/pdf-sample.pdf";
+            const TC_PDF_URL = `${ENV.appOrigin}/documents/alteratives-tnc.pdf`;
             await sendEmail({
               to: input.email,
               subject: "AlterNatives — Your Terms & Conditions Copy",

@@ -2,7 +2,7 @@ export default {
   apps: [
     {
       name: "alternative-ens",
-      script: "dist/server/_core/index.js",
+      script: "dist/index.js",
       instances: 1,
       env: {
         NODE_ENV: "production",
