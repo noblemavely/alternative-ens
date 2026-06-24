@@ -662,32 +662,37 @@ export const appRouter = router({
 
           // Try Apollo.io first for LinkedIn URLs
           if (linkedinUrl) {
-            console.log(`[extractProfile] Attempting Apollo.io extraction for LinkedIn URL: ${linkedinUrl}`);
+            console.log(`[extractProfile] ========== LINKEDIN EXTRACTION START ==========`);
+            console.log(`[extractProfile] URL:`, linkedinUrl);
+            console.log(`[extractProfile] ENV CHECK - apolloApiKey exists:`, !!process.env.APOLLO_API_KEY);
+            console.log(`[extractProfile] ENV CHECK - apolloClientId exists:`, !!process.env.APOLLO_CLIENT_ID);
+            console.log(`[extractProfile] ENV CHECK - apolloClientSecret exists:`, !!process.env.APOLLO_CLIENT_SECRET);
+
             const { searchApolloByLinkedInUrl, isApolloConfigured } = await import(
               "./services/apolloLinkedinExtractor"
             );
 
-            console.log(`[extractProfile] Apollo configured check:`, isApolloConfigured());
-            if (isApolloConfigured()) {
-              console.log(`[extractProfile] Apollo.io is configured, calling searchApolloByLinkedInUrl...`);
-              profileData = await searchApolloByLinkedInUrl(linkedinUrl);
-              console.log(`[extractProfile] searchApolloByLinkedInUrl returned:`, profileData ? "DATA" : "NULL");
-              console.log(`[extractProfile] Apollo extraction result:`, {
-                success: !!profileData,
-                hasFirstName: profileData?.firstName ? true : false,
-                hasEmployment: profileData?.employment ? profileData.employment.length > 0 : false,
-              });
+            const configured = isApolloConfigured();
+            console.log(`[extractProfile] isApolloConfigured() returned:`, configured);
 
-              if (profileData && profileData.firstName) {
-                console.log(
-                  `[extractProfile] ✅ Successfully extracted profile via Apollo.io for ${profileData.firstName} ${profileData.lastName}`
-                );
-                return profileData;
-              } else {
-                console.warn(`[extractProfile] Apollo extraction returned empty or null result`);
+            if (configured) {
+              try {
+                console.log(`[extractProfile] Calling searchApolloByLinkedInUrl...`);
+                profileData = await searchApolloByLinkedInUrl(linkedinUrl);
+
+                if (profileData && profileData.firstName) {
+                  console.log(`[extractProfile] ✅ SUCCESS: Apollo returned profile for ${profileData.firstName} ${profileData.lastName}`);
+                  console.log(`[extractProfile] Employment count:`, profileData.employment?.length || 0);
+                  console.log(`[extractProfile] ========== LINKEDIN EXTRACTION SUCCESS ==========`);
+                  return profileData;
+                } else {
+                  console.warn(`[extractProfile] Apollo returned empty/null data`);
+                }
+              } catch (apolloError) {
+                console.error(`[extractProfile] Apollo extraction error:`, apolloError instanceof Error ? apolloError.message : apolloError);
               }
             } else {
-              console.warn(`[extractProfile] Apollo.io not configured`);
+              console.warn(`[extractProfile] Apollo NOT configured - skipping Apollo attempt`);
             }
 
             // Fallback to Claude if Apollo not configured or failed

@@ -31,9 +31,13 @@ if (fs.existsSync(envPath)) {
   });
 }
 
+console.log("[ENV] ========== ENVIRONMENT VARIABLES ==========");
 console.log("[ENV] DATABASE_URL loaded:", process.env.DATABASE_URL ? "YES - " + process.env.DATABASE_URL.substring(0, 30) + "..." : "NO");
 console.log("[ENV] CLAUDE_API_KEY loaded:", process.env.CLAUDE_API_KEY ? "YES - " + process.env.CLAUDE_API_KEY.substring(0, 20) + "..." : "NO");
-console.log("[ENV] APOLLO_API_KEY loaded:", process.env.APOLLO_API_KEY ? "YES" : "NO");
+console.log("[ENV] APOLLO_API_KEY loaded:", process.env.APOLLO_API_KEY ? "YES - " + process.env.APOLLO_API_KEY.substring(0, 20) + "..." : "NO");
+console.log("[ENV] APOLLO_CLIENT_ID loaded:", process.env.APOLLO_CLIENT_ID ? "YES - " + process.env.APOLLO_CLIENT_ID.substring(0, 20) + "..." : "NO");
+console.log("[ENV] APOLLO_CLIENT_SECRET loaded:", process.env.APOLLO_CLIENT_SECRET ? "YES - " + process.env.APOLLO_CLIENT_SECRET.substring(0, 20) + "..." : "NO");
+console.log("[ENV] ==========================================");
 
 import express from "express";
 import { createServer } from "http";
