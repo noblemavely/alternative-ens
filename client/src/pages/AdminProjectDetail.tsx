@@ -83,6 +83,13 @@ export default function AdminProjectDetail() {
   // Per-expert invitation links
   const [inviteLinks, setInviteLinks] = useState<Record<number, string>>({}); // keyed by shortlistId
 
+  // Email draft modal
+  const [showEmailDraft, setShowEmailDraft] = useState(false);
+  const [emailDraft, setEmailDraft] = useState<any>(null);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+  const [currentShortlistId, setCurrentShortlistId] = useState<number | null>(null);
+
   const projectQuery          = trpc.projects.getById.useQuery({ id: projectId! }, { enabled: !!projectId });
   const shortlistQuery        = trpc.shortlists.getByProject.useQuery({ projectId: projectId! }, { enabled: !!projectId });
   const activityTimelineQuery = trpc.projects.getActivityTimeline.useQuery({ projectId: projectId! }, { enabled: !!projectId });
@@ -140,6 +147,23 @@ export default function AdminProjectDetail() {
 
   const createInvitationMutation = trpc.questionnaires.createInvitation.useMutation({
     onError: (e: any) => toast.error(e.message || "Failed to generate link"),
+  });
+
+  const generateEmailDraftQuery = trpc.shortlists.generateQuestionnaireEmailDraft.useQuery(
+    { shortlistId: currentShortlistId! },
+    { enabled: !!currentShortlistId }
+  );
+
+  const sendEmailAndUpdateStatusMutation = trpc.shortlists.sendQuestionnaireEmailAndUpdateStatus.useMutation({
+    onSuccess: () => {
+      toast.success("Email sent and status updated to Invited");
+      shortlistQuery.refetch();
+      setShowEmailDraft(false);
+      setCurrentShortlistId(null);
+      setEmailSubject("");
+      setEmailBody("");
+    },
+    onError: (e: any) => toast.error(e.message || "Failed to send email"),
   });
 
   const responsesQuery = trpc.questionnaires.responses.useQuery(
@@ -320,7 +344,14 @@ export default function AdminProjectDetail() {
                         <td>
                           <Select
                             value={shortlist.status}
-                            onValueChange={(v) => updateStatusMutation.mutate({ id: shortlist.id, status: v as any })}
+                            onValueChange={(v) => {
+                              if (v === "invited") {
+                                setCurrentShortlistId(shortlist.id);
+                                setShowEmailDraft(true);
+                              } else {
+                                updateStatusMutation.mutate({ id: shortlist.id, status: v as any });
+                              }
+                            }}
                           >
                             <SelectTrigger className="w-44 h-7 text-xs">
                               <SelectValue />
@@ -733,6 +764,108 @@ export default function AdminProjectDetail() {
           )}
         </div>
       </div>
+
+      {/* Email Draft Modal */}
+      {showEmailDraft && generateEmailDraftQuery.data && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4">
+            <div className="sticky top-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-foreground">Review Email</h2>
+              <button onClick={() => setShowEmailDraft(false)} className="text-muted-foreground hover:text-foreground">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Expert info */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Sending to</p>
+                <p className="text-sm font-semibold text-foreground mt-1">{generateEmailDraftQuery.data.expertName}</p>
+                <p className="text-sm text-muted-foreground">{generateEmailDraftQuery.data.expertEmail}</p>
+              </div>
+
+              {/* Subject */}
+              <div>
+                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground block mb-2">Subject</label>
+                <Input
+                  value={emailSubject || generateEmailDraftQuery.data.subject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  className="rounded-lg"
+                />
+              </div>
+
+              {/* Body */}
+              <div>
+                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground block mb-2">Email Body</label>
+                <textarea
+                  value={emailBody || generateEmailDraftQuery.data.body}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  className="w-full h-40 p-3 rounded-lg border border-border font-mono text-xs resize-none"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1 italic">
+                  Questionnaire link: {generateEmailDraftQuery.data.questionnaireLink}
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-lg"
+                  onClick={() => setShowEmailDraft(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 gap-2 rounded-lg"
+                  style={{ background: "#2563EB" }}
+                  disabled={sendEmailAndUpdateStatusMutation.isPending}
+                  onClick={() => {
+                    sendEmailAndUpdateStatusMutation.mutate({
+                      shortlistId: currentShortlistId!,
+                      subject: emailSubject || generateEmailDraftQuery.data.subject,
+                      htmlBody: generateEmailDraftQuery.data.htmlBody,
+                    });
+                  }}
+                >
+                  {sendEmailAndUpdateStatusMutation.isPending ? (
+                    <><Loader2 size={14} className="animate-spin" /> Sending…</>
+                  ) : (
+                    <><Send size={14} /> Send Email & Update Status</>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {generateEmailDraftQuery.isLoading && currentShortlistId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+            <Loader2 size={20} className="animate-spin text-primary" />
+            <span className="text-sm text-foreground">Generating email draft...</span>
+          </div>
+        </div>
+      )}
+
+      {generateEmailDraftQuery.isError && currentShortlistId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg p-6 max-w-md">
+            <p className="text-sm text-red-600 mb-3">Error generating email draft</p>
+            <Button
+              size="sm"
+              className="rounded-lg"
+              onClick={() => {
+                setShowEmailDraft(false);
+                setCurrentShortlistId(null);
+              }}
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }
