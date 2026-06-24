@@ -899,12 +899,36 @@ export const appRouter = router({
         const expert = await getExpertById(shortlist.expertId);
         if (!expert?.email) throw new Error("Expert not found");
 
+        const q = await getQuestionnaireByProject(shortlist.projectId);
+        if (!q) throw new Error("No questionnaire for this project");
+
+        // Create the invitation (with database persistence in a mutation)
+        const invitation = await createOrGetInvitation({
+          questionnaireId: q.id,
+          expertId: shortlist.expertId,
+          shortlistId: shortlist.id,
+        });
+
+        if (!invitation?.token) throw new Error("Failed to create invitation");
+
+        // Replace the questionnaire link in the email with the actual invitation token
+        const appOrigin = process.env.APP_ORIGIN || 'https://alternatives.nativeworld.com';
+        const invitationLink = `${appOrigin}/questionnaire/${invitation.token}`;
+        const updatedHtmlBody = input.htmlBody.replace(
+          /https:\/\/[^\s"<>]+\/questionnaire\/[a-z0-9]+/g,
+          invitationLink
+        );
+        const updatedTextBody = input.textBody.replace(
+          /https:\/\/[^\s]+\/questionnaire\/[a-z0-9]+/g,
+          invitationLink
+        );
+
         // Send email with both HTML and text content
         await sendEmail({
           to: expert.email,
           subject: input.subject,
-          html: input.htmlBody,
-          text: input.textBody,
+          html: updatedHtmlBody,
+          text: updatedTextBody,
         });
 
         // Update status to invited
