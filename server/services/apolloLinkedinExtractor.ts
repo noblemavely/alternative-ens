@@ -176,6 +176,8 @@ async function searchWithApiKey(
       },
       body: JSON.stringify({
         linkedin_url: linkedinUrl,
+        reveal_personal_emails: true,
+        enrich_profile: "full",
       }),
     });
 
@@ -197,7 +199,9 @@ async function searchWithApiKey(
 
     console.log(`[Apollo] Person object exists. Keys:`, Object.keys(data.person).join(", "));
     console.log(`[Apollo] Person first_name:`, data.person.first_name);
-    console.log(`[Apollo] Person employment_history length:`, data.person.employment_history?.length || 0);
+    console.log(`[Apollo] Person employment_history type:`, typeof data.person.employment_history);
+    console.log(`[Apollo] Person employment_history value:`, data.person.employment_history);
+    console.log(`[Apollo] Full person object:`, JSON.stringify(data.person, null, 2).substring(0, 500));
 
     const result = extractProfileFromResponse(data, username);
     console.log(`[Apollo] Extracted profile data:`, {
@@ -230,6 +234,8 @@ async function searchWithAccessToken(
     },
     body: JSON.stringify({
       linkedin_url: linkedinUrl,
+      reveal_personal_emails: true,
+      enrich_profile: "full",
     }),
   });
 
@@ -308,7 +314,14 @@ function extractProfileFromResponse(
 function mapEmploymentHistory(
   employmentHistory: any[]
 ): ApolloProfileData["employment"] {
+  console.log(`[Apollo] mapEmploymentHistory called with:`, {
+    type: typeof employmentHistory,
+    isArray: Array.isArray(employmentHistory),
+    value: employmentHistory
+  });
+
   if (!employmentHistory || !Array.isArray(employmentHistory)) {
+    console.log(`[Apollo] Employment history is not an array, returning empty`);
     return [];
   }
 
@@ -328,7 +341,14 @@ function mapEmploymentHistory(
 function mapEducationHistory(
   education: any[]
 ): ApolloProfileData["education"] {
+  console.log(`[Apollo] mapEducationHistory called with:`, {
+    type: typeof education,
+    isArray: Array.isArray(education),
+    value: education
+  });
+
   if (!education || !Array.isArray(education)) {
+    console.log(`[Apollo] Education history is not an array, returning empty`);
     return [];
   }
 
