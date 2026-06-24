@@ -183,6 +183,16 @@ async function searchWithApiKey(
 
     const data = (await response.json()) as any;
     console.log(`[Apollo] API Response received, has person: ${!!data.person}`);
+
+    if (!data.person) {
+      console.error(`[Apollo] Response missing person object. Response keys:`, Object.keys(data).join(", "));
+      return null;
+    }
+
+    console.log(`[Apollo] Person object exists. Keys:`, Object.keys(data.person).join(", "));
+    console.log(`[Apollo] Person first_name:`, data.person.first_name);
+    console.log(`[Apollo] Person employment_history length:`, data.person.employment_history?.length || 0);
+
     const result = extractProfileFromResponse(data, username);
     console.log(`[Apollo] Extracted profile data:`, {
       firstName: result?.firstName,
