@@ -184,7 +184,12 @@ async function searchWithApiKey(
     const data = (await response.json()) as any;
     console.log(`[Apollo] API Response received, has person: ${!!data.person}`);
     const result = extractProfileFromResponse(data, username);
-    console.log(`[Apollo] Extracted profile data: ${JSON.stringify(result)}`);
+    console.log(`[Apollo] Extracted profile data:`, {
+      firstName: result?.firstName,
+      lastName: result?.lastName,
+      employmentCount: result?.employment?.length || 0,
+      educationCount: result?.education?.length || 0,
+    });
     return result;
   } catch (error) {
     console.error(`[Apollo] API key search failed:`, error);
