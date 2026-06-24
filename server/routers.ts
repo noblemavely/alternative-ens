@@ -579,10 +579,21 @@ export const appRouter = router({
           keyword: z.string().optional(),
           sector: z.string().optional(),
           function: z.string().optional(),
-          companyName: z.string().optional(),
           location: z.string().optional(),
+          // Employment
+          companyName: z.string().optional(),
+          designation: z.string().optional(),
+          employmentYearFrom: z.string().optional(),
+          employmentYearTo: z.string().optional(),
+          // Education
+          university: z.string().optional(),
+          degree: z.string().optional(),
+          fieldOfStudy: z.string().optional(),
+          educationYearFrom: z.string().optional(),
+          educationYearTo: z.string().optional(),
+          // Legacy
           year: z.string().optional(),
-          limit: z.number().optional().default(10),
+          limit: z.number().optional().default(50),
           offset: z.number().optional().default(0),
         })
       )

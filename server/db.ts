@@ -630,20 +630,29 @@ export async function searchExperts(filters: {
   sector?: string;
   function?: string;
   keyword?: string;
-  companyName?: string;
   location?: string;
+  // Employment filters
+  companyName?: string;
+  designation?: string;
+  employmentYearFrom?: string;
+  employmentYearTo?: string;
+  // Education filters
+  university?: string;
+  degree?: string;
+  fieldOfStudy?: string;
+  educationYearFrom?: string;
+  educationYearTo?: string;
+  // Legacy single-year filter
   year?: string;
   skillsets?: string[];
 }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  // Use raw SQL when employment-table filters are active (requires JOIN)
-  const needsJoin = !!(filters.companyName || filters.year);
-
   const whereClauses: string[] = [];
   const params: any[] = [];
 
+  // ── Basic expert-table filters ──────────────────────────────────────────
   if (filters.sector) {
     whereClauses.push("e.sector LIKE ?");
     params.push(`%${filters.sector}%`);
@@ -660,23 +669,64 @@ export async function searchExperts(filters: {
     whereClauses.push("(e.firstName LIKE ? OR e.lastName LIKE ? OR e.biography LIKE ? OR e.sector LIKE ? OR e.`function` LIKE ?)");
     params.push(...Array(5).fill(`%${filters.keyword}%`));
   }
-  if (filters.companyName) {
-    whereClauses.push("ee.companyName LIKE ?");
-    params.push(`%${filters.companyName}%`);
+
+  // ── Employment EXISTS subquery ──────────────────────────────────────────
+  // Period overlap: startDate <= yearTo AND (endDate >= yearFrom OR endDate is null/current)
+  const empConds: string[] = [];
+  const empParams: any[] = [];
+  const empYearFrom = filters.employmentYearFrom || filters.year;
+  const empYearTo   = filters.employmentYearTo   || filters.year;
+
+  if (filters.companyName) { empConds.push("ee.companyName LIKE ?"); empParams.push(`%${filters.companyName}%`); }
+  if (filters.designation)  { empConds.push("ee.position LIKE ?");   empParams.push(`%${filters.designation}%`); }
+  if (empYearTo)   { empConds.push("LEFT(ee.startDate, 4) <= ?"); empParams.push(empYearTo); }
+  if (empYearFrom) { empConds.push("(ee.endDate IS NULL OR ee.endDate = '' OR ee.isCurrent = 1 OR LEFT(ee.endDate, 4) >= ?)"); empParams.push(empYearFrom); }
+
+  if (empConds.length > 0) {
+    whereClauses.push(`EXISTS (SELECT 1 FROM expert_employment ee WHERE ee.expertId = e.id AND ${empConds.join(" AND ")})`);
+    params.push(...empParams);
   }
-  if (filters.year) {
-    // Expert was active at a company during the given year
-    whereClauses.push("(LEFT(ee.startDate, 4) <= ? AND (ee.endDate IS NULL OR ee.endDate = '' OR LEFT(ee.endDate, 4) >= ?))");
-    params.push(filters.year, filters.year);
+
+  // ── Education EXISTS subquery ───────────────────────────────────────────
+  const eduConds: string[] = [];
+  const eduParams: any[] = [];
+
+  if (filters.university)    { eduConds.push("edu.schoolName LIKE ?");    eduParams.push(`%${filters.university}%`); }
+  if (filters.degree)        { eduConds.push("edu.degree LIKE ?");        eduParams.push(`%${filters.degree}%`); }
+  if (filters.fieldOfStudy)  { eduConds.push("edu.fieldOfStudy LIKE ?"); eduParams.push(`%${filters.fieldOfStudy}%`); }
+  if (filters.educationYearTo)   { eduConds.push("LEFT(edu.startDate, 4) <= ?"); eduParams.push(filters.educationYearTo); }
+  if (filters.educationYearFrom) { eduConds.push("(edu.endDate IS NULL OR edu.endDate = '' OR LEFT(edu.endDate, 4) >= ?)"); eduParams.push(filters.educationYearFrom); }
+
+  if (eduConds.length > 0) {
+    whereClauses.push(`EXISTS (SELECT 1 FROM expert_education edu WHERE edu.expertId = e.id AND ${eduConds.join(" AND ")})`);
+    params.push(...eduParams);
   }
 
   const whereSQL = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
-  const joinClause = needsJoin ? "JOIN expert_employment ee ON e.id = ee.expertId" : "";
-  const finalSQL = `SELECT DISTINCT e.* FROM experts e ${joinClause} ${whereSQL} ORDER BY e.createdAt DESC`;
+  const [rows] = await (db as any).$client.execute(
+    `SELECT e.* FROM experts e ${whereSQL} ORDER BY e.createdAt DESC`,
+    params
+  );
+  const experts = rows as any[];
+  if (experts.length === 0) return [];
 
-  const pool = (db as any).$client;
-  const [rows] = await pool.execute(finalSQL, params);
-  return rows as any[];
+  // ── Batch-enrich with employment + education for display ────────────────
+  const ids = experts.map((e: any) => e.id);
+  const ph  = ids.map(() => "?").join(",");
+  const [empRows]: any = await (db as any).$client.execute(
+    `SELECT * FROM expert_employment WHERE expertId IN (${ph}) ORDER BY isCurrent DESC, startDate DESC`,
+    ids
+  );
+  const [eduRows]: any = await (db as any).$client.execute(
+    `SELECT * FROM expert_education WHERE expertId IN (${ph}) ORDER BY endDate DESC`,
+    ids
+  );
+
+  return experts.map((e: any) => ({
+    ...e,
+    employment: empRows.filter((r: any) => r.expertId === e.id),
+    education:  eduRows.filter((r: any) => r.expertId === e.id),
+  }));
 }
 
 // ============ PROJECT FUNCTIONS ============
