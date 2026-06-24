@@ -78,6 +78,7 @@ import {
   updateExpertNote,
   deleteExpertNote,
   getQuestionnaireByProject,
+  createOrGetInvitation,
 } from "./db";
 import { storagePut, storageGet } from "./storage";
 import { nanoid } from "nanoid";
@@ -846,7 +847,15 @@ export const appRouter = router({
           if (!expert) throw new Error("Expert not found");
 
           const project = await getProjectById(shortlist.projectId);
-          const link = `${process.env.APP_ORIGIN || 'https://alternatives.nativeworld.com'}/questionnaire/${q.token}`;
+
+          // Create unique per-expert invitation
+          const invitation = await createOrGetInvitation({
+            questionnaireId: q.id,
+            expertId: shortlist.expertId,
+            shortlistId: shortlist.id,
+          });
+
+          const link = `${process.env.APP_ORIGIN || 'https://alternatives.nativeworld.com'}/questionnaire/${invitation.token}`;
 
           return {
             expertEmail: expert.email,
