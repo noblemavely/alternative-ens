@@ -33,7 +33,7 @@ type EmailVerificationData = z.infer<typeof emailVerificationSchema>;
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function ExpertPortal() {
-  const [step, setStep] = useState<"email" | "verification" | "profile" | "linkedin" | "experience" | "resume" | "terms" | "preview">("email");
+  const [step, setStep] = useState<"email" | "verification" | "profile" | "profile-linkedin" | "experience-education" | "terms" | "preview">("email");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState("");
   const [verificationToken, setVerificationToken] = useState("");
@@ -53,9 +53,8 @@ export default function ExpertPortal() {
     { id: "email", label: "Email", completed: false },
     { id: "verification", label: "Verification", completed: false },
     { id: "personal", label: "Personal Info", completed: false },
-    { id: "linkedin", label: "LinkedIn Profile", completed: false },
-    { id: "experience", label: "Experience", completed: false },
-    { id: "resume", label: "Resume (Optional)", completed: false },
+    { id: "profile-linkedin", label: "Profile", completed: false },
+    { id: "experience-education", label: "Experience and Education", completed: false },
     { id: "terms", label: "Terms & Conditions", completed: false },
     { id: "preview", label: "Preview", completed: false },
   ]);
@@ -333,7 +332,7 @@ export default function ExpertPortal() {
 
       // Auto-navigate to experience step after brief delay
       setTimeout(() => {
-        setStep("experience");
+        setStep("experience-education");
       }, 1500);
     } catch (error: any) {
       console.error("LinkedIn enrichment error:", error);
@@ -638,7 +637,7 @@ export default function ExpertPortal() {
                           toast.error("Please fill in first and last name");
                           return;
                         }
-                        setStep("linkedin");
+                        setStep("profile-linkedin");
                       }}
                       className="w-full bg-primary hover:bg-primary/90"
                     >
@@ -652,11 +651,11 @@ export default function ExpertPortal() {
         )}
 
         {/* Step 4: LinkedIn Profile */}
-        {step === "linkedin" && (
+        {step === "profile-linkedin" && (
           <div className="space-y-6">
             <FormProgressIndicator
               steps={formSteps}
-              currentStep="linkedin"
+              currentStep="profile-linkedin"
               completionPercentage={0}
             />
             <Card className="border-border shadow-lg">
@@ -664,7 +663,7 @@ export default function ExpertPortal() {
                 <button onClick={() => setStep("profile")} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-3 transition-colors">
                   <ArrowLeft size={13} /> Back
                 </button>
-                <CardTitle className="text-foreground">LinkedIn Profile</CardTitle>
+                <CardTitle className="text-foreground">Profile</CardTitle>
                 <CardDescription>Connect your LinkedIn profile to auto-populate your experience</CardDescription>
               </CardHeader>
               <CardContent>
@@ -690,29 +689,38 @@ export default function ExpertPortal() {
                     />
 
                     <Button
-                      onClick={() => setStep("experience")}
+                      onClick={() => setStep("experience-education")}
                       className="w-full bg-primary hover:bg-primary/90"
                     >
                       Continue
                     </Button>
                   </div>
                 </Form>
+
+                <div className="border-t border-border mt-6 pt-6">
+                  <h4 className="text-sm font-semibold text-foreground mb-4">Or Upload Resume</h4>
+                  <ResumeParserForm
+                    onParsed={handleResumeParsed}
+                    onFileSelected={(file) => setResumeFile(file)}
+                    onSkip={() => setStep("experience-education")}
+                  />
+                </div>
               </CardContent>
             </Card>
           </div>
         )}
 
         {/* Step 5: Work Experience */}
-        {step === "experience" && (
+        {step === "experience-education" && (
           <div className="space-y-6">
             <FormProgressIndicator
               steps={formSteps}
-              currentStep="experience"
+              currentStep="experience-education"
               completionPercentage={0}
             />
             <Card className="border-border shadow-lg">
               <CardHeader>
-                <button onClick={() => setStep("linkedin")} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-3 transition-colors">
+                <button onClick={() => setStep("profile-linkedin")} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-3 transition-colors">
                   <ArrowLeft size={13} /> Back
                 </button>
                 <CardTitle className="text-foreground">Work Experience & Education</CardTitle>
@@ -739,15 +747,11 @@ export default function ExpertPortal() {
                   />
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 p-3 rounded text-sm text-muted-foreground">
-                  Resume upload is optional. You can skip it if you've already filled in your experience above.
-                </div>
-
                 <Button
-                  onClick={() => setStep("resume")}
+                  onClick={() => setStep("terms")}
                   className="w-full bg-primary hover:bg-primary/90"
                 >
-                  Continue
+                  Continue to Terms
                 </Button>
               </CardContent>
             </Card>
@@ -755,37 +759,6 @@ export default function ExpertPortal() {
         )}
 
         {/* Step 6: Resume Upload (Optional) */}
-        {step === "resume" && (
-          <div className="space-y-6">
-            <FormProgressIndicator
-              steps={formSteps}
-              currentStep="resume"
-              completionPercentage={0}
-            />
-            <Card className="border-border shadow-lg">
-              <CardHeader>
-                <button onClick={() => setStep("experience")} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-3 transition-colors">
-                  <ArrowLeft size={13} /> Back
-                </button>
-                <CardTitle className="text-foreground">Upload Resume (Optional)</CardTitle>
-                <CardDescription>Upload your resume to auto-fill your experience</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <ResumeParserForm
-                  onParsed={handleResumeParsed}
-                  onFileSelected={(file) => setResumeFile(file)}
-                  onSkip={() => setStep("terms")}
-                />
-                <Button
-                  onClick={() => setStep("terms")}
-                  className="w-full bg-primary hover:bg-primary/90"
-                >
-                  Continue
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         {/* Resume Reset Dialog */}
         {showResumeResetDialog && (
@@ -828,7 +801,7 @@ export default function ExpertPortal() {
             />
             <Card className="border-border shadow-lg">
               <CardHeader>
-                <button onClick={() => setStep("resume")} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-3 transition-colors">
+                <button onClick={() => setStep("experience-education")} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-3 transition-colors">
                   <ArrowLeft size={13} /> Back
                 </button>
                 <CardTitle className="flex items-center gap-2 text-foreground">
@@ -962,7 +935,7 @@ export default function ExpertPortal() {
 
                 <div className="flex gap-3">
                   <Button
-                    onClick={() => setStep("resume")}
+                    onClick={() => setStep("experience-education")}
                     variant="outline"
                     className="flex-1"
                   >
