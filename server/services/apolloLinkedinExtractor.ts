@@ -53,19 +53,51 @@ function extractLinkedInUsername(url: string): string | null {
 }
 
 /**
+ * Get Apollo.io access token using OAuth credentials
+ */
+async function getApolloAccessToken(): Promise<string | null> {
+  try {
+    if (!ENV.apolloClientId || !ENV.apolloClientSecret) {
+      console.error("[Apollo] Missing OAuth credentials");
+      return null;
+    }
+
+    // Apollo.io OAuth token endpoint
+    const tokenResponse = await fetch("https://api.apollo.io/v1/auth/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        client_id: ENV.apolloClientId,
+        client_secret: ENV.apolloClientSecret,
+        grant_type: "client_credentials",
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error(
+        `[Apollo] Token exchange failed: ${tokenResponse.status} - ${errorText}`
+      );
+      return null;
+    }
+
+    const tokenData = (await tokenResponse.json()) as any;
+    return tokenData.access_token || null;
+  } catch (error) {
+    console.error("[Apollo] Error getting access token:", error);
+    return null;
+  }
+}
+
+/**
  * Search for a person on Apollo.io by LinkedIn profile URL
  */
 export async function searchApolloByLinkedInUrl(
   linkedinUrl: string
 ): Promise<ApolloProfileData | null> {
   try {
-    if (!ENV.apolloClientId || !ENV.apolloClientSecret) {
-      console.error(
-        "[Apollo] Missing Apollo credentials (APOLLO_CLIENT_ID or APOLLO_CLIENT_SECRET)"
-      );
-      return null;
-    }
-
     // Extract LinkedIn username
     const username = extractLinkedInUsername(linkedinUrl);
     if (!username) {
@@ -77,59 +109,118 @@ export async function searchApolloByLinkedInUrl(
 
     console.log(`[Apollo] Searching for LinkedIn user: ${username}`);
 
-    // Search on Apollo.io using LinkedIn URL
-    const response = await fetch("https://api.apollo.io/v1/people/match", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Api-Key": ENV.apolloClientId,
-      },
-      body: JSON.stringify({
-        linkedin_url: linkedinUrl,
-      }),
-    });
+    // Try direct API key first (if configured)
+    if (ENV.apolloApiKey && ENV.apolloApiKey !== "your-apollo-key-here") {
+      console.log("[Apollo] Using direct API key authentication");
+      return await searchWithApiKey(linkedinUrl, ENV.apolloApiKey);
+    }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[Apollo] API error: ${response.status} - ${errorText}`);
+    // Fall back to OAuth token if direct key not available
+    console.log("[Apollo] Using OAuth token authentication");
+    const accessToken = await getApolloAccessToken();
+    if (!accessToken) {
+      console.warn("[Apollo] Could not obtain access token, returning null");
       return null;
     }
 
-    const data = (await response.json()) as any;
-
-    if (!data.person) {
-      console.warn(
-        `[Apollo] No person found for LinkedIn URL: ${linkedinUrl}`
-      );
-      return null;
-    }
-
-    const person = data.person;
-
-    console.log(`[Apollo] Successfully found profile for ${username}`);
-
-    // Map Apollo data to our ProfileData format
-    const profileData: ApolloProfileData = {
-      firstName: person.first_name || "",
-      lastName: person.last_name || "",
-      email: person.email || person.emails?.[0] || "",
-      phone: person.phone_number || "",
-      headline: person.title || "",
-      sector: person.industry || "",
-      biography: person.headline || "",
-      skills: person.skills?.slice(0, 10) || [],
-      employment: mapEmploymentHistory(person.employment_history),
-      education: mapEducationHistory(person.education),
-    };
-
-    return profileData;
+    return await searchWithAccessToken(linkedinUrl, accessToken);
   } catch (error) {
-    console.error(
-      "[Apollo] Error searching LinkedIn profile:",
-      error
-    );
+    console.error("[Apollo] Error searching LinkedIn profile:", error);
     return null;
   }
+}
+
+/**
+ * Search Apollo.io using API Key
+ */
+async function searchWithApiKey(
+  linkedinUrl: string,
+  apiKey: string
+): Promise<ApolloProfileData | null> {
+  const username = extractLinkedInUsername(linkedinUrl);
+
+  const response = await fetch("https://api.apollo.io/v1/people/match", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Api-Key": apiKey,
+    },
+    body: JSON.stringify({
+      linkedin_url: linkedinUrl,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[Apollo] API error: ${response.status} - ${errorText}`);
+    return null;
+  }
+
+  const data = (await response.json()) as any;
+  return extractProfileFromResponse(data, username);
+}
+
+/**
+ * Search Apollo.io using OAuth Access Token
+ */
+async function searchWithAccessToken(
+  linkedinUrl: string,
+  accessToken: string
+): Promise<ApolloProfileData | null> {
+  const username = extractLinkedInUsername(linkedinUrl);
+
+  const response = await fetch("https://api.apollo.io/v1/people/match", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      linkedin_url: linkedinUrl,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[Apollo] API error: ${response.status} - ${errorText}`);
+    return null;
+  }
+
+  const data = (await response.json()) as any;
+  return extractProfileFromResponse(data, username);
+}
+
+/**
+ * Extract profile data from Apollo.io API response
+ */
+function extractProfileFromResponse(
+  data: any,
+  username: string
+): ApolloProfileData | null {
+  if (!data.person) {
+    console.warn(`[Apollo] No person found for LinkedIn username: ${username}`);
+    return null;
+  }
+
+  const person = data.person;
+
+  console.log(`[Apollo] Successfully found profile for ${username}`);
+
+  // Map Apollo data to our ProfileData format
+  const profileData: ApolloProfileData = {
+    firstName: person.first_name || "",
+    lastName: person.last_name || "",
+    email: person.email || person.emails?.[0] || "",
+    phone: person.phone_number || "",
+    headline: person.title || "",
+    sector: person.industry || "",
+    biography: person.headline || "",
+    skills: person.skills?.slice(0, 10) || [],
+    employment: mapEmploymentHistory(person.employment_history),
+    education: mapEducationHistory(person.education),
+  };
+
+  return profileData;
 }
 
 /**
