@@ -2097,19 +2097,18 @@ export async function getInvitationByToken(token: string) {
 
   console.log(`[DB] getInvitationByToken: Looking up token ${token}`);
 
-  try {
-    // Use Drizzle ORM instead of raw pool.execute for proper persistence
-    const [inv] = await db.select()
-      .from(questionnaireInvitations)
-      .where(eq(questionnaireInvitations.token, token))
-      .limit(1);
+  // Use Drizzle ORM instead of raw pool.execute for proper persistence
+  const [inv] = await db.select()
+    .from(questionnaireInvitations)
+    .where(eq(questionnaireInvitations.token, token))
+    .limit(1);
 
-    console.log(`[DB] Invitation query result:`, JSON.stringify({invId: inv?.id, token: inv?.token, qId: inv?.questionnaireId}));
+  console.log(`[DB] Invitation query result:`, JSON.stringify({invId: inv?.id, token: inv?.token, qId: inv?.questionnaireId}));
 
-    if (!inv) {
-      console.error(`[DB] ❌ Invitation not found for token: ${token}`);
-      return null;
-    }
+  if (!inv) {
+    console.error(`[DB] ❌ Invitation not found for token: ${token}`);
+    return null;
+  }
 
   console.log(`[DB] ✓ Invitation found: id=${inv.id}, questionnaireId=${inv.questionnaireId}, expertId=${inv.expertId}`);
 
