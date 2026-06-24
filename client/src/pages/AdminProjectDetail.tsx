@@ -309,7 +309,7 @@ export default function AdminProjectDetail() {
                   <tbody>
                     {shortlistedExperts.map((shortlist: any) => (
                       <tr key={shortlist.id}>
-                        <td>
+                        <td className="whitespace-nowrap">
                           <button onClick={() => navigate(`/admin/experts/${shortlist.expertId}`)} className="text-primary hover:underline font-medium text-sm">
                             {shortlist.expert?.firstName} {shortlist.expert?.lastName}
                           </button>

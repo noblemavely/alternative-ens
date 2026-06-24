@@ -25,17 +25,19 @@ interface AdminLayoutProps {
 }
 
 const NAV_ITEMS = [
-  { label: "Dashboard", icon: LayoutDashboard, href: "/admin", exact: true },
-  { label: "Clients",   icon: Users,           href: "/admin/clients" },
-  { label: "Experts",   icon: UserCircle2,     href: "/admin/experts" },
-  { label: "Projects",  icon: Briefcase,       href: "/admin/projects" },
-  { label: "Leads",     icon: Inbox,           href: "/admin/leads" },
+  { label: "Dashboard",        icon: LayoutDashboard, href: "/admin", exact: true },
+  { label: "Clients",          icon: Users,           href: "/admin/clients" },
+  { label: "Experts",          icon: UserCircle2,     href: "/admin/experts" },
+  { label: "Expert Search",    icon: Search,          href: "/admin/search" },
+  { label: "Projects",         icon: Briefcase,       href: "/admin/projects" },
+  { label: "Leads",            icon: Inbox,           href: "/admin/leads" },
 ];
 
 function getPageTitle(pathname: string): string {
   if (pathname === "/admin" || pathname === "/admin/") return "Dashboard";
   if (pathname.startsWith("/admin/clients"))  return "Clients";
   if (pathname.startsWith("/admin/experts"))  return "Experts";
+  if (pathname.startsWith("/admin/search"))   return "Expert Search";
   if (pathname.startsWith("/admin/projects")) return "Projects";
   if (pathname.startsWith("/admin/settings")) return "Settings";
   if (pathname.startsWith("/admin/leads"))    return "Leads";
