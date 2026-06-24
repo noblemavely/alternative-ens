@@ -127,10 +127,10 @@ export const questionnairesRouter = router({
           return null;
         }
 
-        console.log(`[Questionnaire] ✓ Questionnaire found: id=${result.questionnaire.id}, isActive=${result.questionnaire.isActive}`);
+        console.log(`[Questionnaire] ✓ Questionnaire found: id=${result.questionnaire.id}, isPublished=${result.questionnaire.isPublished}`);
 
-        if (!result.questionnaire.isActive) {
-          console.error(`[Questionnaire] ❌ Questionnaire is INACTIVE (isActive=false) for token: ${input.token}, questionnaire: ${result.questionnaire.title}`);
+        if (!result.questionnaire.isPublished) {
+          console.error(`[Questionnaire] ❌ Questionnaire is NOT PUBLISHED (isPublished=false) for token: ${input.token}, questionnaire: ${result.questionnaire.title}`);
           return null;
         }
 
