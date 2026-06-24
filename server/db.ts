@@ -1429,13 +1429,21 @@ export async function seedDatabase() {
       },
     ];
 
-    await db.insert(experts).values(expertData);
-    const fetchedExperts = await Promise.all(
-      expertData.map(e =>
-        db.select().from(experts).where(eq(experts.email, e.email)).limit(1)
-      )
-    );
-    const expertIds = fetchedExperts.map(result => result[0]?.id).filter((id): id is number => id !== undefined);
+    // Use raw SQL to avoid Drizzle nullable field issues
+    const pool = (db as any).$client;
+    for (const expert of expertData) {
+      await pool.execute(
+        `INSERT IGNORE INTO experts (email, phone, firstName, lastName, sector, \`function\`, biography, linkedinUrl, cvUrl, cvKey, location, isVerified, verificationToken, verificationTokenExpiry) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [expert.email, expert.phone, expert.firstName, expert.lastName, expert.sector, expert.function, expert.biography, expert.linkedinUrl, expert.cvUrl, expert.cvKey, expert.location, expert.isVerified ? 1 : 0, expert.verificationToken, expert.verificationTokenExpiry]
+      );
+    }
+
+    // Fetch the inserted experts
+    const expertIds: number[] = [];
+    for (const expert of expertData) {
+      const [rows]: any = await pool.execute("SELECT id FROM experts WHERE email = ? LIMIT 1", [expert.email]);
+      if (rows?.[0]?.id) expertIds.push(rows[0].id);
+    }
 
     // Seed Expert Employment History
     const employmentData = [

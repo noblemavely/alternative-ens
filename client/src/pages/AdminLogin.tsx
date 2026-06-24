@@ -220,7 +220,7 @@ export default function AdminLogin() {
               <p className="text-xs text-muted-foreground">
                 Email:{" "}
                 <code className="bg-white px-1.5 py-0.5 rounded-md border border-border text-[11px] font-mono text-foreground">
-                  admin@alternative.com
+                  admin@alternatives.com
                 </code>
               </p>
               <p className="text-xs text-muted-foreground">
