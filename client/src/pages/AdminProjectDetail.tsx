@@ -852,7 +852,10 @@ export default function AdminProjectDetail() {
       {generateEmailDraftQuery.isError && currentShortlistId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg p-6 max-w-md">
-            <p className="text-sm text-red-600 mb-3">Error generating email draft</p>
+            <p className="text-sm text-red-600 mb-3 font-semibold">Unable to send invitation</p>
+            <p className="text-xs text-muted-foreground mb-4">
+              {(generateEmailDraftQuery.error as any)?.message || "Error generating email draft"}
+            </p>
             <Button
               size="sm"
               className="rounded-lg"

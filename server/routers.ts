@@ -833,38 +833,45 @@ export const appRouter = router({
     generateQuestionnaireEmailDraft: adminProcedure
       .input(z.object({ shortlistId: z.number() }))
       .query(async ({ input }) => {
-        const { getShortlistById, getDb } = await import("./db");
-        const shortlist = await getShortlistById(input.shortlistId);
-        if (!shortlist) throw new Error("Shortlist not found");
+        try {
+          const { getShortlistById, getDb } = await import("./db");
+          const shortlist = await getShortlistById(input.shortlistId);
+          if (!shortlist) throw new Error("Shortlist not found");
 
-        const q = await getQuestionnaireByProject(shortlist.projectId);
-        if (!q) return null;
+          const q = await getQuestionnaireByProject(shortlist.projectId);
+          if (!q) throw new Error("No questionnaire created for this project. Please create one first.");
 
-        const db = await getDb();
-        const [expertRows]: any = await db?.$client.execute(
-          "SELECT email, firstName FROM experts WHERE id = ? LIMIT 1",
-          [shortlist.expertId]
-        );
-        const expert = expertRows?.[0];
-        if (!expert) return null;
+          const db = await getDb();
+          if (!db) throw new Error("Database connection failed");
 
-        const project = await getProjectById(shortlist.projectId);
-        const link = `${process.env.APP_ORIGIN || 'https://alternatives.nativeworld.com'}/questionnaire/${q.token}`;
+          const [expertRows]: any = await db.$client.execute(
+            "SELECT email, firstName FROM experts WHERE id = ? LIMIT 1",
+            [shortlist.expertId]
+          );
+          const expert = expertRows?.[0];
+          if (!expert) throw new Error("Expert not found");
 
-        return {
-          expertEmail: expert.email,
-          expertName: expert.firstName,
-          projectName: project?.name || 'a project',
-          questionnaireLink: link,
-          subject: `${expert.firstName}, You're invited to complete a questionnaire`,
-          body: `Hi ${expert.firstName},\n\nYou have been invited to complete a questionnaire for ${project?.name || 'a project'}.\n\nPlease click the link below to complete the questionnaire:\n\n${link}`,
-          htmlBody: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
-            <p>Hi ${expert.firstName},</p>
-            <p>You have been invited to complete a questionnaire for <strong>${project?.name || 'a project'}</strong>.</p>
-            <p><a href="${link}" style="display:inline-block;padding:12px 28px;background:#2563EB;color:white;text-decoration:none;border-radius:6px;font-weight:600">Complete Questionnaire</a></p>
-            <p style="color:#888;font-size:12px;margin-top:24px">© ${new Date().getFullYear()} AlterNatives</p>
-          </div>`,
-        };
+          const project = await getProjectById(shortlist.projectId);
+          const link = `${process.env.APP_ORIGIN || 'https://alternatives.nativeworld.com'}/questionnaire/${q.token}`;
+
+          return {
+            expertEmail: expert.email,
+            expertName: expert.firstName,
+            projectName: project?.name || 'a project',
+            questionnaireLink: link,
+            subject: `${expert.firstName}, You're invited to complete a questionnaire`,
+            body: `Hi ${expert.firstName},\n\nYou have been invited to complete a questionnaire for ${project?.name || 'a project'}.\n\nPlease click the link below to complete the questionnaire:\n\n${link}`,
+            htmlBody: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+              <p>Hi ${expert.firstName},</p>
+              <p>You have been invited to complete a questionnaire for <strong>${project?.name || 'a project'}</strong>.</p>
+              <p><a href="${link}" style="display:inline-block;padding:12px 28px;background:#2563EB;color:white;text-decoration:none;border-radius:6px;font-weight:600">Complete Questionnaire</a></p>
+              <p style="color:#888;font-size:12px;margin-top:24px">© ${new Date().getFullYear()} AlterNatives</p>
+            </div>`,
+          };
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Failed to generate email draft";
+          throw new Error(message);
+        }
       }),
 
     sendQuestionnaireEmailAndUpdateStatus: adminProcedure
