@@ -107,23 +107,32 @@ export async function searchApolloByLinkedInUrl(
       return null;
     }
 
-    console.log(`[Apollo] Searching for LinkedIn user: ${username}`);
+    console.log(`[Apollo] Attempting to search for LinkedIn user: ${username}`);
 
     // Try direct API key first (if configured)
     if (ENV.apolloApiKey && ENV.apolloApiKey !== "your-apollo-key-here") {
       console.log("[Apollo] Using direct API key authentication");
-      return await searchWithApiKey(linkedinUrl, ENV.apolloApiKey);
+      const result = await searchWithApiKey(linkedinUrl, ENV.apolloApiKey);
+      if (result) return result;
+      console.warn("[Apollo] Direct API key search failed, will try OAuth");
     }
 
-    // Fall back to OAuth token if direct key not available
-    console.log("[Apollo] Using OAuth token authentication");
-    const accessToken = await getApolloAccessToken();
-    if (!accessToken) {
-      console.warn("[Apollo] Could not obtain access token, returning null");
-      return null;
+    // Try OAuth token if direct key not available or failed
+    if (ENV.apolloClientId && ENV.apolloClientSecret) {
+      console.log("[Apollo] Attempting OAuth token authentication");
+      const accessToken = await getApolloAccessToken();
+      if (accessToken) {
+        const result = await searchWithAccessToken(linkedinUrl, accessToken);
+        if (result) return result;
+        console.warn("[Apollo] OAuth search failed");
+      } else {
+        console.warn("[Apollo] Could not obtain access token");
+      }
     }
 
-    return await searchWithAccessToken(linkedinUrl, accessToken);
+    // If Apollo fails, return null and let the caller fall back to Claude
+    console.warn("[Apollo] Apollo.io search failed, will use fallback method");
+    return null;
   } catch (error) {
     console.error("[Apollo] Error searching LinkedIn profile:", error);
     return null;
