@@ -1,4 +1,4 @@
-import { eq, and, like, or, inArray, sql } from "drizzle-orm";
+import { eq, and, like, or, inArray, sql, desc } from "drizzle-orm";
 import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import * as mysql from "mysql2/promise";
 import bcrypt from "bcryptjs";
@@ -1900,7 +1900,11 @@ export async function getQuestionnaireByProject(projectId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const [q] = await db.select().from(questionnaires).where(eq(questionnaires.projectId, projectId)).limit(1);
+  // Get the MOST RECENT questionnaire for this project (ordered by createdAt DESC)
+  const [q] = await db.select().from(questionnaires)
+    .where(eq(questionnaires.projectId, projectId))
+    .orderBy(desc(questionnaires.createdAt))
+    .limit(1);
   if (!q) return null;
   const questions = await db.select().from(questionnaireQuestions)
     .where(eq(questionnaireQuestions.questionnaireId, q.id))
