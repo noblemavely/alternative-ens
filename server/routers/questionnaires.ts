@@ -107,9 +107,25 @@ export const questionnairesRouter = router({
   getByInvitationToken: publicProcedure
     .input(z.object({ token: z.string() }))
     .query(async ({ input }) => {
-      const result = await getInvitationByToken(input.token);
-      if (!result || !result.questionnaire.isActive) return null;
-      return result;
+      try {
+        const result = await getInvitationByToken(input.token);
+        if (!result) {
+          console.warn(`[Questionnaire] Invitation not found for token: ${input.token}`);
+          return null;
+        }
+        if (!result.questionnaire) {
+          console.warn(`[Questionnaire] Questionnaire not found for invitation token: ${input.token}`);
+          return null;
+        }
+        if (!result.questionnaire.isActive) {
+          console.warn(`[Questionnaire] Questionnaire is not active for invitation token: ${input.token}`);
+          return null;
+        }
+        return result;
+      } catch (error) {
+        console.error(`[Questionnaire] Error fetching invitation by token: ${input.token}`, error);
+        return null;
+      }
     }),
 
   submitInvitation: publicProcedure

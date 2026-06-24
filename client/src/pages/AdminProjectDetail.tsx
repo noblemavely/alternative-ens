@@ -323,7 +323,6 @@ export default function AdminProjectDetail() {
                       <th>Sector</th>
                       <th>Function</th>
                       <th>Status</th>
-                      {questionnaireQuery.data?.isPublished && <th><span className="flex items-center gap-1"><Link2 size={11} />Q Link</span></th>}
                       <th className="text-right">Actions</th>
                     </tr>
                   </thead>
