@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Trash2, Calendar, Edit2, X, Save, CheckCircle, AlertCircle, XCircle, Briefcase, ClipboardList, Plus, Copy, ChevronDown, Users, Link2, Pencil, Send, Eye, Download } from "lucide-react";
+import { Loader2, Trash2, Calendar, Edit2, X, Save, CheckCircle, AlertCircle, XCircle, Briefcase, ClipboardList, Plus, Copy, ChevronDown, Link2, Pencil, Send, Eye, Download } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRoute, useLocation } from "wouter";
@@ -79,7 +79,6 @@ export default function AdminProjectDetail() {
   const [editOptions, setEditOptions] = useState<string[]>([]);
   const [editOptionInput, setEditOptionInput] = useState("");
   // Responses
-  const [showResponses, setShowResponses] = useState(false);
   // Email draft modal
   const [showEmailDraft, setShowEmailDraft] = useState(false);
   const [emailDraft, setEmailDraft] = useState<any>(null);
@@ -162,11 +161,6 @@ export default function AdminProjectDetail() {
     },
     onError: (e: any) => toast.error(e.message || "Failed to send email"),
   });
-
-  const responsesQuery = trpc.questionnaires.responses.useQuery(
-    { questionnaireId: questionnaireQuery.data?.id! },
-    { enabled: !!questionnaireQuery.data?.id && showResponses }
-  );
 
   if (!projectId) return <div className="p-6 text-sm text-muted-foreground">Invalid project ID</div>;
   if (projectQuery.isLoading) return <AdminLayout><div className="flex items-center justify-center h-48 text-sm text-muted-foreground">Loading…</div></AdminLayout>;
@@ -622,43 +616,6 @@ export default function AdminProjectDetail() {
                   </div>
 
                   {/* Responses */}
-                  <div>
-                    <button className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
-                      onClick={() => setShowResponses(v => !v)}>
-                      <Users size={12} />
-                      Responses {responsesQuery.data ? `(${responsesQuery.data.length})` : ""}
-                      <ChevronDown size={12} className={`transition-transform ${showResponses ? "rotate-180" : ""}`} />
-                    </button>
-                    {showResponses && (
-                      responsesQuery.isLoading ? (
-                        <div className="py-4 text-sm text-muted-foreground">Loading…</div>
-                      ) : !responsesQuery.data?.length ? (
-                        <p className="text-sm text-muted-foreground py-3">No responses yet.</p>
-                      ) : (
-                        <div className="mt-3 space-y-4">
-                          {responsesQuery.data.map((resp: any) => (
-                            <div key={resp.id} className="rounded-lg border border-border p-4 bg-white">
-                              <p className="text-sm font-semibold text-foreground">{resp.respondentName || resp.respondentEmail}</p>
-                              <p className="text-xs text-muted-foreground mb-3">{resp.respondentEmail} · {new Date(resp.submittedAt).toLocaleDateString()}</p>
-                              <div className="space-y-2">
-                                {q.questions.map((question: any) => {
-                                  const ans = resp.answers[String(question.id)];
-                                  if (ans === undefined) return null;
-                                  return (
-                                    <div key={question.id}>
-                                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{question.questionText}</p>
-                                      <p className="text-sm text-foreground mt-0.5">{Array.isArray(ans) ? ans.join(", ") : ans}</p>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )
-                    )}
-                  </div>
-
                   {/* Delete */}
                   <div className="pt-2 border-t border-border">
                     <Button size="sm" variant="ghost" className="text-xs text-muted-foreground hover:text-red-500 gap-1.5"
