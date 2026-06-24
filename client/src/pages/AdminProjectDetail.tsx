@@ -14,6 +14,7 @@ import PageBreadcrumb from "@/components/PageBreadcrumb";
 const SHORTLIST_STATUSES = [
   { value: "attached", label: "Attached" },
   { value: "invited",  label: "Invited / Questionnaire Sent" },
+  { value: "questionnaire_responded", label: "Questionnaire Responded" },
   { value: "accepted", label: "Accepted" },
   { value: "p2c_done", label: "P2C Done" },
   { value: "declined", label: "Declined" },
@@ -22,6 +23,7 @@ const SHORTLIST_STATUSES = [
 
 function statusBadgeClass(status: string) {
   if (["accepted", "calls_done"].includes(status)) return "badge-success";
+  if (["questionnaire_responded"].includes(status)) return "badge-info";
   if (["declined"].includes(status))               return "badge-error";
   if (["invited"].includes(status))                return "badge-warning";
   if (["p2c_done"].includes(status))               return "badge-purple";
