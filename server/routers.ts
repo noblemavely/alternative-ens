@@ -5,6 +5,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminAuthRouter } from "./routers/adminAuth";
 import { leadsRouter } from "./routers/leads";
+import { questionnairesRouter } from "./routers/questionnaires";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import {
   createClient,
@@ -214,6 +215,7 @@ export const appRouter = router({
 
   adminAuth: adminAuthRouter,
   leads: leadsRouter,
+  questionnaires: questionnairesRouter,
 
   // ============ CLIENT ROUTERS ============
   clients: router({
@@ -419,6 +421,65 @@ export const appRouter = router({
             });
             console.log(`[submitProfile] Created new expert`);
           }
+
+          // Send T&C copy to the expert
+          try {
+            const { sendEmail } = await import("./email");
+            const TC_PDF_URL = "https://www.w3.org/WAI/WCAG21/Techniques/pdf/pdf-sample.pdf";
+            await sendEmail({
+              to: input.email,
+              subject: "AlterNatives — Your Terms & Conditions Copy",
+              html: `
+                <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+                  <div style="background:#0F172A;padding:20px 24px;border-radius:8px 8px 0 0">
+                    <h2 style="color:#fff;margin:0;font-size:18px">Welcome to AlterNatives</h2>
+                  </div>
+                  <div style="padding:24px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px">
+                    <p style="color:#333">Hi ${input.firstName || "there"},</p>
+                    <p style="color:#555">Thank you for joining the AlterNatives Expert Network. Your profile has been successfully submitted.</p>
+                    <p style="color:#555">As requested, please find a copy of the Terms &amp; Conditions you accepted during registration:</p>
+                    <div style="margin:24px 0;text-align:center">
+                      <a href="${TC_PDF_URL}" style="display:inline-block;padding:12px 28px;background:#2563EB;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">Download Terms &amp; Conditions</a>
+                    </div>
+                    <p style="color:#555;font-size:13px">Our team will review your profile and be in touch within 24 hours.</p>
+                    <p style="color:#888;font-size:12px;margin-top:24px">© ${new Date().getFullYear()} AlterNatives · nativeworld.com</p>
+                  </div>
+                </div>`,
+            });
+          } catch (tcMailErr) {
+            console.warn("[submitProfile] T&C email to expert failed:", tcMailErr);
+          }
+
+          // Notify admin of new expert registration
+          try {
+            const { sendEmail } = await import("./email");
+            await sendEmail({
+              to: "alternatives@nativeworld.com",
+              subject: `New Expert Registration — ${input.firstName || ""} ${input.lastName || ""}`.trim(),
+              html: `
+                <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+                  <div style="background:#0F172A;padding:20px 24px;border-radius:8px 8px 0 0">
+                    <h2 style="color:#fff;margin:0;font-size:18px">New Expert Registered</h2>
+                  </div>
+                  <div style="padding:24px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px">
+                    <table style="width:100%;border-collapse:collapse">
+                      <tr><td style="padding:8px 0;color:#555;width:140px">Name</td><td style="font-weight:600">${input.firstName || ""} ${input.lastName || ""}</td></tr>
+                      <tr><td style="padding:8px 0;color:#555">Email</td><td style="font-weight:600">${input.email}</td></tr>
+                      ${input.phone ? `<tr><td style="padding:8px 0;color:#555">Phone</td><td>${input.phone}</td></tr>` : ""}
+                      ${input.sector ? `<tr><td style="padding:8px 0;color:#555">Sector</td><td>${input.sector}</td></tr>` : ""}
+                      ${input.function ? `<tr><td style="padding:8px 0;color:#555">Function</td><td>${input.function}</td></tr>` : ""}
+                      ${input.linkedinUrl ? `<tr><td style="padding:8px 0;color:#555">LinkedIn</td><td><a href="${input.linkedinUrl}">${input.linkedinUrl}</a></td></tr>` : ""}
+                    </table>
+                    <div style="margin-top:20px">
+                      <a href="https://alternatives.nativeworld.com/admin/experts" style="display:inline-block;padding:10px 20px;background:#2563EB;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">View in Admin</a>
+                    </div>
+                  </div>
+                </div>`,
+            });
+          } catch (mailErr) {
+            console.warn("[submitProfile] Admin notification email failed:", mailErr);
+          }
+
           return { success: true };
         } catch (error) {
           console.error(`[submitProfile] Error:`, error instanceof Error ? error.message : error);

@@ -23,6 +23,9 @@ import {
   projectActivityTimeline,
   leads,
   expertNotes,
+  questionnaires,
+  questionnaireQuestions,
+  questionnaireSubmissions,
   type Lead,
   type InsertLead,
   type Client,
@@ -39,6 +42,9 @@ import {
   type ProjectActivityTimeline,
   type ExpertNote,
   type InsertExpertNote,
+  type Questionnaire,
+  type QuestionnaireQuestion,
+  type QuestionnaireSubmission,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -305,6 +311,47 @@ async function initializeSchema(pool: any) {
 
       /* Add location column to experts table */
       `ALTER TABLE experts ADD COLUMN IF NOT EXISTS location VARCHAR(255) AFTER cvKey`,
+
+      /* Questionnaire tables */
+      `CREATE TABLE IF NOT EXISTS questionnaires (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        projectId INT NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        token VARCHAR(64) NOT NULL UNIQUE,
+        isActive BOOLEAN DEFAULT TRUE NOT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE,
+        INDEX idx_projectId (projectId),
+        INDEX idx_token (token)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+      `CREATE TABLE IF NOT EXISTS questionnaire_questions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        questionnaireId INT NOT NULL,
+        questionText LONGTEXT NOT NULL,
+        questionType ENUM('long_text','yes_no','dropdown','multi_select') NOT NULL,
+        options TEXT,
+        \`order\` INT DEFAULT 0 NOT NULL,
+        isRequired BOOLEAN DEFAULT TRUE NOT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY (questionnaireId) REFERENCES questionnaires(id) ON DELETE CASCADE,
+        INDEX idx_questionnaireId (questionnaireId)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+      `CREATE TABLE IF NOT EXISTS questionnaire_submissions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        questionnaireId INT NOT NULL,
+        expertId INT,
+        respondentEmail VARCHAR(255) NOT NULL,
+        respondentName VARCHAR(255),
+        answers LONGTEXT NOT NULL,
+        submittedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY (questionnaireId) REFERENCES questionnaires(id) ON DELETE CASCADE,
+        INDEX idx_questionnaireId (questionnaireId),
+        INDEX idx_expertId (expertId)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
     ];
 
     // Execute all table creation statements
@@ -1426,15 +1473,15 @@ export async function seedDatabase() {
 
     // Seed Shortlists
     const shortlistData = [
-      { projectId: projectIds[0], expertId: expertIds[0], status: 'contacted' as const, notes: 'Excellent fit for cloud migration' },
-      { projectId: projectIds[0], expertId: expertIds[1], status: 'pending' as const, notes: 'Awaiting response' },
-      { projectId: projectIds[1], expertId: expertIds[3], status: 'interested' as const, notes: 'Very interested in AI/ML role' },
-      { projectId: projectIds[2], expertId: expertIds[1], status: 'engaged' as const, notes: 'In discussions about engagement' },
-      { projectId: projectIds[2], expertId: expertIds[4], status: 'pending' as const, notes: 'Initial outreach sent' },
-      { projectId: projectIds[3], expertId: expertIds[1], status: 'contacted' as const, notes: 'Confirmed availability' },
-      { projectId: projectIds[4], expertId: expertIds[2], status: 'engaged' as const, notes: 'Proposal under review' },
-      { projectId: projectIds[5], expertId: expertIds[2], status: 'interested' as const, notes: 'Strong regulatory background' },
-      { projectId: projectIds[5], expertId: expertIds[4], status: 'pending' as const, notes: 'Awaiting confirmation' },
+      { projectId: projectIds[0], expertId: expertIds[0], status: 'invited' as const, notes: 'Excellent fit for cloud migration' },
+      { projectId: projectIds[0], expertId: expertIds[1], status: 'attached' as const, notes: 'Awaiting response' },
+      { projectId: projectIds[1], expertId: expertIds[3], status: 'accepted' as const, notes: 'Very interested in AI/ML role' },
+      { projectId: projectIds[2], expertId: expertIds[1], status: 'p2c_done' as const, notes: 'In discussions about engagement' },
+      { projectId: projectIds[2], expertId: expertIds[4], status: 'attached' as const, notes: 'Initial outreach sent' },
+      { projectId: projectIds[3], expertId: expertIds[1], status: 'invited' as const, notes: 'Confirmed availability' },
+      { projectId: projectIds[4], expertId: expertIds[2], status: 'calls_done' as const, notes: 'Call completed, review pending' },
+      { projectId: projectIds[5], expertId: expertIds[2], status: 'accepted' as const, notes: 'Strong regulatory background' },
+      { projectId: projectIds[5], expertId: expertIds[4], status: 'attached' as const, notes: 'Awaiting confirmation' },
     ];
     await db.insert(shortlists).values(shortlistData);
 
@@ -1717,4 +1764,120 @@ export async function deleteExpertNote(id: number) {
   if (!db) throw new Error("Database not available");
 
   await db.delete(expertNotes).where(eq(expertNotes.id, id));
+}
+
+// ============ QUESTIONNAIRE FUNCTIONS ============
+
+function generateToken(): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let token = "";
+  for (let i = 0; i < 32; i++) token += chars[Math.floor(Math.random() * chars.length)];
+  return token;
+}
+
+export async function createQuestionnaire(data: { projectId: number; title: string; description?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const token = generateToken();
+  await db.insert(questionnaires).values({ ...data, token, isActive: true });
+  const [q] = await db.select().from(questionnaires).where(eq(questionnaires.token, token)).limit(1);
+  return q;
+}
+
+export async function getQuestionnaireByProject(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [q] = await db.select().from(questionnaires).where(eq(questionnaires.projectId, projectId)).limit(1);
+  if (!q) return null;
+  const questions = await db.select().from(questionnaireQuestions)
+    .where(eq(questionnaireQuestions.questionnaireId, q.id))
+    .orderBy(questionnaireQuestions.order);
+  return { ...q, questions };
+}
+
+export async function getQuestionnaireByToken(token: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [q] = await db.select().from(questionnaires).where(eq(questionnaires.token, token)).limit(1);
+  if (!q) return null;
+  const questions = await db.select().from(questionnaireQuestions)
+    .where(eq(questionnaireQuestions.questionnaireId, q.id))
+    .orderBy(questionnaireQuestions.order);
+  return { ...q, questions };
+}
+
+export async function addQuestionnaireQuestion(data: {
+  questionnaireId: number;
+  questionText: string;
+  questionType: "long_text" | "yes_no" | "dropdown" | "multi_select";
+  options?: string[];
+  order?: number;
+  isRequired?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(questionnaireQuestions).values({
+    questionnaireId: data.questionnaireId,
+    questionText: data.questionText,
+    questionType: data.questionType,
+    options: data.options ? JSON.stringify(data.options) : null,
+    order: data.order ?? 0,
+    isRequired: data.isRequired ?? true,
+  });
+}
+
+export async function deleteQuestionnaireQuestion(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(questionnaireQuestions).where(eq(questionnaireQuestions.id, id));
+}
+
+export async function submitQuestionnaireResponse(data: {
+  questionnaireId: number;
+  respondentEmail: string;
+  respondentName?: string;
+  answers: Record<string, any>;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Link to expert if email matches
+  const pool = (db as any).$client;
+  const [expertRows]: any = await pool.execute(
+    "SELECT id FROM experts WHERE email = ? LIMIT 1",
+    [data.respondentEmail]
+  );
+  const expertId = expertRows?.[0]?.id ?? null;
+
+  await db.insert(questionnaireSubmissions).values({
+    questionnaireId: data.questionnaireId,
+    expertId,
+    respondentEmail: data.respondentEmail,
+    respondentName: data.respondentName ?? null,
+    answers: JSON.stringify(data.answers),
+  });
+}
+
+export async function getQuestionnaireSubmissions(questionnaireId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const rows = await db.select().from(questionnaireSubmissions)
+    .where(eq(questionnaireSubmissions.questionnaireId, questionnaireId))
+    .orderBy(questionnaireSubmissions.submittedAt);
+
+  return rows.map(r => ({
+    ...r,
+    answers: (() => { try { return JSON.parse(r.answers); } catch { return {}; } })(),
+  }));
+}
+
+export async function deleteQuestionnaire(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(questionnaires).where(eq(questionnaires.id, id));
 }

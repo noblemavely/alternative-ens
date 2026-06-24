@@ -332,3 +332,53 @@ export const expertNotes = mysqlTable("expert_notes", {
 
 export type ExpertNote = typeof expertNotes.$inferSelect;
 export type InsertExpertNote = typeof expertNotes.$inferInsert;
+
+/**
+ * Questionnaires — one per project, sent to experts via a shareable link
+ */
+export const questionnaires = mysqlTable("questionnaires", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Questionnaire = typeof questionnaires.$inferSelect;
+export type InsertQuestionnaire = typeof questionnaires.$inferInsert;
+
+/**
+ * Questions within a questionnaire
+ */
+export const questionnaireQuestions = mysqlTable("questionnaire_questions", {
+  id: int("id").autoincrement().primaryKey(),
+  questionnaireId: int("questionnaireId").notNull(),
+  questionText: longtext("questionText").notNull(),
+  questionType: mysqlEnum("questionType", ["long_text", "yes_no", "dropdown", "multi_select"]).notNull(),
+  options: text("options"), // JSON array for dropdown / multi_select choices
+  order: int("order").default(0).notNull(),
+  isRequired: boolean("isRequired").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type QuestionnaireQuestion = typeof questionnaireQuestions.$inferSelect;
+export type InsertQuestionnaireQuestion = typeof questionnaireQuestions.$inferInsert;
+
+/**
+ * Questionnaire submissions — one row per expert response
+ */
+export const questionnaireSubmissions = mysqlTable("questionnaire_submissions", {
+  id: int("id").autoincrement().primaryKey(),
+  questionnaireId: int("questionnaireId").notNull(),
+  expertId: int("expertId"),
+  respondentEmail: varchar("respondentEmail", { length: 255 }).notNull(),
+  respondentName: varchar("respondentName", { length: 255 }),
+  answers: longtext("answers").notNull(), // JSON: { [questionId]: answer }
+  submittedAt: timestamp("submittedAt").defaultNow().notNull(),
+});
+
+export type QuestionnaireSubmission = typeof questionnaireSubmissions.$inferSelect;
+export type InsertQuestionnaireSubmission = typeof questionnaireSubmissions.$inferInsert;

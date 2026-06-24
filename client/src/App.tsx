@@ -26,6 +26,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminLeads from "./pages/AdminLeads";
 import ConnectPage from "./pages/ConnectPage";
 import ConnectThankYou from "./pages/ConnectThankYou";
+import QuestionnaireForm from "./pages/QuestionnaireForm";
 import TestPDF from "./pages/test-pdf";
 import VerifyEmail from "./pages/VerifyEmail";
 
@@ -50,6 +51,7 @@ function Router() {
       <Route path={"/admin/add-project"} component={AddProject} />
       <Route path={"/connect"} component={ConnectPage} />
       <Route path={"/connect/thank-you"} component={ConnectThankYou} />
+      <Route path={"/questionnaire/:token"} component={QuestionnaireForm} />
       <Route path={"/admin/leads"} component={AdminLeads} />
       <Route path={"/verify-email"} component={VerifyEmail} />
       <Route path={"/expert/register"} component={ExpertPortal} />

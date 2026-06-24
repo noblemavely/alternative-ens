@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Trash2, Calendar, Edit2, X, Save, CheckCircle, AlertCircle, XCircle, Briefcase } from "lucide-react";
+import { Loader2, Trash2, Calendar, Edit2, X, Save, CheckCircle, AlertCircle, XCircle, Briefcase, ClipboardList, Plus, Copy, ChevronDown, Users } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRoute, useLocation } from "wouter";
@@ -64,9 +64,17 @@ export default function AdminProjectDetail() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<any>(null);
 
+  const [newQuestionText, setNewQuestionText] = useState("");
+  const [newQuestionType, setNewQuestionType] = useState<"long_text" | "yes_no" | "dropdown" | "multi_select">("long_text");
+  const [newQuestionOptions, setNewQuestionOptions] = useState("");
+  const [showResponses, setShowResponses] = useState(false);
+  const [creatingQuestionnaire, setCreatingQuestionnaire] = useState(false);
+  const [qTitle, setQTitle] = useState("");
+
   const projectQuery          = trpc.projects.getById.useQuery({ id: projectId! }, { enabled: !!projectId });
   const shortlistQuery        = trpc.shortlists.getByProject.useQuery({ projectId: projectId! }, { enabled: !!projectId });
   const activityTimelineQuery = trpc.projects.getActivityTimeline.useQuery({ projectId: projectId! }, { enabled: !!projectId });
+  const questionnaireQuery    = trpc.questionnaires.getByProject.useQuery({ projectId: projectId! }, { enabled: !!projectId });
 
   const updateProjectMutation = trpc.projects.update.useMutation({
     onSuccess: () => { toast.success("Project updated"); setIsEditing(false); projectQuery.refetch(); activityTimelineQuery.refetch(); },
@@ -87,6 +95,31 @@ export default function AdminProjectDetail() {
     onSuccess: () => { toast.success("Expert removed"); shortlistQuery.refetch(); },
     onError: (e: any) => toast.error(e.message || "Failed to remove expert"),
   });
+
+  const createQuestionnaireMutation = trpc.questionnaires.create.useMutation({
+    onSuccess: () => { toast.success("Questionnaire created"); questionnaireQuery.refetch(); setCreatingQuestionnaire(false); setQTitle(""); },
+    onError: (e: any) => toast.error(e.message || "Failed to create questionnaire"),
+  });
+
+  const addQuestionMutation = trpc.questionnaires.addQuestion.useMutation({
+    onSuccess: () => { toast.success("Question added"); questionnaireQuery.refetch(); setNewQuestionText(""); setNewQuestionOptions(""); },
+    onError: (e: any) => toast.error(e.message || "Failed to add question"),
+  });
+
+  const deleteQuestionMutation = trpc.questionnaires.deleteQuestion.useMutation({
+    onSuccess: () => { toast.success("Question deleted"); questionnaireQuery.refetch(); },
+    onError: (e: any) => toast.error(e.message || "Failed to delete question"),
+  });
+
+  const deleteQuestionnaireMutation = trpc.questionnaires.delete.useMutation({
+    onSuccess: () => { toast.success("Questionnaire deleted"); questionnaireQuery.refetch(); },
+    onError: (e: any) => toast.error(e.message || "Failed to delete questionnaire"),
+  });
+
+  const responsesQuery = trpc.questionnaires.responses.useQuery(
+    { questionnaireId: questionnaireQuery.data?.id! },
+    { enabled: !!questionnaireQuery.data?.id && showResponses }
+  );
 
   if (!projectId) return <div className="p-6 text-sm text-muted-foreground">Invalid project ID</div>;
   if (projectQuery.isLoading) return <AdminLayout><div className="flex items-center justify-center h-48 text-sm text-muted-foreground">Loading…</div></AdminLayout>;
@@ -288,6 +321,212 @@ export default function AdminProjectDetail() {
               </div>
             )}
           </div>
+
+          {/* Questionnaire */}
+          <SectionCard title="Questionnaire" subtitle="Send a form to experts to collect structured responses">
+            {questionnaireQuery.isLoading ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">Loading…</div>
+            ) : !questionnaireQuery.data ? (
+              /* Create questionnaire */
+              creatingQuestionnaire ? (
+                <div className="space-y-3">
+                  <Input
+                    placeholder="Questionnaire title (e.g. Expert Screening — Cloud Migration)"
+                    value={qTitle}
+                    onChange={e => setQTitle(e.target.value)}
+                    className="h-9 rounded-lg"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="gap-1.5 rounded-lg"
+                      style={{ background: "#2563EB" }}
+                      disabled={!qTitle.trim() || createQuestionnaireMutation.isPending}
+                      onClick={() => createQuestionnaireMutation.mutate({ projectId: projectId!, title: qTitle })}
+                    >
+                      {createQuestionnaireMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <ClipboardList size={12} />}
+                      Create
+                    </Button>
+                    <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setCreatingQuestionnaire(false)}>Cancel</Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-4 flex flex-col items-center gap-3">
+                  <ClipboardList size={28} className="text-muted-foreground opacity-50" />
+                  <p className="text-sm text-muted-foreground">No questionnaire yet</p>
+                  <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" onClick={() => setCreatingQuestionnaire(true)}>
+                    <Plus size={13} /> Create Questionnaire
+                  </Button>
+                </div>
+              )
+            ) : (
+              /* Questionnaire exists */
+              (() => {
+                const q = questionnaireQuery.data!;
+                const link = `${window.location.origin}/questionnaire/${q.token}`;
+                return (
+                  <div className="space-y-4">
+                    {/* Share link */}
+                    <div className="rounded-lg border border-border bg-secondary/40 p-3 flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground flex-1 truncate font-mono">{link}</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-shrink-0 gap-1 rounded-lg h-7 text-xs"
+                        onClick={() => { navigator.clipboard.writeText(link); toast.success("Link copied!"); }}
+                      >
+                        <Copy size={11} /> Copy Link
+                      </Button>
+                    </div>
+
+                    {/* Questions */}
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Questions ({q.questions.length})</p>
+                      {q.questions.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-2">No questions yet. Add one below.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {q.questions.map((question: any, idx: number) => (
+                            <div key={question.id} className="flex items-start gap-2 p-3 rounded-lg border border-border bg-white">
+                              <span className="text-xs text-muted-foreground font-mono mt-0.5 w-4 flex-shrink-0">{idx + 1}.</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-foreground">{question.questionText}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="badge-info text-[10px]">{question.questionType.replace(/_/g, " ")}</span>
+                                  {question.isRequired && <span className="text-[10px] text-muted-foreground">Required</span>}
+                                </div>
+                                {question.options && (() => { try { const opts = JSON.parse(question.options); return opts.length ? <p className="text-[10px] text-muted-foreground mt-1">Options: {opts.join(" · ")}</p> : null; } catch { return null; } })()}
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="flex-shrink-0 h-7 w-7 p-0 text-muted-foreground hover:text-red-500"
+                                onClick={() => deleteQuestionMutation.mutate({ id: question.id })}
+                                disabled={deleteQuestionMutation.isPending}
+                              >
+                                <Trash2 size={13} />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Add question */}
+                    <div className="rounded-lg border border-dashed border-border p-4 space-y-3">
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Add Question</p>
+                      <Input
+                        placeholder="Question text…"
+                        value={newQuestionText}
+                        onChange={e => setNewQuestionText(e.target.value)}
+                        className="h-9 rounded-lg"
+                      />
+                      <div className="flex gap-2">
+                        <Select value={newQuestionType} onValueChange={(v: any) => setNewQuestionType(v)}>
+                          <SelectTrigger className="h-9 rounded-lg flex-1 text-sm"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="long_text">Long Text</SelectItem>
+                            <SelectItem value="yes_no">Yes / No</SelectItem>
+                            <SelectItem value="dropdown">Dropdown (Radio)</SelectItem>
+                            <SelectItem value="multi_select">Multi-Select (Checkbox)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          size="sm"
+                          className="gap-1.5 rounded-lg"
+                          style={{ background: "#2563EB" }}
+                          disabled={!newQuestionText.trim() || addQuestionMutation.isPending}
+                          onClick={() => {
+                            const opts = (newQuestionType === "dropdown" || newQuestionType === "multi_select")
+                              ? newQuestionOptions.split(",").map(s => s.trim()).filter(Boolean)
+                              : undefined;
+                            addQuestionMutation.mutate({
+                              questionnaireId: q.id,
+                              questionText: newQuestionText,
+                              questionType: newQuestionType,
+                              options: opts,
+                              order: q.questions.length,
+                            });
+                          }}
+                        >
+                          {addQuestionMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+                          Add
+                        </Button>
+                      </div>
+                      {(newQuestionType === "dropdown" || newQuestionType === "multi_select") && (
+                        <Input
+                          placeholder="Options (comma-separated): e.g. Option A, Option B, Option C"
+                          value={newQuestionOptions}
+                          onChange={e => setNewQuestionOptions(e.target.value)}
+                          className="h-9 rounded-lg text-sm"
+                        />
+                      )}
+                    </div>
+
+                    {/* Responses */}
+                    <div>
+                      <button
+                        className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
+                        onClick={() => setShowResponses(v => !v)}
+                      >
+                        <Users size={12} />
+                        Responses {responsesQuery.data ? `(${responsesQuery.data.length})` : ""}
+                        <ChevronDown size={12} className={`transition-transform ${showResponses ? "rotate-180" : ""}`} />
+                      </button>
+                      {showResponses && (
+                        responsesQuery.isLoading ? (
+                          <div className="py-4 text-sm text-muted-foreground">Loading…</div>
+                        ) : !responsesQuery.data?.length ? (
+                          <p className="text-sm text-muted-foreground py-3">No responses yet.</p>
+                        ) : (
+                          <div className="mt-3 space-y-4">
+                            {responsesQuery.data.map((resp: any) => (
+                              <div key={resp.id} className="rounded-lg border border-border p-4 bg-white">
+                                <div className="flex items-center justify-between mb-3">
+                                  <div>
+                                    <p className="text-sm font-semibold text-foreground">{resp.respondentName || resp.respondentEmail}</p>
+                                    <p className="text-xs text-muted-foreground">{resp.respondentEmail} · {new Date(resp.submittedAt).toLocaleDateString()}</p>
+                                  </div>
+                                </div>
+                                <div className="space-y-2">
+                                  {q.questions.map((question: any) => {
+                                    const ans = resp.answers[String(question.id)];
+                                    if (ans === undefined) return null;
+                                    return (
+                                      <div key={question.id}>
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{question.questionText}</p>
+                                        <p className="text-sm text-foreground mt-0.5">{Array.isArray(ans) ? ans.join(", ") : ans}</p>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      )}
+                    </div>
+
+                    {/* Delete questionnaire */}
+                    <div className="pt-2 border-t border-border">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-xs text-muted-foreground hover:text-red-500 gap-1.5"
+                        onClick={() => {
+                          if (confirm("Delete this questionnaire and all responses?")) {
+                            deleteQuestionnaireMutation.mutate({ id: q.id });
+                          }
+                        }}
+                      >
+                        <Trash2 size={12} /> Delete Questionnaire
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })()
+            )}
+          </SectionCard>
 
           {/* Activity Timeline */}
           {activityTimeline.length > 0 && (

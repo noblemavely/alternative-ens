@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Mail, CheckCircle, Loader2, Link2, Copy } from "lucide-react";
+import { Mail, CheckCircle, Loader2, Link2, Copy, ArrowLeft, FileText } from "lucide-react";
 import { EmploymentHistoryForm } from "@/components/EmploymentHistoryForm";
 import { EducationHistoryForm } from "@/components/EducationHistoryForm";
 import FormProgressIndicator from "@/components/FormProgressIndicator";
@@ -33,7 +33,8 @@ type EmailVerificationData = z.infer<typeof emailVerificationSchema>;
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function ExpertPortal() {
-  const [step, setStep] = useState<"email" | "verification" | "profile" | "linkedin" | "experience" | "resume" | "preview">("email");
+  const [step, setStep] = useState<"email" | "verification" | "profile" | "linkedin" | "experience" | "resume" | "terms" | "preview">("email");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState("");
   const [verificationToken, setVerificationToken] = useState("");
   const [displayCode, setDisplayCode] = useState("");
@@ -55,6 +56,7 @@ export default function ExpertPortal() {
     { id: "linkedin", label: "LinkedIn Profile", completed: false },
     { id: "experience", label: "Experience", completed: false },
     { id: "resume", label: "Resume (Optional)", completed: false },
+    { id: "terms", label: "Terms & Conditions", completed: false },
     { id: "preview", label: "Preview", completed: false },
   ]);
   const [currentFormStep, setCurrentFormStep] = useState("profile");
@@ -261,7 +263,7 @@ export default function ExpertPortal() {
     setShowResumeResetDialog(false);
     setPendingResumeData(null);
     // NOTE: Do NOT clear resumeFile here - it needs to be persisted for upload in handleCompleteProfile
-    setStep("preview");
+    setStep("terms");
   };
 
   const handleFetchLinkedin = async () => {
@@ -485,6 +487,9 @@ export default function ExpertPortal() {
         {step === "verification" && (
           <Card className="border-border shadow-lg">
             <CardHeader>
+              <button onClick={() => setStep("email")} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-3 transition-colors">
+                <ArrowLeft size={13} /> Back
+              </button>
               <CardTitle className="flex items-center gap-2 text-foreground">
                 <CheckCircle size={24} className="text-green-600" />
                 Enter Verification Code
@@ -559,6 +564,9 @@ export default function ExpertPortal() {
             />
             <Card className="border-border shadow-lg">
               <CardHeader>
+                <button onClick={() => setStep("verification")} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-3 transition-colors">
+                  <ArrowLeft size={13} /> Back
+                </button>
                 <CardTitle className="text-foreground">Personal Information</CardTitle>
                 <CardDescription>Tell us about yourself</CardDescription>
               </CardHeader>
@@ -653,6 +661,9 @@ export default function ExpertPortal() {
             />
             <Card className="border-border shadow-lg">
               <CardHeader>
+                <button onClick={() => setStep("profile")} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-3 transition-colors">
+                  <ArrowLeft size={13} /> Back
+                </button>
                 <CardTitle className="text-foreground">LinkedIn Profile</CardTitle>
                 <CardDescription>Connect your LinkedIn profile to auto-populate your experience</CardDescription>
               </CardHeader>
@@ -701,6 +712,9 @@ export default function ExpertPortal() {
             />
             <Card className="border-border shadow-lg">
               <CardHeader>
+                <button onClick={() => setStep("linkedin")} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-3 transition-colors">
+                  <ArrowLeft size={13} /> Back
+                </button>
                 <CardTitle className="text-foreground">Work Experience & Education</CardTitle>
                 <CardDescription>Add your professional history</CardDescription>
               </CardHeader>
@@ -750,6 +764,9 @@ export default function ExpertPortal() {
             />
             <Card className="border-border shadow-lg">
               <CardHeader>
+                <button onClick={() => setStep("experience")} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-3 transition-colors">
+                  <ArrowLeft size={13} /> Back
+                </button>
                 <CardTitle className="text-foreground">Upload Resume (Optional)</CardTitle>
                 <CardDescription>Upload your resume to auto-fill your experience</CardDescription>
               </CardHeader>
@@ -757,10 +774,10 @@ export default function ExpertPortal() {
                 <ResumeParserForm
                   onParsed={handleResumeParsed}
                   onFileSelected={(file) => setResumeFile(file)}
-                  onSkip={() => setStep("preview")}
+                  onSkip={() => setStep("terms")}
                 />
                 <Button
-                  onClick={() => setStep("preview")}
+                  onClick={() => setStep("terms")}
                   className="w-full bg-primary hover:bg-primary/90"
                 >
                   Continue
@@ -801,7 +818,72 @@ export default function ExpertPortal() {
           </div>
         )}
 
-        {/* Step 7: Profile Preview (Before Submission) */}
+        {/* Step 7: Terms & Conditions */}
+        {step === "terms" && !createdExpertData && (
+          <div className="space-y-6">
+            <FormProgressIndicator
+              steps={formSteps}
+              currentStep="terms"
+              completionPercentage={90}
+            />
+            <Card className="border-border shadow-lg">
+              <CardHeader>
+                <button onClick={() => setStep("resume")} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-3 transition-colors">
+                  <ArrowLeft size={13} /> Back
+                </button>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <FileText size={20} className="text-primary" />
+                  Terms &amp; Conditions
+                </CardTitle>
+                <CardDescription>Please read and accept the terms before submitting your profile</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {/* PDF embed */}
+                <div className="rounded-lg border border-border overflow-hidden" style={{ height: 420 }}>
+                  <iframe
+                    src="https://www.w3.org/WAI/WCAG21/Techniques/pdf/pdf-sample.pdf"
+                    title="Terms and Conditions"
+                    className="w-full h-full"
+                    style={{ border: "none" }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground italic">
+                  This is a placeholder PDF. The final Terms &amp; Conditions document will be uploaded before go-live.
+                </p>
+
+                {/* Accept checkbox */}
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={e => setTermsAccepted(e.target.checked)}
+                    className="mt-0.5 accent-primary h-4 w-4"
+                  />
+                  <span className="text-sm text-foreground">
+                    I have read and accept the AlterNatives Expert Network Terms &amp; Conditions
+                  </span>
+                </label>
+
+                <div className="flex gap-3">
+                  <Button variant="outline" className="flex-1" onClick={() => setStep("preview")}>
+                    Review Profile
+                  </Button>
+                  <Button
+                    className="flex-1 bg-primary hover:bg-primary/90"
+                    disabled={!termsAccepted || createExpertMutation.isPending}
+                    onClick={() => profileForm.handleSubmit(handleCompleteProfile)()}
+                  >
+                    {createExpertMutation.isPending ? (
+                      <><Loader2 className="mr-2 animate-spin" size={16} />Submitting…</>
+                    ) : "Accept & Submit"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Step 8: Profile Preview (Before Submission) */}
         {step === "preview" && !createdExpertData && (
           <div className="space-y-6">
             <FormProgressIndicator
@@ -811,6 +893,9 @@ export default function ExpertPortal() {
             />
             <Card className="border-border shadow-lg">
               <CardHeader>
+                <button onClick={() => setStep("terms")} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-3 transition-colors">
+                  <ArrowLeft size={13} /> Back
+                </button>
                 <CardTitle className="text-foreground">Review Your Profile</CardTitle>
                 <CardDescription>Please review your information before submitting</CardDescription>
               </CardHeader>
@@ -877,25 +962,17 @@ export default function ExpertPortal() {
 
                 <div className="flex gap-3">
                   <Button
-                    onClick={() => setStep("experience")}
+                    onClick={() => setStep("resume")}
                     variant="outline"
                     className="flex-1"
                   >
                     Back
                   </Button>
                   <Button
-                    onClick={() => profileForm.handleSubmit(handleCompleteProfile)()}
+                    onClick={() => setStep("terms")}
                     className="flex-1 bg-primary hover:bg-primary/90"
-                    disabled={createExpertMutation.isPending}
                   >
-                    {createExpertMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 animate-spin" size={16} />
-                        Submitting...
-                      </>
-                    ) : (
-                      "Submit Profile"
-                    )}
+                    Continue to T&amp;C
                   </Button>
                 </div>
               </CardContent>
