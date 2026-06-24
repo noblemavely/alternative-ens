@@ -108,22 +108,36 @@ export const questionnairesRouter = router({
     .input(z.object({ token: z.string() }))
     .query(async ({ input }) => {
       try {
+        console.log(`[Questionnaire] Fetching invitation by token: ${input.token}`);
         const result = await getInvitationByToken(input.token);
+
         if (!result) {
-          console.warn(`[Questionnaire] Invitation not found for token: ${input.token}`);
+          console.error(`[Questionnaire] ❌ Invitation not found for token: ${input.token}`);
           return null;
         }
+
+        console.log(`[Questionnaire] ✓ Invitation found: ${JSON.stringify({
+          invId: result.invitation?.id,
+          qId: result.questionnaire?.id,
+          expertId: result.expert?.id
+        })}`);
+
         if (!result.questionnaire) {
-          console.warn(`[Questionnaire] Questionnaire not found for invitation token: ${input.token}`);
+          console.error(`[Questionnaire] ❌ Questionnaire not found (null) for invitation token: ${input.token}`);
           return null;
         }
+
+        console.log(`[Questionnaire] ✓ Questionnaire found: id=${result.questionnaire.id}, isActive=${result.questionnaire.isActive}`);
+
         if (!result.questionnaire.isActive) {
-          console.warn(`[Questionnaire] Questionnaire is not active for invitation token: ${input.token}`);
+          console.error(`[Questionnaire] ❌ Questionnaire is INACTIVE (isActive=false) for token: ${input.token}, questionnaire: ${result.questionnaire.title}`);
           return null;
         }
+
+        console.log(`[Questionnaire] ✓ Questionnaire is active, returning result`);
         return result;
       } catch (error) {
-        console.error(`[Questionnaire] Error fetching invitation by token: ${input.token}`, error);
+        console.error(`[Questionnaire] ❌ Error fetching invitation by token: ${input.token}`, error);
         return null;
       }
     }),
