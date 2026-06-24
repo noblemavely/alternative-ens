@@ -14,6 +14,9 @@ import {
   createOrGetInvitation,
   getInvitationByToken,
   submitInvitationResponse,
+  updateShortlistStatus,
+  getShortlistById,
+  getAdminUserById,
 } from "../db";
 import { sendEmail } from "../email";
 import { ENV } from "../_core/env";
@@ -154,10 +157,20 @@ export const questionnairesRouter = router({
 
       await submitInvitationResponse(input);
 
-      // Notify admin
+      // Update shortlist status to "questionnaire_responded"
+      if (result.invitation?.shortlistId) {
+        try {
+          await updateShortlistStatus(result.invitation.shortlistId, "questionnaire_responded");
+          console.log(`[Questionnaire] Updated shortlist ${result.invitation.shortlistId} status to questionnaire_responded`);
+        } catch (err) {
+          console.warn(`[Questionnaire] Failed to update shortlist status:`, err);
+        }
+      }
+
+      // Notify admin and consultant
       try {
         const appUrl = (ENV as any).appUrl || "https://alternatives.nativeworld.com";
-        const { questionnaire: q, expert } = result;
+        const { questionnaire: q, expert, project } = result;
         const answerRows = q.questions
           .map((qs: any) => {
             const ans = input.answers[String(qs.id)];
@@ -166,29 +179,49 @@ export const questionnairesRouter = router({
           })
           .join("");
 
+        const emailBody = `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+            <div style="background:#0F172A;padding:20px 24px;border-radius:8px 8px 0 0">
+              <h2 style="color:#fff;margin:0;font-size:18px">Questionnaire Response Received</h2>
+            </div>
+            <div style="padding:24px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px">
+              <p style="color:#555">A questionnaire response has been submitted for <strong>${q.title}</strong>.</p>
+              <p style="color:#555"><strong>Expert:</strong> ${expert?.firstName ?? ""} ${expert?.lastName ?? ""} &lt;${expert?.email ?? ""}&gt;</p>
+              <p style="color:#555"><strong>Project:</strong> ${project?.name ?? ""}</p>
+              <table style="width:100%;border-collapse:collapse;margin-top:16px">
+                <tr><td style="padding:8px;background:#f8fafc;font-weight:700;color:#333;border-bottom:2px solid #e2e8f0">Question</td><td style="padding:8px;background:#f8fafc;font-weight:700;color:#333;border-bottom:2px solid #e2e8f0">Answer</td></tr>
+                ${answerRows}
+              </table>
+              <div style="margin-top:20px">
+                <a href="${appUrl}/admin/projects/${project?.id}" style="display:inline-block;padding:10px 20px;background:#2563EB;color:#fff;text-decoration:none;border-radius:6px;font-size:13px">View Project</a>
+              </div>
+            </div>
+          </div>`;
+
+        // Send to admin
         await sendEmail({
           to: ADMIN_EMAIL,
           subject: `Questionnaire Response — ${q.title}`,
-          html: `
-            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
-              <div style="background:#0F172A;padding:20px 24px;border-radius:8px 8px 0 0">
-                <h2 style="color:#fff;margin:0;font-size:18px">New Questionnaire Response</h2>
-              </div>
-              <div style="padding:24px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px">
-                <p style="color:#555">Response submitted for <strong>${q.title}</strong>.</p>
-                <p style="color:#555"><strong>Expert:</strong> ${expert?.firstName ?? ""} ${expert?.lastName ?? ""} &lt;${expert?.email ?? ""}&gt;</p>
-                <table style="width:100%;border-collapse:collapse;margin-top:16px">
-                  <tr><td style="padding:8px;background:#f8fafc;font-weight:700;color:#333;border-bottom:2px solid #e2e8f0">Question</td><td style="padding:8px;background:#f8fafc;font-weight:700;color:#333;border-bottom:2px solid #e2e8f0">Answer</td></tr>
-                  ${answerRows}
-                </table>
-                <div style="margin-top:20px">
-                  <a href="${appUrl}/admin/experts/${expert?.id}" style="display:inline-block;padding:10px 20px;background:#2563EB;color:#fff;text-decoration:none;border-radius:6px;font-size:13px">View Expert Profile</a>
-                </div>
-              </div>
-            </div>`,
+          html: emailBody,
         });
+
+        // Send to consultant in charge
+        if (result.invitation?.shortlistId) {
+          const shortlist = await getShortlistById(result.invitation.shortlistId);
+          if (shortlist?.consultantInChargeId) {
+            const consultant = await getAdminUserById(shortlist.consultantInChargeId);
+            if (consultant?.email) {
+              await sendEmail({
+                to: consultant.email,
+                subject: `Questionnaire Response Received — ${expert?.firstName} ${expert?.lastName}`,
+                html: emailBody,
+              });
+              console.log(`[Questionnaire] Notification sent to consultant ${consultant.email}`);
+            }
+          }
+        }
       } catch (e) {
-        console.warn("[Questionnaire] Admin email failed:", e);
+        console.warn("[Questionnaire] Email notification failed:", e);
       }
 
       return { success: true };

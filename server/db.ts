@@ -938,6 +938,21 @@ export async function removeFromShortlist(id: number) {
   await db.delete(shortlists).where(eq(shortlists.id, id));
 }
 
+export async function updateShortlistStatus(id: number, status: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(shortlists).set({ status }).where(eq(shortlists.id, id));
+}
+
+export async function getAdminUserById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [result] = await db.select().from(adminUsers).where(eq(adminUsers.id, id)).limit(1);
+  return result || null;
+}
+
 // ============ EXPERT EMPLOYMENT FUNCTIONS ============
 
 export async function createExpertEmployment(data: Omit<ExpertEmployment, "id" | "createdAt" | "updatedAt">) {
