@@ -1,6 +1,8 @@
 import AdminLayout from "@/components/AdminLayout";
 import { trpc } from "@/lib/trpc";
 import { Inbox, Mail, Building2, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 
 const QUERY_COLORS: Record<string, string> = {
@@ -20,8 +22,14 @@ function formatDate(d: Date | string) {
 }
 
 export default function AdminLeads() {
-  const leadsQuery = trpc.leads.list.useQuery();
-  const leads = leadsQuery.data ?? [];
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 20;
+
+  const leadsQuery = trpc.leads.list.useQuery({
+    limit: pageSize,
+    offset: currentPage * pageSize,
+  });
+  const leads = leadsQuery.data?.items ?? [];
 
   return (
     <AdminLayout>
@@ -31,7 +39,10 @@ export default function AdminLeads() {
         <div>
           <h1 className="page-title">Leads</h1>
           <p className="page-subtitle">
-            {leads.length} submission{leads.length !== 1 ? "s" : ""} via alternatives.nativeworld.com/connect
+            {leadsQuery.data?.total || 0} submission{(leadsQuery.data?.total || 0) !== 1 ? "s" : ""} via alternatives.nativeworld.com/connect
+            {leads.length > 0 && (
+              <span> • Showing {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, leadsQuery.data?.total || 0)}</span>
+            )}
           </p>
         </div>
       </div>
@@ -156,6 +167,33 @@ export default function AdminLeads() {
                 </div>
               ))}
             </div>
+
+            {/* Pagination Controls */}
+            {leadsQuery.data && leadsQuery.data.total > pageSize && (
+              <div className="flex items-center justify-between px-5 py-3 border-t border-border bg-muted/50">
+                <div className="text-sm text-muted-foreground">
+                  Page {currentPage + 1} of {Math.ceil(leadsQuery.data.total / pageSize)}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 0}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={!leadsQuery.data.hasMore}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

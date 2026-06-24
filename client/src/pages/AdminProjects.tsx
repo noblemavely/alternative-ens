@@ -17,28 +17,32 @@ export default function AdminProjects() {
 
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
-  const [projectTypeFilter, setProjectTypeFilter] = useState<string>(urlParams.get('type') || "");
+  const [statusFilter, setStatusFilter] = useState<string>(urlParams.get('status') || "");
+  const [currentPage, setCurrentPage] = useState(parseInt(urlParams.get('page') || '0'));
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<{ id: number; name: string } | null>(null);
 
-  const updateUrl = (search: string, type: string) => {
+  const pageSize = 20;
+  const updateUrl = (search: string, status: string, page: number = 0) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
-    if (type && type !== "all") params.set('type', type);
+    if (status && status !== "all") params.set('status', status);
+    if (page > 0) params.set('page', String(page));
     const queryString = params.toString();
     navigate(`/admin/projects${queryString ? '?' + queryString : ''}`);
   };
 
-  const projectsQuery = trpc.projects.list.useQuery();
-  const clientsQuery = trpc.clients.list.useQuery();
-  const contactsQuery = trpc.clientContacts.list.useQuery();
+  const projectsQuery = trpc.projects.list.useQuery({
+    search: searchTerm,
+    status: statusFilter && statusFilter !== "all" ? statusFilter : undefined,
+    limit: pageSize,
+    offset: currentPage * pageSize,
+  });
+  const clientsQuery = trpc.clients.list.useQuery({ limit: 1000 });
+  const contactsQuery = trpc.clientContacts.list.useQuery({ limit: 1000 });
   const shortlistsQuery = trpc.shortlists.list.useQuery();
 
-  const filteredProjects = projectsQuery.data?.filter((project: any) =>
-    (project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.description?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (!projectTypeFilter || projectTypeFilter === "all" || project.projectType === projectTypeFilter)
-  ) || [];
+  const filteredProjects = projectsQuery.data?.items || [];
 
   const deleteMutation = trpc.projects.delete.useMutation();
 
@@ -61,9 +65,9 @@ export default function AdminProjects() {
   };
 
   const getClientContactName = (contactId: number) => {
-    const contact = contactsQuery.data?.find((c: any) => c.id === contactId);
+    const contact = (contactsQuery.data?.items ?? []).find((c: any) => c.id === contactId);
     if (!contact) return "Unknown";
-    const client = clientsQuery.data?.find((c: any) => c.id === contact.clientId);
+    const client = (clientsQuery.data?.items ?? []).find((c: any) => c.id === contact.clientId);
     return `${client?.name} - ${contact.contactName}`;
   };
 
@@ -99,18 +103,26 @@ export default function AdminProjects() {
           <Input
             placeholder="Search by project name or description…"
             value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); updateUrl(e.target.value, projectTypeFilter); }}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(0);
+              updateUrl(e.target.value, statusFilter, 0);
+            }}
             className="flex-1 h-8 text-sm"
           />
-          <Select value={projectTypeFilter} onValueChange={(value) => { setProjectTypeFilter(value); updateUrl(searchTerm, value); }}>
+          <Select value={statusFilter} onValueChange={(value) => {
+            setStatusFilter(value);
+            setCurrentPage(0);
+            updateUrl(searchTerm, value, 0);
+          }}>
             <SelectTrigger className="w-36 h-8 text-sm">
-              <SelectValue placeholder="Type" />
+              <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="Call">Call</SelectItem>
-              <SelectItem value="Advisory">Advisory</SelectItem>
-              <SelectItem value="ID">ID</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="Active">Active</SelectItem>
+              <SelectItem value="On Hold">On Hold</SelectItem>
+              <SelectItem value="Closed">Closed</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -120,7 +132,10 @@ export default function AdminProjects() {
             <div>
               <h3 className="text-sm font-semibold text-foreground">All Projects</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {filteredProjects.length} project{filteredProjects.length !== 1 ? "s" : ""} found
+                {projectsQuery.data?.total || 0} project{(projectsQuery.data?.total || 0) !== 1 ? "s" : ""} found
+                {filteredProjects.length > 0 && (
+                  <span> • Showing {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, projectsQuery.data?.total || 0)}</span>
+                )}
               </p>
             </div>
           </div>
@@ -130,9 +145,9 @@ export default function AdminProjects() {
               <EmptyState
                 icon={Briefcase}
                 title="No projects yet"
-                description={searchTerm || projectTypeFilter !== "all" ? "No projects match your filters." : "Add your first project to get started"}
-                actionLabel={!searchTerm && projectTypeFilter === "all" ? "Add Project" : undefined}
-                onAction={!searchTerm && projectTypeFilter === "all" ? () => navigate("/admin/add-project") : undefined}
+                description={searchTerm || statusFilter !== "all" ? "No projects match your filters." : "Add your first project to get started"}
+                actionLabel={!searchTerm && statusFilter === "all" ? "Add Project" : undefined}
+                onAction={!searchTerm && statusFilter === "all" ? () => navigate("/admin/add-project") : undefined}
               />
             </div>
           ) : (
@@ -192,6 +207,38 @@ export default function AdminProjects() {
                   ))}
                 </tbody>
               </table>
+              {/* Pagination Controls */}
+              {projectsQuery.data && projectsQuery.data.total > pageSize && (
+                <div className="flex items-center justify-between px-5 py-3 border-t border-border bg-muted/50">
+                  <div className="text-sm text-muted-foreground">
+                    Page {currentPage + 1} of {Math.ceil(projectsQuery.data.total / pageSize)}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setCurrentPage(currentPage - 1);
+                        updateUrl(searchTerm, statusFilter, currentPage - 1);
+                      }}
+                      disabled={currentPage === 0}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setCurrentPage(currentPage + 1);
+                        updateUrl(searchTerm, statusFilter, currentPage + 1);
+                      }}
+                      disabled={!projectsQuery.data.hasMore}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

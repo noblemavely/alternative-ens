@@ -179,17 +179,45 @@ export const adminAuthRouter = router({
       return { success: true };
     }),
 
-  listUsers: adminProcedure.query(async () => {
-    const { getAllAdminUsers } = await import("../db.admin");
-    const users = await getAllAdminUsers();
-    return users.map((user: any) => ({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      lastLogin: user.lastLogin,
-    }));
-  }),
+  listUsers: adminProcedure
+    .input(
+      z.object({
+        search: z.string().optional(),
+        limit: z.number().optional().default(20),
+        offset: z.number().optional().default(0),
+      })
+    )
+    .query(async ({ input }) => {
+      const { getAllAdminUsers } = await import("../db.admin");
+      const allUsers = await getAllAdminUsers();
+
+      let filtered = allUsers.map((user: any) => ({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        lastLogin: user.lastLogin,
+      }));
+
+      if (input.search) {
+        const searchLower = input.search.toLowerCase();
+        filtered = filtered.filter(user =>
+          (user.email?.toLowerCase().includes(searchLower) || false) ||
+          (user.name?.toLowerCase().includes(searchLower) || false)
+        );
+      }
+
+      const total = filtered.length;
+      const items = filtered.slice(input.offset, input.offset + input.limit);
+
+      return {
+        items,
+        total,
+        offset: input.offset,
+        limit: input.limit,
+        hasMore: input.offset + input.limit < total,
+      };
+    }),
 
   createUser: adminProcedure
     .input(
