@@ -671,31 +671,13 @@ export const appRouter = router({
                 return profileData;
               }
             }
-
-            // Fallback to Claude if Apollo not configured or failed
-            console.log(`[extractProfile] Falling back to Claude API for LinkedIn URL`);
-            const { getProfileExtractor } = await import("./services/aiProfileExtractor");
-            const extractor = getProfileExtractor("claude");
-            profileData = await extractor.extractFromURL(linkedinUrl);
-            console.log(`[extractProfile] Claude extraction completed:`, !!profileData);
           } else if (resumeText) {
-            console.log(`[extractProfile] Extracting from resume text`);
             const { getProfileExtractor } = await import("./services/aiProfileExtractor");
             const extractor = getProfileExtractor("claude");
             profileData = await extractor.extractFromText(resumeText);
-            console.log(`[extractProfile] Resume extraction completed:`, !!profileData);
           }
 
-          if (!profileData) {
-            console.error(`[extractProfile] Final profileData is null/empty`);
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to extract profile data. Please try again or fill in manually.",
-            });
-          }
-
-          console.log(`[extractProfile] Returning extracted profile data`);
-          return profileData;
+          return profileData || null;
         } catch (error: any) {
           console.error("[extractProfile] Error:", error);
           if (error instanceof TRPCError) {
