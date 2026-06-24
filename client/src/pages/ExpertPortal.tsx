@@ -698,7 +698,7 @@ export default function ExpertPortal() {
                       }}
                       className="w-full bg-primary hover:bg-primary/90"
                     >
-                      Continue Without Extraction
+                      Next
                     </Button>
                   </div>
                 </Form>
