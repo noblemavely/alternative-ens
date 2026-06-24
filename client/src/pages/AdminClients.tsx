@@ -35,32 +35,35 @@ export default function AdminClients() {
   const [location, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  
+
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
   const [sectorFilter, setSectorFilter] = useState<string>(urlParams.get('sector') || "");
+  const [currentPage, setCurrentPage] = useState(parseInt(urlParams.get('page') || '0'));
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<{ id: number; name: string } | null>(null);
-  
-  const updateUrl = (search: string, sector: string) => {
+
+  const pageSize = 20;
+  const updateUrl = (search: string, sector: string, page: number = 0) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     if (sector && sector !== "all") params.set('sector', sector);
+    if (page > 0) params.set('page', String(page));
     const queryString = params.toString();
     navigate(`/admin/clients${queryString ? '?' + queryString : ''}`);
   };
 
-  const clientsQuery = trpc.clients.list.useQuery();
+  const clientsQuery = trpc.clients.list.useQuery({
+    search: searchTerm,
+    limit: pageSize,
+    offset: currentPage * pageSize,
+  });
   const sectorsQuery = trpc.sectors.list.useQuery();
   const projectsQuery = trpc.projects.list.useQuery();
   const contactsQuery = trpc.clientContacts.list.useQuery();
   const createMutation = trpc.clients.create.useMutation();
-  
-  const filteredClients = clientsQuery.data?.filter(client =>
-    (client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.companyName?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (!sectorFilter || sectorFilter === "all" || client.sector === sectorFilter)
-  ) || [];
+
+  const filteredClients = clientsQuery.data?.items || [];
   
   const updateMutation = trpc.clients.update.useMutation();
   const deleteMutation = trpc.clients.delete.useMutation();
@@ -140,13 +143,15 @@ export default function AdminClients() {
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                updateUrl(e.target.value, sectorFilter);
+                setCurrentPage(0);
+                updateUrl(e.target.value, sectorFilter, 0);
               }}
               className="flex-1 min-w-0"
             />
             <Select value={sectorFilter} onValueChange={(value) => {
               setSectorFilter(value);
-              updateUrl(searchTerm, value);
+              setCurrentPage(0);
+              updateUrl(searchTerm, value, 0);
             }}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Sector" />
@@ -171,7 +176,10 @@ export default function AdminClients() {
             <div>
               <h3 className="text-sm font-semibold text-foreground">All Clients</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {filteredClients.length} client{filteredClients.length !== 1 ? "s" : ""} found
+                {clientsQuery.data?.total || 0} client{(clientsQuery.data?.total || 0) !== 1 ? "s" : ""} found
+                {filteredClients.length > 0 && (
+                  <span> • Showing {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, clientsQuery.data?.total || 0)}</span>
+                )}
               </p>
             </div>
           </div>
@@ -240,6 +248,38 @@ export default function AdminClients() {
                   })}
                 </tbody>
               </table>
+              {/* Pagination Controls */}
+              {clientsQuery.data && clientsQuery.data.total > pageSize && (
+                <div className="flex items-center justify-between px-5 py-3 border-t border-border bg-muted/50">
+                  <div className="text-sm text-muted-foreground">
+                    Page {currentPage + 1} of {Math.ceil(clientsQuery.data.total / pageSize)}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setCurrentPage(currentPage - 1);
+                        updateUrl(searchTerm, sectorFilter, currentPage - 1);
+                      }}
+                      disabled={currentPage === 0}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setCurrentPage(currentPage + 1);
+                        updateUrl(searchTerm, sectorFilter, currentPage + 1);
+                      }}
+                      disabled={!clientsQuery.data.hasMore}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

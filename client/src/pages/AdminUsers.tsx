@@ -10,9 +10,16 @@ import { toast } from "sonner";
 
 export default function AdminUsers() {
   const [, navigate] = useLocation();
+  const [currentPage, setCurrentPage] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const pageSize = 20;
 
   // Fetch admin users
-  const usersQuery = trpc.adminAuth.listUsers.useQuery();
+  const usersQuery = trpc.adminAuth.listUsers.useQuery({
+    search: searchTerm,
+    limit: pageSize,
+    offset: currentPage * pageSize,
+  });
 
   // Delete mutation
   const deleteMutation = trpc.adminAuth.deleteUser.useMutation({
@@ -35,7 +42,7 @@ export default function AdminUsers() {
     }
   };
 
-  const admins = usersQuery.data || [];
+  const admins = usersQuery.data?.items || [];
 
   return (
     <AdminLayout>
@@ -63,7 +70,12 @@ export default function AdminUsers() {
       <Card>
         <CardHeader>
           <CardTitle>Active Administrators</CardTitle>
-          <CardDescription>Total: {admins.length} admin user(s)</CardDescription>
+          <CardDescription>
+            Total: {usersQuery.data?.total || 0} admin user(s)
+            {admins.length > 0 && (
+              <span> • Showing {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, usersQuery.data?.total || 0)}</span>
+            )}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {usersQuery.isLoading ? (
@@ -130,6 +142,32 @@ export default function AdminUsers() {
                   ))}
                 </tbody>
               </table>
+              {/* Pagination Controls */}
+              {usersQuery.data && usersQuery.data.total > pageSize && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/50">
+                  <div className="text-sm text-muted-foreground">
+                    Page {currentPage + 1} of {Math.ceil(usersQuery.data.total / pageSize)}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      disabled={currentPage === 0}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={!usersQuery.data.hasMore}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
